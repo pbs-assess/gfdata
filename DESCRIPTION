@@ -9,13 +9,18 @@ Authors@R: c(person(c("Sean", "C."), "Anderson",
 Description: Facilitates groundfish data extraction at the Canadian Department
     of Fisheries and Oceans (DFO) Pacific Biological Station (PBS).
 Encoding: UTF-8
-Depends: R (>= 3.4.0),
-    Rcpp (>= 0.12.0)
+Depends: R (>= 3.4.0)
 License: GPL (>=2)
 LazyData: true
 Imports:
+  DBI,
   dplyr (>= 0.7.0),
-  gfplot
+  lubridate,
+  odbc,
+  readr,
+  rvest,
+  tidyr,
+  xml2
 RoxygenNote: 6.1.0
 Suggests: 
     usethis,
