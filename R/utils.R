@@ -48,52 +48,6 @@ force_three_letter_species_code <- function(x) {
   }
 }
 
-all_species_codes <- function(x) {
-  all(grepl("[0-9]+", x))
-}
-
-common2codes <- function(common) {
-  if (all_species_codes(common)) {
-    return(force_three_letter_species_code(common))
-  }
-
-  species <- DBI::dbGetQuery(
-    db_connection(database = "GFBioSQL"),
-    "SELECT * FROM SPECIES"
-  )
-  common_df <- data.frame(
-    SPECIES_COMMON_NAME = toupper(common),
-    order_by = seq_along(common), stringsAsFactors = FALSE
-  )
-  .d <- filter(species, SPECIES_COMMON_NAME %in% toupper(common))
-  # Remove erroneous species codes for basking shark and lingcod:
-  .d <- filter(.d, !SPECIES_CODE %in% c("033", "465")) %>%
-    left_join(common_df, by = "SPECIES_COMMON_NAME") %>%
-    arrange(.data$order_by)
-  .d$SPECIES_CODE
-}
-
-codes2common <- function(spp_code) {
-  species <- DBI::dbGetQuery(
-    db_connection(database = "GFBioSQL"),
-    "SELECT * FROM SPECIES"
-  )
-  code_df <- data.frame(
-    SPECIES_CODE = spp_code,
-    order_by = seq_along(spp_code), stringsAsFactors = FALSE
-  )
-  common_df <- data.frame(
-    SPECIES_CODE = spp_code,
-    order_by = seq_along(spp_code), stringsAsFactors = FALSE
-  )
-  .d <- filter(species, SPECIES_CODE %in% spp_code)
-  # Remove erroneous species codes for basking shark and lingcod:
-  .d <- filter(.d, !SPECIES_CODE %in% c("033", "465")) %>%
-    left_join(common_df, by = "SPECIES_CODE") %>%
-    arrange(.data$order_by)
-  .d$SPECIES_COMMON_NAME
-}
-
 collapse_filters <- function(x) {
   paste0("'", paste(x, collapse = "','"), "'")
 }
@@ -126,8 +80,8 @@ first_cap <- function(s, strict = FALSE) {
 }
 
 read_sql <- function(x) {
-  if (file.exists(system.file("sql", x, package = "gfplot"))) {
-    readLines(system.file("sql", x, package = "gfplot"))
+  if (file.exists(system.file("sql", x, package = "gfdata"))) {
+    readLines(system.file("sql", x, package = "gfdata"))
   } else {
     stop("The sql file does not exist.")
   }

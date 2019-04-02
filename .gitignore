@@ -1,28 +1,56 @@
 .Rproj.user
-# History files
 .Rhistory
-.Rapp.history
-
-# Session Data files
 .RData
-# Example code in package build process
-*-Ex.R
-# Output files from R CMD build
-/*.tar.gz
-# Output files from R CMD check
-/*.Rcheck/
-# RStudio files
-.Rproj.user/
-# produced vignettes
-vignettes/*.html
-vignettes/*.pdf
-# OAuth2 token, see https://github.com/hadley/httr/releases/tag/v0.3
-.httr-oauth
-# knitr and R markdown default cache directories
-/*_cache/
-/cache/
-# Temporary files created by R markdown
-*.utf8.md
-*.knit.md
-# Shiny token, see https://shiny.rstudio.com/articles/shinyapps.html
-rsconnect/
+
+*.pdf
+*.rda
+marmap_coord_-129.04825;47.74815;-124.415633;51.0058_res_1.csv
+marmap_coord_-131.708066;50.505316;-127.449483;53.183_res_1.csv
+marmap_coord_-134.287133;52.56505;-132.120716;54.976666_res_1.csv
+marmap_coord_-133.35505;52.20215;-129.349766;55.1566_res_1.csv
+*.rds
+*.aux
+*.log
+*chunk*
+*data-cache*
+text/cache/*
+marmap_coord_-129.04825;47.74815;-124.291016;51.0058_res_1.csv
+marmap_coord_-131.708066;50.505316;-127.383166;53.183_res_1.csv
+marmap_coord_-133.3589;52.20215;-129.349766;55.1566_res_1.csv
+marmap_coord_-134.535533;47.721833;-124.291016;55.172733_res_1.csv
+marmap_coord_-134.535533;52.4393;-132.120716;54.976666_res_1.csv
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+text/gf-synopsis.tex
+*.toc
+*.upa
+text/introduction.tex
+text/methods.tex
+marmap_coord_-134.9917;47.4997;-123.9917;55.4956_res_1.csv
+*.gz
+*.upb
+text/spatial-appendix-concordance.tex
+text/spatial-appendix.tex
+*.out
+*.lof
+*.docx
+*.o
+*.so
+*.sublime-project
+*.sublime-workspace
+inst/doc
+inst/pcod-cache
+inst/pcod-figs
+inst/pcod-knitr*
+*cache*
+inst/pcod-vignette.html
+inst/shortraker-data.html
+inst/test-weighting/test-weighting.html
+spatial-survey/*
+inst/shortraker-kni*
+figs/*
+inst/pcod-vb.html
+*~
+*.dll
