@@ -23,8 +23,10 @@ test_that("get species data functions work at PBS", {
   d <- get_catch("lingcod")
   expect_gte(nrow(d), 1L)
 
-  # d <- get_hake_catch()
-  #
+  d <- get_hake_catch()
+  expect_false(is.null(sum(d$landed_kg)))
+  expect_match(class(d$discarded_kg), "numeric")
+
   # d <- get_cpue_historical()
   #
   # d <- get_cpue_spatial("lingcod")
