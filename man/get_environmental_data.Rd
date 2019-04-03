@@ -3,9 +3,8 @@
 \name{get_sensor_data_trawl}
 \alias{get_sensor_data_trawl}
 \alias{get_sensor_data_fe_trawl}
-\alias{get_sensor_data_fe_ctd}
 \alias{get_sensor_data_ll_td}
-\title{Title}
+\title{Environmental data extraction for sensors deployed on trawl survey gear}
 \usage{
 get_sensor_data_trawl(ssid = NULL, attribute = c("temperature",
   "depth", "dissolved oxygen", "salinity"), spread_attributes = FALSE)
@@ -13,13 +12,6 @@ get_sensor_data_trawl(ssid = NULL, attribute = c("temperature",
 get_sensor_data_fe_trawl(fishing_event_id = NULL,
   attribute = c("temperature", "depth", "dissolved oxygen", "salinity"),
   sensor_name = NULL)
-
-get_sensor_data_fe_ctd(fishing_event_id = NULL,
-  attribute = c("temperature", "depth", "dissolved oxygen", "salinity"),
-  sensor_name = NULL)
-
-get_sensor_data_ll_td(ssid = NULL, attribute = c("temperature",
-  "depth"), sensor_min_max = FALSE)
 
 get_sensor_data_ll_td(ssid = NULL, attribute = c("temperature",
   "depth"), sensor_min_max = FALSE)
@@ -39,13 +31,13 @@ returned in a wider format.}
 wide format (= TRUE) with min and max values for each attribute for each
 fishing event, or in long format (= FALSE) with only mean values for each
 attribute and fishing event.}
-
-\item{sensor_name}{TODO}
 }
 \description{
-Title
+Environmental data extraction for sensors deployed on trawl survey gear
 
-Sensor data extraction by fishing event
+Environmetnal data extraction for trawl surveys, for individual fishing events
+
+Environmental data extraction for sensors deployed on longline survey gear
 }
 \details{
 To explore sensor data for an individual fishing event

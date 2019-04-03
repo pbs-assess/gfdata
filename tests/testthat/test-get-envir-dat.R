@@ -1,5 +1,23 @@
 context("test-get-envir-dat")
 
-test_that("multiplication works", {
-  expect_equal(2 * 2, 4)
+library(dplyr)
+
+test_that("environmental data extraction works", {
+  # skip_on_cran()
+  skip_on_travis()
+  skip_on_appveyor()
+
+  d <- get_sensor_data_trawl(1, "temperature")
+  expect_equal(class(d$count), "integer")
+  expect_equal(length(d), 12)
+
+  d <- get_sensor_data_fe_trawl(308673, "temperature")
+  expect_equal(class(d$sensor_data_value), "numeric")
+  expect_equal(length(d), 6)
+
+    d <- get_sensor_data_ll_td()
+    expect_equal(sum(is.null(d$fishing_event_id)), 0)
+
 })
+
+
