@@ -27,13 +27,20 @@ test_that("get species data functions work at PBS", {
   expect_false(is.null(sum(d$landed_kg)))
   expect_match(class(d$discarded_kg), "numeric")
 
-  # d <- get_cpue_historical()
-  #
-  # d <- get_cpue_spatial("lingcod")
-  #
-  # d <- get_cpue_spatial_ll("lingcod")
-  #
-  # d <- get_cpue_index("bottom trawl", min_cpue_year = 2015)
+  d <- get_cpue_historical("442")
+  expect_equal(d$species_common_name[[1]], "YELLOWEYE ROCKFISH")
+  expect_equal(class(d$landed_kg), "numeric")
+
+  d <- get_cpue_spatial("lingcod")
+  expect_gte(d$fishing_event_id[[1]], 1)
+  expect_equal(class(d$cpue), "numeric")
+
+  d <- get_cpue_spatial_ll("lingcod")
+  expect_match(class(d$landed_round_kg), "numeric")
+  expect_gte(nrow(d), 1L)
+
+  d <- get_cpue_index("bottom trawl", min_cpue_year = 2015)
+  expect_gt(sum(d$landed_kg, d$discarded_kg), 0)
 
   d <- get_age_precision("lingcod")
   expect_equal(d$species_code[[1L]], "467")
@@ -41,6 +48,7 @@ test_that("get species data functions work at PBS", {
   d <- get_survey_index("lingcod", ssid = 1)
   expect_type(d$num_pos_sets, "integer")
 
-  # d <- get_management()
+  d <- get_management(396)
+  expect_match(d$species_common_name, "pacific ocean perch")
 
 })

@@ -117,19 +117,16 @@ codes2common <- function(spp_code) {
     db_connection(database = "GFBioSQL"),
     "SELECT * FROM SPECIES"
   )
-  code_df <- data.frame(
-    SPECIES_CODE = spp_code,
-    order_by = seq_along(spp_code), stringsAsFactors = FALSE
-  )
-  common_df <- data.frame(
-    SPECIES_CODE = as.character(spp_code),
-    order_by = seq_along(spp_code), stringsAsFactors = FALSE
-  )
   .d <- filter(species, SPECIES_CODE %in% spp_code)
-  # Remove erroneous species codes for basking shark and lingcod:
-  .d <- filter(.d, !SPECIES_CODE %in% c("033", "465")) %>%
-    left_join(common_df, by = "SPECIES_CODE") %>%
-    arrange(.data$order_by)
+
+  if (spp_code == 033) {
+    message("Code deprecated, use 034 for Basking Shark.")
+  }
+  if (spp_code == 465) {
+    message("Code deprcated, use 467 for Lingod.")
+  }
+
+  .d <- filter(.d, !SPECIES_CODE %in% c("033", "465"))
   .d$SPECIES_COMMON_NAME
 }
 

@@ -462,8 +462,8 @@ get_cpue_historical <- function(species = NULL,
     .d <- dplyr::select(.d, -.time_diff, -.year_start_date)
   }
 
-  .d$area <- assign_areas(.d$major_stat_area_description, areas)
-  .d$specific_area <- assign_areas(.d$major_stat_area_description,
+  .d$area <- gfplot::assign_areas(.d$major_stat_area_description, areas)
+  .d$specific_area <- gfplot::assign_areas(.d$major_stat_area_description,
     area_regex = c("3C", "3D", "5A", "5B", "5C", "5D", "5E")
   )
 

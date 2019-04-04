@@ -53,7 +53,7 @@ test_that("first_cap() works", {
 test_that("read_sql works", {
   x <- read_sql("get-catch.sql")
   expect_gte(length(x), 1)
-  expect_identical(class(x), "character")
+  expect_type(x, "character")
 })
 
 test_that("all_species_codes() works", {
@@ -74,4 +74,9 @@ test_that("common2codes() works", {
 })
 
 # codes2common()
+test_that("codes2common() works", {
+  expect_equal(codes2common(3), "003")
+  expect_equal(codes2common(c(1, 2)), c("001", "002"))
+  expect_equal(codes2common(c("001", "002")), c("001", "002"))
+})
 
