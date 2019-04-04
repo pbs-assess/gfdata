@@ -117,16 +117,27 @@ codes2common <- function(spp_code) {
     db_connection(database = "GFBioSQL"),
     "SELECT * FROM SPECIES"
   )
+
+  for (i in spp_code){
+    if (i == 033) {
+      message("Code 033 deprecated for Basking Shark. Use code 034.")
+    }
+    if (i == 465) {
+      message("Code 465 deprecated for Lingcod. Use code 467.")
+    }
+  }
+
+  spp_code <- force_three_letter_species_code(spp_code)
+
+  code_df <- data.frame(
+    SPECIES_CODE = as.character(spp_code),
+    order_by = seq_along(spp_code), stringsAsFactors = FALSE
+  )
   .d <- filter(species, SPECIES_CODE %in% spp_code)
 
-  if (spp_code == 033) {
-    message("Code deprecated, use 034 for Basking Shark.")
-  }
-  if (spp_code == 465) {
-    message("Code deprcated, use 467 for Lingod.")
-  }
-
-  .d <- filter(.d, !SPECIES_CODE %in% c("033", "465"))
+  .d <- filter(.d, !SPECIES_CODE %in% c("033", "465")) %>%
+    left_join(code_df, by = "SPECIES_CODE") %>%
+    arrange(.data$order_by)
   .d$SPECIES_COMMON_NAME
 }
 

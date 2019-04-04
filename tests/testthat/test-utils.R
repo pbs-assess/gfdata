@@ -75,8 +75,7 @@ test_that("common2codes() works", {
 
 # codes2common()
 test_that("codes2common() works", {
-  expect_equal(codes2common(3), "003")
-  expect_equal(codes2common(c(1, 2)), c("001", "002"))
-  expect_equal(codes2common(c("001", "002")), c("001", "002"))
+  expect_message(codes2common(465), "Code 465 deprecated for Lingcod. Use code 467.")
+  expect_equal(codes2common("222"), "PACIFIC COD")
 })
 
