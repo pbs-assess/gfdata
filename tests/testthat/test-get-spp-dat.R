@@ -51,4 +51,7 @@ test_that("get species data functions work at PBS", {
   d <- get_management(396)
   expect_match(d$species_common_name, "pacific ocean perch")
 
+  d <- get_sara_dat()
+  expect_type(d$sara_status, "character")
+
 })

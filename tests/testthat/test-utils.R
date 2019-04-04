@@ -19,7 +19,6 @@ test_that("run_sql works", {
 
 # db_connection()
 
-
 test_that("force_three_letter_species_code() works", {
   expect_equal(force_three_letter_species_code(3), "003")
   expect_equal(force_three_letter_species_code(c(1, 2)), c("001", "002"))
@@ -73,7 +72,6 @@ test_that("common2codes() works", {
   expect_equal(common2codes(c("001", "002")), c("001", "002"))
 })
 
-# codes2common()
 test_that("codes2common() works", {
   expect_message(codes2common(465), "Code 465 deprecated for Lingcod. Use code 467.")
   expect_equal(codes2common("222"), "PACIFIC COD")
