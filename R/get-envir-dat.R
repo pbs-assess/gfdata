@@ -27,8 +27,8 @@ get_sensor_data_trawl <- function(ssid = NULL,
   .d$attribute <- gsub("dissolved oxygen", "do", .d$attribute)
   .d <- unique(.d)
   .d <- .d %>%
-    mutate(attribute = paste0(attribute, "_", unit)) %>%
-    select(-unit)
+    dplyr::mutate(attribute = paste0(attribute, "_", unit)) %>%
+    dplyr::select(-unit)
 
   if (spread_attributes) {
     .d <- .d %>% tidyr::gather(.data$min, .data$avg, .data$max,
@@ -37,7 +37,7 @@ get_sensor_data_trawl <- function(ssid = NULL,
     .d <- .d %>% tidyr::spread(key = .data$temp, value = .data$value)
   }
 
-  as_tibble(.d)
+  tibble::as_tibble(.d)
 }
 
 #' Environmetnal data extraction for trawl surveys, for individual fishing events

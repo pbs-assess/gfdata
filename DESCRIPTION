@@ -19,6 +19,7 @@ Imports:
   odbc,
   readr,
   rvest,
+  tibble,
   tidyr,
   xml2
 RoxygenNote: 6.1.0
