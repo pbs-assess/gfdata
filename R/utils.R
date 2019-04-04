@@ -52,7 +52,7 @@ collapse_filters <- function(x) {
   paste0("'", paste(x, collapse = "','"), "'")
 }
 
-#' gfplot utilities
+#' gfdata utilities
 #'
 #' @param sql_precode SQL go to inject before a species list etc.
 #' @param species A vector of species or similar objects.

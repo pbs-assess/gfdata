@@ -15,6 +15,7 @@ LazyData: true
 Imports:
   DBI,
   dplyr (>= 0.7.0),
+  gfplot,
   lubridate,
   odbc,
   readr,
