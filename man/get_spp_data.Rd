@@ -132,7 +132,7 @@ synopsis report production.
 }
 \details{
 * `get_survey_sets()` extracts survey catch data and spatial data for
-   plotting survey catchs on a map of British Columbia.
+   plotting survey catchs on a map of British Columbia
 * `get_survey_samples()` extracts all biological sample specimen records
    from research surveys for given species and survey series IDs from GFBio
 * `get_commercial_samples()` extracts all biological sample specimen records
@@ -140,21 +140,22 @@ synopsis report production.
 * `get_catch()` extracts all landing and discard records for a given species
    from GFFOS.GF_MERGED_CATCH
 * `get_hake_catch()` extracts all landing and discard records for Pacific Hake
-   with some extra data used in the Hake assessment.
+   with some extra data used in the Hake assessment
 * `get_cpue_spatial()` extracts catch, effort and spatial data from
    GFFOS.GF_D_OFFICIAL_CATCH for the groundfish trawl fishery
 * `get_cpue_spatial_ll()` extracts catch, effort and spatial data from
    GFFOS.GF_D_OFFICIAL_CATCH for the longline fishery
 * `get_cpue_index()` extracts catch and effort data from
-   GFFOS.GF_MERGED_CATCH for the groundfish trawl fishery since 1996.
+   GFFOS.GF_MERGED_CATCH for the groundfish trawl fishery since 1996
 * `get_cpue_historical()` extracts historical catch and effort data back into
-   the 1950s. It's help file is on a separate page; see the link.
+   the 1950s. It's help file is on a separate page; see the link
 * `get_age_precision()` extracts age readings from biological samples for a
    given species where there is a second ('precision') age reading
 * `get_sara_dat()` scrubs Species At Risk website for up-to-date species
    status and listings
 * `get_survey_index()` extracts survey catch data for given species
    and survey series IDs
+* `get_management()` extracts management actions
 * `cache_pbs_data()` runs all 'get' functions in the gfdata package
    (except those specific to IPHC data) and caches extracted data to a given
    folder

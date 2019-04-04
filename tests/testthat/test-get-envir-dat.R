@@ -15,9 +15,16 @@ test_that("environmental data extraction works", {
   expect_equal(class(d$sensor_data_value), "numeric")
   expect_equal(length(d), 6)
 
-    d <- get_sensor_data_ll_td()
-    expect_equal(sum(is.null(d$fishing_event_id)), 0)
+    # d <- get_sensor_data_ll_td()
+    # expect_equal(sum(is.null(d$fishing_event_id)), 0)
 
 })
 
 
+
+
+
+#
+# get_sensor_data_trawl <- function(ssid = NULL,
+#   attribute = c("temperature", "depth", "dissolved oxygen", "salinity"),
+#   spread_attributes = FALSE)
