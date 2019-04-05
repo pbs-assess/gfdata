@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{inject_filter}
 \alias{inject_filter}
-\title{gfplot utilities}
+\title{gfdata utilities}
 \usage{
 inject_filter(sql_precode, species, sql_code,
   search_flag = "-- insert species here",
@@ -21,5 +21,5 @@ inject_filter(sql_precode, species, sql_code,
 related vector.}
 }
 \description{
-gfplot utilities
+gfdata utilities
 }
