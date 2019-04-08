@@ -1,7 +1,8 @@
 -- This query only extracts data from CTD's deployed on the HBLL Inside surveys.
 -- The CTD's are not deployed directly with a particular fishing event, and so have
 -- their own unique fishing event id and are collected approximately 5 m off the bottom
--- (whereas all data collected on trawl surveys are considered bottom data). Sensor data
+-- (whereas all data collected with sensors deployed directly 
+-- on trawl and long line survey gear are considered bottom data). Sensor data
 -- from sensors deployed on hooks with actual fishing events are extracted separately.
 
 -- Attributes are averaged over the measurements between maximum depth as recorded

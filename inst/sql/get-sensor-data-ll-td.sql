@@ -1,8 +1,8 @@
 --This query only extracts depth and temperature data from sensors deployed (up to 3) on hooks
 -- on the HBLL Inside surveys.  CTD data are extracted separately, and are collected
--- approximately 5 m off the bottom (whereas all data on trawl surveys are considered 
--- bottom data). CTD data can be linked to sensor data from fishing sets in the 
--- same block by block designation.
+-- approximately 5 m off the bottom (whereas all data collected with sensors deployed directly 
+-- on trawl and long line survey gear are considered bottom data). CTD data can be linked 
+-- to sensor data from fishing sets in the same block by block designation.
 
 -- Attribute values are averaged over all measurments recorded between 
 -- when gear deployment was complete and gear retrieval began.
@@ -14,9 +14,9 @@ SELECT YEAR(FE_BEGIN_RETRIEVAL_TIME) AS YEAR
 	,SENSOR_DATA_ATTRIBUTE_DESC AS ATTRIBUTE
 	,MIN(SD.TIME_STAMP) AS START_TIME
 	,MAX(SD.TIME_STAMP) AS END_TIME
-	,MIN(SD.SENSOR_DATA_VALUE) AS MIN_VALUE
-	,AVG(SD.SENSOR_DATA_VALUE) AS AVG_VALUE
-	,MAX(SD.SENSOR_DATA_VALUE) AS MAX_VALUE
+	,MIN(SD.SENSOR_DATA_VALUE) AS MIN
+	,AVG(SD.SENSOR_DATA_VALUE) AS AVG
+	,MAX(SD.SENSOR_DATA_VALUE) AS MAX
 	,COUNT(SD.SENSOR_DATA_VALUE) AS COUNT
 	,CASE WHEN SENSOR_DATA_UNIT_ABBR = '(¿C)' THEN 'C' ELSE SENSOR_DATA_UNIT_ABBR END AS UNIT
 FROM FISHING_EVENT FE

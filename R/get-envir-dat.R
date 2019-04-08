@@ -78,7 +78,7 @@ get_sensor_data_fe_trawl <- function(fishing_event_id = NULL,
 
 #' Environmental data extraction for sensors deployed on longline survey gear
 #'
-#' @param sensor_min_max Allows for user to choose whether data are output in
+#' @param spread_attributes Allows for user to choose whether data are output in
 #'   wide format (= TRUE) with min and max values for each attribute for each
 #'   fishing event, or in long format (= FALSE) with only mean values for each
 #'   attribute and fishing event.
@@ -86,7 +86,7 @@ get_sensor_data_fe_trawl <- function(fishing_event_id = NULL,
 #' @rdname get_environmental_data
 get_sensor_data_ll_td <- function(ssid = NULL,
   attribute = c("temperature", "depth"),
-  sensor_min_max = FALSE) {
+  spread_attributes = FALSE) {
   .q <- read_sql("get-sensor-data-ll-td.sql")
   if (!is.null(ssid)) {
     .q <- inject_filter("AND SURVEY_SERIES_ID IN", ssid, .q,
@@ -108,14 +108,55 @@ get_sensor_data_ll_td <- function(ssid = NULL,
     mutate(attribute = paste0(attribute, "_", unit)) %>%
     select(-unit)
 
-  if (!sensor_min_max) {
-    .d <- .d %>% select(-min_value, -max_value)
-    .d <- .d %>% tidyr::gather(avg_value, key = "parameter", value = "value")
+  if (!spread_attributes) {
+    .d <- .d %>% select(-min, -max)
+    .d <- .d %>% tidyr::gather(avg, key = "parameter", value = "value") %>%
+      select(-parameter)
     .d <- .d %>% tidyr::spread(key = attribute, value = value)
   }
   as_tibble(.d)
 }
 
+#' Environmental data extraction for sensors deployed on longline survey gear
+#'
+#' @param spread_attributes Allows for user to choose whether data are output in
+#'   wide format (= TRUE) with min and max values for each attribute for each
+#'   fishing event, or in long format (= FALSE) with only mean values for each
+#'   attribute and fishing event.
+#' @export
+#' @rdname get_environmental_data
+get_sensor_data_ll_ctd <- function(ssid = NULL,
+  attribute = c("temperature", "depth", "dissolved oxygen", "salinity"),
+  spread_attributes = FALSE) {
+  .q <- read_sql("get-sensor-data-ll-ctd.sql")
+  if (!is.null(ssid)) {
+    .q <- inject_filter("AND SURVEY_SERIES_ID IN", ssid, .q,
+      search_flag = "-- insert ssid here", conversion_func = I
+    )
+  }
+  if (!is.null(attribute)) {
+    .q <- inject_filter("AND SENSOR_DATA_ATTRIBUTE_DESC IN", first_cap(attribute), .q,
+      search_flag = "-- insert attribute here", conversion_func = I
+    )
+  }
+
+  .d <- run_sql("GFBioSQL", .q)
+  names(.d) <- tolower(names(.d))
+  .d$attribute <- tolower(.d$attribute)
+  .d <- unique(.d)
+
+  .d <- .d %>%
+    mutate(attribute = paste0(attribute, "_", unit)) %>%
+    select(-unit)
+
+  if (!spread_attributes) {
+    .d <- .d %>% select(-min, -max)
+    .d <- .d %>% tidyr::gather(avg, key = "parameter", value = "value") %>%
+      select(-parameter)
+    .d <- .d %>% tidyr::spread(key = attribute, value = value)
+  }
+  as_tibble(.d)
+}
 
 #' #' Envirnmental data extraction (ctd data) near longline survey sites
 #' #' for individual fishing events
