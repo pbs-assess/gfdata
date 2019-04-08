@@ -85,7 +85,7 @@
 #' @param ssid A numeric vector of survey series IDs. Run [get_ssids()] for a
 #'   look-up table of available survey series IDs with surveys series
 #'   descriptions.
-#' @name get_spp_data
+#' @name get_data
 NULL
 
 
@@ -95,7 +95,7 @@ NULL
 #'   different survey stratifications.
 #' @param verbose If `TRUE` then extra messages were reprinted during data
 #'   extraction. Useful to monitor progress.
-#' @rdname get_spp_data
+#' @rdname get_data
 get_survey_sets <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36),
                             join_sample_ids = FALSE, verbose = FALSE) {
   # Just to pull out up to date list of ssids associated with trawl/ll gear type.
@@ -234,7 +234,7 @@ get_survey_sets <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36),
 }
 
 #' @export
-#' @rdname get_spp_data
+#' @rdname get_data
 #' @param remove_bad_data Remove known bad data, such as unrealistic
 #'  length or weight values.
 #' @param usability A vector of usability codes to include. Defaults to all.
@@ -322,7 +322,7 @@ get_survey_samples <- function(species, ssid = NULL, remove_bad_data = TRUE,
 #' @export
 #' @param unsorted_only Remove sorted biological data ('keepers' and 'discards'
 #'  and unknown). Default = TRUE.
-#' @rdname get_spp_data
+#' @rdname get_data
 get_commercial_samples <- function(species, unsorted_only = TRUE,
                                    usability = NULL) {
   .q <- read_sql("get-comm-samples.sql")
@@ -383,7 +383,7 @@ get_commercial_samples <- function(species, unsorted_only = TRUE,
 }
 
 #' @export
-#' @rdname get_spp_data
+#' @rdname get_data
 get_catch <- function(species) {
   .q <- read_sql("get-catch.sql")
   .q <- inject_filter("WHERE SP.SPECIES_CODE IN", species, sql_code = .q)
@@ -398,7 +398,7 @@ get_catch <- function(species) {
 }
 
 #' @export
-#' @rdname get_spp_data
+#' @rdname get_data
 get_hake_catch <- function() {
   .q <- read_sql("get-hake-catch.sql")
   .q <- inject_filter("WHERE SP.SPECIES_CODE IN", "255", sql_code = .q)
@@ -472,7 +472,7 @@ get_cpue_historical <- function(species = NULL,
 }
 
 #' @export
-#' @rdname get_spp_data
+#' @rdname get_data
 get_cpue_spatial <- function(species) {
   .q <- read_sql("get-cpue-spatial.sql")
   .q <- inject_filter("AND SP.SPECIES_CODE IN", species, sql_code = .q)
@@ -486,7 +486,7 @@ get_cpue_spatial <- function(species) {
 }
 
 #' @export
-#' @rdname get_spp_data
+#' @rdname get_data
 get_cpue_spatial_ll <- function(species) {
   .q <- read_sql("get-cpue-spatial-ll.sql")
   .q <- inject_filter("AND SP.SPECIES_CODE IN", species, sql_code = .q)
@@ -506,7 +506,7 @@ get_cpue_spatial_ll <- function(species) {
 #'  gear types to select from.
 #' @param min_cpue_year Minimum year for the CPUE data.
 #' @export
-#' @rdname get_spp_data
+#' @rdname get_data
 get_cpue_index <- function(gear = "bottom trawl", min_cpue_year = 1996) {
   .q <- read_sql("get-cpue-index.sql")
   i <- grep("-- insert filters here", .q)
@@ -520,7 +520,7 @@ get_cpue_index <- function(gear = "bottom trawl", min_cpue_year = 1996) {
 }
 
 #' @export
-#' @rdname get_spp_data
+#' @rdname get_data
 #' @param inside To select only the inside population (Strait of Georgia, area
 #'  4B only), set inside = 1. To select only the outside population, set inside
 #'   = 0.
@@ -540,7 +540,7 @@ get_age_precision <- function(species, inside = NULL) {
 }
 
 #' @export
-#' @rdname get_spp_data
+#' @rdname get_data
 get_survey_index <- function(species, ssid = NULL) {
   .q <- read_sql("get-survey-index.sql")
   .q <- inject_filter("WHERE SP.SPECIES_CODE IN", species, .q)
@@ -567,7 +567,7 @@ get_survey_index <- function(species, ssid = NULL) {
 #' @param start_year The minimum year to include management actions.
 #'   Defaults to all.
 #' @export
-#' @rdname get_spp_data
+#' @rdname get_data
 get_management <- function(species = NULL, species_group = NULL, fishery = NULL,
                            area = NULL, start_year = NULL) {
   .q <- read_sql("get-management.sql")
@@ -604,7 +604,7 @@ get_management <- function(species = NULL, species_group = NULL, fishery = NULL,
 }
 
 #' @export
-#' @rdname get_spp_data
+#' @rdname get_data
 get_sara_dat <- function() {
   .h <- xml2::read_html(
     "http://www.registrelep-sararegistry.gc.ca/sar/index/default_e.cfm"
@@ -651,7 +651,7 @@ get_sara_dat <- function() {
 #' * [get_age_precision()]
 #' * and optionally from [get_survey_sets()] and [get_cpue_historical()]
 
-#' @rdname get_spp_data
+#' @rdname get_data
 cache_pbs_data <- function(species, file_name = NULL, path = ".",
                            compress = FALSE, unsorted_only = TRUE, historical_cpue = FALSE,
                            survey_sets = FALSE, verbose = TRUE) {
