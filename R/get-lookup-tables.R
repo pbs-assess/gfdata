@@ -33,6 +33,21 @@ get_ssids <- function() {
 
 #' @export
 #' @rdname lookup
+get_active_survey_blocks <- function(ssid = NULL) {
+  .q <- read_sql("get-active-survey-blocks.sql")
+  .d <- run_sql("GFBioSQL", .q)
+  names(.d) <- tolower(names(.d))
+  if (!is.null(ssid)) {
+    .q <- inject_filter("AND SS.SURVEY_SERIES_ID IN", ssid,
+      sql_code = .q,
+      search_flag = "-- insert ssid here", conversion_func = I
+    )
+  }
+  .d
+}
+
+#' @export
+#' @rdname lookup
 get_major_areas <- function() {
   .d <- run_sql(
     "GFFOS",
