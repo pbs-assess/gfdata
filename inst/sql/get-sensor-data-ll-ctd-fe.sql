@@ -1,18 +1,10 @@
--- This query only extracts data from CTD's deployed on the HBLL Inside surveys.
--- The CTD's are not deployed directly with a particular fishing event, and so have
--- their own unique fishing event id and are collected approximately 5 m off the bottom
--- (whereas all data collected on trawl surveys are considered bottom data). Sensor data
--- from sensors deployed on hooks with actual fishing events are extracted separately.
-
--- Attributes are averaged over the measurements between maximum depth as recorded
--- by the CTD and 5 m shallower.
 SELECT YEAR(FE_END_DEPLOYMENT_TIME) AS YEAR
 	,SURVEY_SERIES_ID AS SSID
 	,SURVEY_DESC
 	,BLOCK_DESIGNATION 
 	,FE.FISHING_EVENT_ID
-	,SENSOR_DATA_ATTRIBUTE_DESC AS ATTRIBUTE
 	,SD.TIME_STAMP
+	,SENSOR_DATA_ATTRIBUTE_DESC AS ATTRIBUTE
 	,SENSOR_DATA_VALUE
 	,CASE SENSOR_DATA_UNIT_ABBR WHEN '(¿C)' THEN 'C' WHEN 'ml/L' THEN 'mlpL' WHEN 'S/m' THEN 'Spm' ELSE SENSOR_DATA_UNIT_ABBR END AS UNIT
 	,MAX_SENSOR_DEPTH
@@ -61,8 +53,8 @@ GROUP BY FE_END_DEPLOYMENT_TIME
 	,SENSOR_DATA_ATTRIBUTE_DESC
 	,SENSOR_DATA_UNIT_ABBR
 	,MAX_SENSOR_DEPTH
-	,FE_MAX_BOTTOM_DEPTH,
-	SD.TIME_STAMP,
-	SENSOR_DATA_VALUE
+	,FE_MAX_BOTTOM_DEPTH
+	,SD.TIME_STAMP
+	,SENSOR_DATA_VALUE
 ORDER BY FISHING_EVENT_ID
 

@@ -1,9 +1,16 @@
 #' Environmental data extraction for sensors deployed on trawl survey gear
 #'
+#' @param ssid A numeric vector of survey series IDs. Run [get_ssids()] for a
+#'   look-up table of available survey series IDs with surveys series
+#'   descriptions.
 #' @param attribute A character vector of sensor attributes to filter for.
 #'   Run `get_sensor_attributes()` for a look-up table of available attributes.
 #' @param spread_attributes Logical for whether the attributes should be
-#'   returned in a wider format.
+#'   returned in a wider format. Allows for user to choose whether data are output in
+#'   wide format (= TRUE) with min and max values for each attribute for each
+#'   fishing event, or in long format (= FALSE) with only mean values for each
+#'   attribute and fishing event.
+#'
 #' @export
 #' @rdname get_environmental_data
 get_sensor_data_trawl <- function(ssid = NULL,
@@ -42,16 +49,19 @@ get_sensor_data_trawl <- function(ssid = NULL,
 
 #' Environmetnal data extraction for trawl surveys, for individual fishing events
 #'
-#' @details To explore sensor data for an individual fishing event
+#' @details To explore sensor data for an individual trawl survey fishing event
 #' @param fishing_event_id A vector of fishing events to filter for
 #' @param sensor_name A character vector of sensor names to filter for.
 #'
 #' @export
 #' @rdname get_environmental_data
-get_sensor_data_fe_trawl <- function(fishing_event_id = NULL,
+get_sensor_data_trawl_fe <- function(fishing_event_id = NULL,
   attribute = c("temperature", "depth", "dissolved oxygen", "salinity"),
   sensor_name = NULL){
-  .q <- read_sql("get-sensor-data-fe.sql")
+  .q <- read_sql("get-sensor-data-trawl-fe.sql")
+  if (is.null(fishing_event_id)) {
+    stop("Please enter a fishing event id.")
+  }
   .q <- inject_filter("AND FESD.FISHING_EVENT_ID IN", fishing_event_id, .q,
     search_flag = "-- insert fishing event id here", conversion_func = I
   )
@@ -78,11 +88,6 @@ get_sensor_data_fe_trawl <- function(fishing_event_id = NULL,
 
 #' Environmental data extraction for sensors deployed on longline survey gear
 #'
-#' @param spread_attributes Allows for user to choose whether data are output in
-#'   wide format (= TRUE) with min and max values for each attribute for each
-#'   fishing event, or in long format (= FALSE) with only mean values for each
-#'   attribute and fishing event.
-#' @export
 #' @rdname get_environmental_data
 get_sensor_data_ll_td <- function(ssid = NULL,
   attribute = c("temperature", "depth"),
@@ -117,12 +122,32 @@ get_sensor_data_ll_td <- function(ssid = NULL,
   as_tibble(.d)
 }
 
+get_sensor_data_ll_td_fe <- function(fishing_event_id = NULL,
+  attribute = c("temperature", "depth")) {
+  .q <- read_sql("get-sensor-data-ll-td-fe.sql")
+  if (is.null(fishing_event_id)) {
+    stop("Please enter a fishing event id.")
+  }
+  .q <- inject_filter("AND FE.FISHING_EVENT_ID IN", fishing_event_id, .q,
+    search_flag = "-- insert fishing event id here", conversion_func = I
+  )
+  if (!is.null(attribute)) {
+    .q <- inject_filter("AND SENSOR_DATA_ATTRIBUTE_DESC IN", first_cap(attribute), .q,
+      search_flag = "-- insert attribute here", conversion_func = I
+    )
+  }
+
+  .d <- run_sql("GFBioSQL", .q)
+  names(.d) <- tolower(names(.d))
+  .d$attribute <- tolower(.d$attribute)
+  .d$attribute <- gsub("dissolved oxygen", "do", .d$attribute)
+  .d <- unique(.d)
+  .d <- .d %>% mutate(attribute = paste0(attribute, "_", unit)) %>%
+    select(-unit)
+}
+
 #' Environmental data extraction for sensors deployed on longline survey gear
 #'
-#' @param spread_attributes Allows for user to choose whether data are output in
-#'   wide format (= TRUE) with min and max values for each attribute for each
-#'   fishing event, or in long format (= FALSE) with only mean values for each
-#'   attribute and fishing event.
 #' @export
 #' @rdname get_environmental_data
 get_sensor_data_ll_ctd <- function(ssid = NULL,
@@ -158,31 +183,32 @@ get_sensor_data_ll_ctd <- function(ssid = NULL,
   as_tibble(.d)
 }
 
-#' #' Envirnmental data extraction (ctd data) near longline survey sites
-#' #' for individual fishing events
-#' #'
-#' #' @param sensor_name TODO
-#' #'
-#' #' @export
-#' #' @rdname get_environmental_data
-#' get_sensor_data_fe_ctd <- function(fishing_event_id = NULL,
-#'   attribute = c("temperature", "depth", "dissolved oxygen", "salinity"),
-#'   sensor_name = NULL){
-#'   .q <- read_sql("get-sensor-data-fe-ctd.sql")
-#'   .q <- inject_filter("AND FE.FISHING_EVENT_ID IN", fishing_event_id, .q,
-#'     search_flag = "-- insert fishing event id here", conversion_func = I
-#'   )
-#'   if (!is.null(attribute)) {
-#'     .q <- inject_filter("AND SENSOR_DATA_ATTRIBUTE_DESC IN", first_cap(attribute), .q,
-#'       search_flag = "-- insert attribute here", conversion_func = I
-#'     )
-#'   }
+#' Envirnmental data extraction (ctd data) near longline survey sites
+#' for individual fishing events
 #'
-#'   .d <- run_sql("GFBioSQL", .q)
-#'   names(.d) <- tolower(names(.d))
-#'   .d$attribute <- tolower(.d$attribute)
-#'   .d$attribute <- gsub("dissolved oxygen", "do", .d$attribute)
-#'   .d <- unique(.d)
-#'   .d <- .d %>% mutate(attribute = paste0(attribute, "_", unit)) %>%
-#'     select(-unit)
-#' }
+#' @export
+#' @rdname get_environmental_data
+get_sensor_data_ll_ctd_fe <- function(fishing_event_id = NULL,
+  attribute = c("temperature", "depth", "dissolved oxygen", "salinity"),
+  sensor_name = NULL){
+  .q <- read_sql("get-sensor-data-ll-ctd-fe.sql")
+  if (is.null(fishing_event_id)) {
+    stop("Please enter a fishing event id.")
+  }
+  .q <- inject_filter("AND FE.FISHING_EVENT_ID IN", fishing_event_id, .q,
+    search_flag = "-- insert fishing event id here", conversion_func = I
+  )
+  if (!is.null(attribute)) {
+    .q <- inject_filter("AND SENSOR_DATA_ATTRIBUTE_DESC IN", first_cap(attribute), .q,
+      search_flag = "-- insert attribute here", conversion_func = I
+    )
+  }
+
+  .d <- run_sql("GFBioSQL", .q)
+  names(.d) <- tolower(names(.d))
+  .d$attribute <- tolower(.d$attribute)
+  .d$attribute <- gsub("dissolved oxygen", "do", .d$attribute)
+  .d <- unique(.d)
+  .d <- .d %>% mutate(attribute = paste0(attribute, "_", unit)) %>%
+    select(-unit)
+}

@@ -11,7 +11,7 @@ test_that("environmental data extraction works", {
   expect_equal(class(d$count), "integer")
   expect_equal(length(d), 12)
 
-  d <- get_sensor_data_fe_trawl(308673, "temperature")
+  d <- get_sensor_data_trawl_fe(308673, "temperature")
   expect_equal(class(d$sensor_data_value), "numeric")
   expect_equal(length(d), 6)
 
