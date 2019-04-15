@@ -146,7 +146,10 @@ get_sensor_data_ll_td_fe <- function(fishing_event_id = NULL,
     select(-unit)
 }
 
-#' Environmental data extraction for sensors deployed on longline survey gear
+#' Environmental data extraction for ctd's deployed on longline surveys.
+#' Ctd deployments are not tied directly to longline survey fishing event id's.
+#' The unique fishing event id's from the deployments can be linked to longline
+#' survey data by joining on the block designation (site number).
 #'
 #' @export
 #' @rdname get_environmental_data
