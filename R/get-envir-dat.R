@@ -47,7 +47,7 @@ get_sensor_data_trawl <- function(ssid = NULL,
   tibble::as_tibble(.d)
 }
 
-#' Environmetnal data extraction for trawl surveys, for individual fishing events
+#' Environmental data extraction for trawl surveys, for individual fishing events
 #'
 #' @details To explore sensor data for an individual trawl survey fishing event
 #' @param fishing_event_id A vector of fishing events to filter for
