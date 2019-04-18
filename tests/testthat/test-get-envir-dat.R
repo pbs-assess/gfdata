@@ -9,7 +9,7 @@ test_that("environmental data extraction works", {
 
   d <- get_sensor_data_trawl(ssid = 1, "temperature")
   expect_equal(class(d$count), "integer")
-  expect_equal(length(d), 12)
+  expect_equal(length(d), 14)
 
   d <- get_sensor_data_trawl_fe(d$fishing_event_id[[1]], "temperature")
   expect_equal(class(d$sensor_data_value), "numeric")
@@ -25,7 +25,7 @@ test_that("environmental data extraction works", {
 
   d <- get_sensor_data_ll_ctd(40)
   expect_equal(ncol(d), 14)
-  expect_type(d$`dissolved oxygen_mlpL`, "")
+  expect_type(d$`dissolved oxygen_mlpL`, "double")
 
 })
 

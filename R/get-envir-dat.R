@@ -192,8 +192,7 @@ get_sensor_data_ll_ctd <- function(ssid = NULL,
 #' @export
 #' @rdname get_environmental_data
 get_sensor_data_ll_ctd_fe <- function(fishing_event_id = NULL,
-  attribute = c("temperature", "depth", "dissolved oxygen", "salinity"),
-  sensor_name = NULL){
+  attribute = c("temperature", "depth", "dissolved oxygen", "salinity")){
   .q <- read_sql("get-sensor-data-ll-ctd-fe.sql")
   if (is.null(fishing_event_id)) {
     stop("Please enter a fishing event id.")
