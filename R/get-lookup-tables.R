@@ -1,3 +1,9 @@
+#' Lookup PBS metadata and descriptive data filters
+#'
+#' Extracts metadata and descriptive details useful in filtering data (i.e.
+#' for extracting data only from a specific survey). Codes are often used in
+#' arguments or for filtering and can be looked up with these functions.
+
 #' @details
 #' * `get_ssids()` produces a lookup table for survey series IDs and
 #'    descriptions
@@ -9,7 +15,7 @@
 #'    each stratum within surveys
 #' * `get_survey_ids()` produces lookup table for survey IDs for a given
 #'    survey series ID
-
+#' @name lookup
 
 #' @export
 #' @rdname lookup
@@ -154,6 +160,9 @@ get_species <- function() {
     dplyr::as.tbl()
 }
 
+
+#' @export
+#' @rdname lookup
 get_strata_areas <- function() {
   run_sql(
     "GFBioSQL",
@@ -165,7 +174,8 @@ get_strata_areas <- function() {
     SG.GROUPING_CODE = G.GROUPING_CODE"
   )
 }
-
+#' @export
+#' @rdname lookup
 get_survey_ids <- function(ssid) {
   .q <- paste(
     "SELECT S.SURVEY_ID,

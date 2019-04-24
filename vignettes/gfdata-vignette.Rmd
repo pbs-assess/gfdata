@@ -1,65 +1,219 @@
 ---
-title: "Vignette Title"
-author: "Vignette Author"
+title: "Gfdata Vignette"
+author: "Elise Keppel"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteIndexEntry{Gfdata Vignette}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r setup, include = FALSE}
+```{r, echo = FALSE}
 knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
+  collapse = FALSE,
+  comment = "#>",
+  cache = TRUE,
+  autodep = TRUE,
+  fig.path = "pcod-knitr-figs/",
+  cache.path = "pcod-knitr-cache/"
 )
 ```
 
-Vignettes are long form documentation commonly included in packages. Because they are part of the distribution of the package, they need to be as compact as possible. The `html_vignette` output type provides a custom style sheet (and tweaks some options) to ensure that the resulting html is as small as possible. The `html_vignette` format:
+# Setup
 
-- Never uses retina figures
-- Has a smaller default figure size
-- Uses a custom CSS stylesheet instead of the default Twitter Bootstrap style
+If you don't already have the package installed, then run:
 
-## Vignette Info
+```{r, eval=FALSE}
+# install.packages("devtools")
+devtools::install_github("pbs-assess/gfdata")
+```
+    
+First we will load the package along with dplyr since we will use it within our code later.
 
-Note the various macros within the `vignette` section of the metadata block above. These are required in order to instruct R how to build the vignette. Note that you should change the `title` field and the `\VignetteIndexEntry` to match the title of your vignette.
-
-## Styles
-
-The `html_vignette` template includes a basic CSS theme. To override this theme you can specify your own CSS in the document metadata as follows:
-
-    output: 
-      rmarkdown::html_vignette:
-        css: mystyles.css
-
-## Figures
-
-The figure sizes have been customised so that you can easily put two images side-by-side. 
-
-```{r, fig.show='hold'}
-plot(1:10)
-plot(10:1)
+```{r, cache=FALSE, warning = FALSE, message = FALSE}
+library(gfdata)
+library(dplyr)
 ```
 
-You can enable figure captions by `fig_caption: yes` in YAML:
 
-    output:
-      rmarkdown::html_vignette:
-        fig_caption: yes
+# An overview of gfdata
 
-Then you can use the chunk option `fig.cap = "Your figure caption."` in **knitr**.
+Commercial and research catch, effort, and biological data for groundfish are
+archived by the DFO Pacific Groundfish Data Unit (Fisheries and Oceans Canada, Science
+Branch, Pacific Region) and housed in a number of relational databases archived 
+on-site at the Pacific Biological Station, Nanaimo, BC). 
 
-## More Examples
+The gfdata package was 
+develeoped to automate data extraction from these databases in a consistent, 
+reproducible manner with a series of `get_*()` functions. The functions extract
+data using SQL queries, developed with support from the Groundfish Data Unit.
+The standardized datasets are designed to feed directly into functions in the
+gfplot package, or can of course also be analyzed outside of gfplot.\
+\
+The SQL code called in the `get_*()` functions can be viewed here:\
+<https://github.com/pbs-assess/gfata/tree/master/inst/sql>\
+\
+How the various functions fit together:\
+<https://github.com/pbs-assess/gfplot/blob/master/inst/function-web.pdf>\
+\
+Detailed information on the data extraction and the `get_*()` functions can be
+found in:
 
-You can write math expressions, e.g. $Y = X\beta + \epsilon$, footnotes^[A footnote here.], and tables, e.g. using `knitr::kable()`.
+Anderson, S.C., Keppel, E.A., Edwards, A.M.. "A reproducible data
+synopsis for over 100 species of British Columbia groundfish". DFO Can. Sci.
+Advis. Sec. REs. Doc. 2019/nnn. iv + 327 p.\
+\
+The complete list of `get_*()` functions in gfdata is:
 
-```{r, echo=FALSE, results='asis'}
-knitr::kable(head(mtcars, 10))
+```{r list-get}
+fns <- ls("package:gfdata")
+sort(fns[grepl("get", fns)])
 ```
 
-Also a quote using `>`:
 
-> "He who gives up [code] safety for [code] speed deserves neither."
-([via](https://twitter.com/hadleywickham/status/504368538874703872))
+The `get_*()` functions extract data by species, and some 
+functions have arguments for additional filtering, such as survey series, 
+management area, years, gear type, or environmental data type. In all cases, 
+the `get_*()` functions can extract data for one or multiple species.
+
+All functions can be viewed with the available arguments in the help
+documentation for each set of functions with:
+
+```{r, eval = FALSE}
+?get_data
+?get_environmental_data
+?get_lookup_tables
+```
+
+
+In addition, a number of the `get` functions retain many relevant database 
+columns that users can filter on with, for example, `dplyr::filter(dat, x = "y")`.
+
+
+# Example
+
+As an example, we could extract Pacific cod survey sample data with the
+following function call if we were on a DFO laptop, with appropriate database 
+permissions, and on the PBS network.
+
+```{r, eval = FALSE}
+dat <- get_survey_samples("pacific cod")
+head(dat)
+```
+
+```{r, echo = FALSE}
+if (file.exists(file.path("pcod-cache", "pacific-cod.rds"))) { # quick check for speed
+  dat  <- readRDS(file.path("pcod-cache", "pacific-cod.rds"))
+  dat <- dat$survey_samples
+ } else
+   dat <- get_survey_samples("pacific cod")
+ head(dat)
+```
+
+Note that there are some duplicate records in the databases due to relating a 
+record to multiple stratification schemes for alternative analyses. If this 
+occurs, a warning is given.
+
+> "Duplicate specimen IDs are present because of overlapping survey stratifications. If working with the data yourelf, filter them after selecting specific surveys. For example, `dat <- dat[!duplicated(dat$specimen_id), ]`. The tidying and plotting functions within gfplot will do this for you."
+
+Either species name or species code can be given as an argument, and
+species name, if used, is not case-sensitive. The following all do the same thing:
+
+```{r, eval=FALSE}
+get_survey_samples("pacific cod")
+get_survey_samples("Pacific cod")
+get_survey_samples("PaCiFiC cOD")
+get_survey_samples("222")
+get_survey_samples(222)
+```
+
+To extract multiple species at once, give a list as the species argument:
+
+```{r, eval=FALSE}
+get_survey_samples(c("pacific ocean perch", "pacific cod"))
+get_survey_samples(c(396, 222))
+get_survey_samples(c(222, "pacific cod"))
+```
+
+We can further restrict the data extraction to a single trawl survey series 
+by including the ssid (survey series id) argument. For a list of
+survey series id codes, run the lookup function `get_ssids()`.
+
+```{r}
+ssids <- get_ssids()
+head(ssids)
+```
+
+Select desired ssid and include as argument (i.e. the Queen Charlotte
+Sound bottom trawl survey):
+
+```{r, eval = FALSE}
+dat <- get_survey_samples(222, ssid = 1)
+head(dat)
+```
+
+```{r, echo = FALSE}
+if (file.exists(file.path("pcod-cache", "pacific-cod.rds"))) {
+  dat  <- readRDS(file.path("pcod-cache", "pacific-cod.rds"))
+  dat <- dat$survey_samples
+  dat <- dat %>% filter(survey_series_id == 1)
+ } else dat <- get_survey_samples(222, ssid = 1)
+head(dat)
+```
+
+Or if you've already extracted the full survey sample dataset for Pacific Cod,
+we could filter the full dataset for the desired survey series:
+
+```{r, eval = FALSE, warning = FALSE}
+dat <- get_survey_samples("pacific cod")
+dat <- dat %>% filter(survey_series_id == 1)
+head(dat)
+```
+
+```{r, echo = FALSE}
+if (file.exists(file.path("pcod-cache", "pacific-cod.rds"))) {
+  dat  <- readRDS(file.path("pcod-cache", "pacific-cod.rds"))
+  dat <- dat$survey_samples
+  dat <- dat %>% filter(survey_series_id == 1)
+ } else dat <- get_survey_samples("pacific cod", ssid = 1)
+head(dat)
+```
+
+or on other variables:
+
+```{r}
+glimpse(dat)
+```
+
+# Caching the data from the SQL servers
+
+In addition to the individual `get_*()` functions, there is a function 
+`cache_pbs_data()` that runs all the `get_*()` functions and caches the data 
+in a folder that you specify. This is useful to be able to have the data
+available for working on later when not on the PBS network, and it saves
+running the SQL queries (though the data do get updated occassionally and the 
+most up-to-date data should usually be extracted for analysis).
+
+The helper function `cache_pbs_data()` will extract all of the data for the
+given species into a series of `.rds` files into whatever folder you specify to
+the `path` argument. I'll wrap it in a quick check just to make sure we don't 
+download the data twice if we build this document again.
+
+```{r, eval = FALSE}
+cache_pbs_data("pacific cod", path = "pcod-cache")
+```
+
+And to call the list of output files:
+
+```{r}
+dat  <- readRDS(file.path("pcod-cache", "pacific-cod.rds"))
+head(dat)
+```
+
+And to call one object/dataframe (i.e. our survey sample data) from the list:
+
+```{r}
+dat <- dat$survey_samples
+head(dat)
+```
