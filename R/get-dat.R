@@ -485,6 +485,20 @@ get_cpue_historical <- function(species = NULL,
   as_tibble(.d)
 }
 
+get_cpue_historical_hl <- function(species = NULL,
+  alt_year_start_date = "04-01", areas = c("3[CD]+", "5[AB]+", "5[CDE]+"),
+  end_year = NULL) {
+  .q <- read_sql("get-cpue-historic-hl-beta.sql")
+  if (!is.null(species)) {
+    .q <- inject_filter("AND MC.SPECIES_CODE IN", species, sql_code = .q)
+  }
+  .d <- run_sql(database = "GFFOS", .q)
+  .d$SPECIES_COMMON_NAME[.d$SPECIES_COMMON_NAME == "SPINY DOGFISH"] <-
+    toupper("north pacific spiny dogfish") # to match GFBioSQL
+  names(.d) <- tolower(names(.d))
+  as_tibble(.d)
+}
+
 #' @export
 #' @rdname get_data
 get_cpue_spatial <- function(species) {
