@@ -23,7 +23,7 @@ Imports:
   tibble,
   tidyr,
   xml2
-RoxygenNote: 6.1.0
+RoxygenNote: 6.1.1
 Suggests: 
     usethis,
     testthat,

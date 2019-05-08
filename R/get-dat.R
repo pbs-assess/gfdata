@@ -485,6 +485,8 @@ get_cpue_historical <- function(species = NULL,
   as_tibble(.d)
 }
 
+#' @export
+#' @rdname get_data
 get_cpue_historical_hl <- function(species = NULL,
   alt_year_start_date = "04-01", areas = c("3[CD]+", "5[AB]+", "5[CDE]+"),
   end_year = NULL) {
@@ -539,8 +541,8 @@ get_cpue_index <- function(gear = "bottom trawl", min_cpue_year = 1996) {
   .q <- read_sql("get-cpue-index.sql")
   i <- grep("-- insert filters here", .q)
   .q[i] <- paste0(
-    "GEAR IN(", collapse_filters(toupper(gear)),
-    ") AND YEAR(BEST_DATE) >= ", min_cpue_year, " AND "
+    "AND GEAR IN(", collapse_filters(toupper(gear)),
+    ") AND YEAR(BEST_DATE) >= ", min_cpue_year
   )
   .d <- run_sql("GFFOS", .q)
   names(.d) <- tolower(names(.d))

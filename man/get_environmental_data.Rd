@@ -45,7 +45,7 @@ attribute and fishing event.}
 \description{
 Environmental data extraction for sensors deployed on trawl survey gear
 
-Environmetnal data extraction for trawl surveys, for individual fishing events
+Environmental data extraction for trawl surveys, for individual fishing events
 
 Environmental data extraction for sensors deployed on longline survey gear
 
