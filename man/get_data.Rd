@@ -11,6 +11,7 @@
 \alias{get_cpue_spatial}
 \alias{get_cpue_spatial_ll}
 \alias{get_cpue_index}
+\alias{get_cpue_index_hl}
 \alias{get_age_precision}
 \alias{get_survey_index}
 \alias{get_management}
@@ -38,6 +39,8 @@ get_cpue_spatial(species)
 get_cpue_spatial_ll(species)
 
 get_cpue_index(gear = "bottom trawl", min_cpue_year = 1996)
+
+get_cpue_index_hl(gear = "hook and line", min_cpue_year = 1980)
 
 get_age_precision(species, inside = NULL)
 
@@ -117,6 +120,12 @@ reading and writing at the expense of disk space.}
 \item{survey_sets}{Logical for whether the survey set data should be
 extracted. You might set this to `FALSE` if you don't need these data and
 you want to substantially speed up data extraction.}
+
+\item{gear}{The gear type(s) to include for CPUE. Will be converted to
+uppercase. Run [get_gear_types()] for a look-up table of available
+gear types to select from.}
+
+\item{min_cpue_year}{Minimum year for the CPUE data.}
 }
 \value{
 The `get_*` functions return a data frame. The [cache_pbs_data()]

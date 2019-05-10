@@ -541,8 +541,25 @@ get_cpue_index <- function(gear = "bottom trawl", min_cpue_year = 1996) {
   .q <- read_sql("get-cpue-index.sql")
   i <- grep("-- insert filters here", .q)
   .q[i] <- paste0(
-    "AND GEAR IN(", collapse_filters(toupper(gear)),
+    "WHERE GEAR IN(", collapse_filters(toupper(gear)),
     ") AND YEAR(BEST_DATE) >= ", min_cpue_year
+  )
+  .d <- run_sql("GFFOS", .q)
+  names(.d) <- tolower(names(.d))
+  as_tibble(.d)
+}
+
+#' @param gear The gear type(s) to include for CPUE. Will be converted to
+#'  uppercase. Run [get_gear_types()] for a look-up table of available
+#'  gear types to select from.
+#' @param min_cpue_year Minimum year for the CPUE data.
+#' @export
+#' @rdname get_data
+get_cpue_index_hl <- function(min_cpue_year = 1980) {
+  .q <- read_sql("get-cpue-index-hl.sql")
+  i <- grep("-- insert filters here", .q)
+  .q[i] <- paste0(
+    "AND YEAR(BEST_DATE) >= ", min_cpue_year
   )
   .d <- run_sql("GFFOS", .q)
   names(.d) <- tolower(names(.d))
