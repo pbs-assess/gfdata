@@ -159,3 +159,21 @@ assign_areas <- function(major_stat_area_description,
   }
   out
 }
+
+
+#' Length type
+#'
+#' Returns the most commonly recorded length measurement (of fork length, total
+#' length, length to end of second dorsal fin, or standard length) for the
+#' given species.
+#'
+#' @export
+#'
+get_spp_sample_length_type <- function(species) {
+  .q <- read_sql("get-spp-sample-length-type.sql")
+  .q <- inject_filter("WHERE SPECIES_CODE IN ", species, .q)
+  .d <- run_sql("GFBioSQL", .q)
+  names(.d) <- tolower(names(.d))
+  .d <- .d %>% filter(count == max(count))
+  .d$length_type
+}
