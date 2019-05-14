@@ -268,6 +268,12 @@ get_survey_samples <- function(species, ssid = NULL, remove_bad_data = TRUE,
       search_flag = "-- insert inside here", conversion_func = I
     )
   }
+  length_type <- get_spp_sample_length_type(species)
+  message(paste0("All or majority of length measurements are ", length_type))
+  search_flag <- "-- insert length type here"
+  i <- grep(search_flag, .q)
+  .q[i] <- paste0("CAST(ROUND(", length_type, "/ 10, 1) AS DECIMAL(8,1)) AS LENGTH,")
+
   .d <- run_sql("GFBioSQL", .q)
   names(.d) <- tolower(names(.d))
   .d$species_common_name <- tolower(.d$species_common_name)
