@@ -547,7 +547,7 @@ get_cpue_index <- function(gear = "bottom trawl", min_cpue_year = 1996) {
   .q <- read_sql("get-cpue-index.sql")
   i <- grep("-- insert filters here", .q)
   .q[i] <- paste0(
-    "WHERE GEAR IN(", collapse_filters(toupper(gear)),
+    "AND GEAR IN(", collapse_filters(toupper(gear)),
     ") AND YEAR(BEST_DATE) >= ", min_cpue_year
   )
   .d <- run_sql("GFFOS", .q)

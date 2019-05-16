@@ -40,7 +40,7 @@ get_cpue_spatial_ll(species)
 
 get_cpue_index(gear = "bottom trawl", min_cpue_year = 1996)
 
-get_cpue_index_hl(gear = "hook and line", min_cpue_year = 1980)
+get_cpue_index_hl(min_cpue_year = 1980)
 
 get_age_precision(species, inside = NULL)
 
