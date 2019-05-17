@@ -173,7 +173,7 @@ get_spp_sample_length_type <- function(species) {
   .q <- read_sql("get-spp-sample-length-type.sql")
   .q <- inject_filter("WHERE SPECIES_CODE IN ", species, .q)
   .d <- run_sql("GFBioSQL", .q)
-  names(.d) <- tolower(names(.d))
+  .d <- .d %>% tidyr::gather('fork', 'standard', 'total', 'second_dorsal', key = 'length_type', value = 'count')
   .d <- .d %>% filter(count == max(count))
   .d$length_type
 }

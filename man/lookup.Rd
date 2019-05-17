@@ -8,7 +8,8 @@
 \alias{get_management_areas}
 \alias{get_fishery_ids}
 \alias{get_species_groups}
-\alias{get_gear_types}
+\alias{get_comm_gear_types}
+\alias{get_survey_gear_types}
 \alias{get_age_methods}
 \alias{get_species}
 \alias{get_strata_areas}
@@ -29,7 +30,9 @@ get_fishery_ids()
 
 get_species_groups()
 
-get_gear_types()
+get_comm_gear_types()
+
+get_survey_gear_types()
 
 get_age_methods()
 
