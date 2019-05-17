@@ -109,12 +109,25 @@ get_species_groups <- function() {
 
 #' @export
 #' @rdname lookup
-get_gear_types <- function() {
+get_comm_gear_types <- function() {
   .d <- run_sql(
     "GFFOS",
     "SELECT GEAR
     FROM GFFOS.dbo.GF_MERGED_CATCH C
     GROUP BY GEAR"
+  )
+  names(.d) <- tolower(names(.d))
+  .d$gear <- tolower(.d$gear)
+  as_tibble(.d)
+}
+
+#' @export
+#' @rdname lookup
+get_survey_gear_types <- function() {
+  .d <- run_sql(
+    "GFBioSQL",
+    "SELECT *
+    FROM GFBioSQL.dbo.GEAR"
   )
   names(.d) <- tolower(names(.d))
   .d$gear <- tolower(.d$gear)
