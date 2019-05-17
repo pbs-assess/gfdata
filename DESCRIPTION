@@ -22,7 +22,8 @@ Imports:
   rvest,
   tibble,
   tidyr,
-  xml2
+  xml2,
+  rlang
 RoxygenNote: 6.1.1
 Suggests: 
     usethis,

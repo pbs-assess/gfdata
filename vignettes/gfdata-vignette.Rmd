@@ -20,6 +20,11 @@ knitr::opts_chunk$set(
 )
 ```
 
+```{r, echo=FALSE}
+.error <- tryCatch(get_ssids(), error = function(e) "Error")
+.eval <- !identical(class(.error), "character")
+```
+
 # Setup
 
 If you don't already have the package installed, then run:
@@ -97,18 +102,9 @@ As an example, we could extract Pacific cod survey sample data with the
 following function call if we were on a DFO laptop, with appropriate database 
 permissions, and on the PBS network.
 
-```{r, eval = FALSE}
+```{r, eval=.eval}
 dat <- get_survey_samples("pacific cod")
 head(dat)
-```
-
-```{r, echo = FALSE}
-if (file.exists(file.path("pcod-cache", "pacific-cod.rds"))) { # quick check for speed
-  dat  <- readRDS(file.path("pcod-cache", "pacific-cod.rds"))
-  dat <- dat$survey_samples
- } else
-   dat <- get_survey_samples("pacific cod")
- head(dat)
 ```
 
 Note that there are some duplicate records in the databases due to relating a 
@@ -140,7 +136,7 @@ We can further restrict the data extraction to a single trawl survey series
 by including the ssid (survey series id) argument. For a list of
 survey series id codes, run the lookup function `get_ssids()`.
 
-```{r}
+```{r, eval=.eval}
 ssids <- get_ssids()
 head(ssids)
 ```
@@ -153,36 +149,11 @@ dat <- get_survey_samples(222, ssid = 1)
 head(dat)
 ```
 
-```{r, echo = FALSE}
-if (file.exists(file.path("pcod-cache", "pacific-cod.rds"))) {
-  dat  <- readRDS(file.path("pcod-cache", "pacific-cod.rds"))
-  dat <- dat$survey_samples
-  dat <- dat %>% filter(survey_series_id == 1)
- } else dat <- get_survey_samples(222, ssid = 1)
-head(dat)
-```
-
-Or if you've already extracted the full survey sample dataset for Pacific Cod,
-we could filter the full dataset for the desired survey series:
-
-```{r, eval = FALSE, warning = FALSE}
-dat <- get_survey_samples("pacific cod")
+```{r, echo = FALSE, eval=.eval}
 dat <- dat %>% filter(survey_series_id == 1)
-head(dat)
 ```
 
-```{r, echo = FALSE}
-if (file.exists(file.path("pcod-cache", "pacific-cod.rds"))) {
-  dat  <- readRDS(file.path("pcod-cache", "pacific-cod.rds"))
-  dat <- dat$survey_samples
-  dat <- dat %>% filter(survey_series_id == 1)
- } else dat <- get_survey_samples("pacific cod", ssid = 1)
-head(dat)
-```
-
-or on other variables:
-
-```{r}
+```{r, eval=.eval}
 glimpse(dat)
 ```
 
@@ -200,20 +171,20 @@ given species into a series of `.rds` files into whatever folder you specify to
 the `path` argument. I'll wrap it in a quick check just to make sure we don't 
 download the data twice if we build this document again.
 
-```{r, eval = FALSE}
+```{r, eval = FALSE, eval=.eval}
 cache_pbs_data("pacific cod", path = "pcod-cache")
 ```
 
 And to call the list of output files:
 
-```{r}
+```{r, eval=.eval}
 dat  <- readRDS(file.path("pcod-cache", "pacific-cod.rds"))
 head(dat)
 ```
 
 And to call one object/dataframe (i.e. our survey sample data) from the list:
 
-```{r}
+```{r, eval=.eval}
 dat <- dat$survey_samples
 head(dat)
 ```

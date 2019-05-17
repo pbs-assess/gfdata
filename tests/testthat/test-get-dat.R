@@ -6,7 +6,6 @@ test_that("get species data functions work at PBS", {
   # skip_on_cran()
   skip_on_travis()
   skip_on_appveyor()
-
   tryCatch(get_ssids(), error = function(e) skip("No database access"))
 
   expect_error(get_survey_sets("lingcod", ssid = 99999))
