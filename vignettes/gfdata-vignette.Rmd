@@ -1,10 +1,10 @@
 ---
-title: "Gfdata Vignette"
+title: "gfdata Vignette"
 author: "Elise Keppel"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Gfdata Vignette}
+  %\VignetteIndexEntry{gfdata Vignette}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -15,8 +15,8 @@ knitr::opts_chunk$set(
   comment = "#>",
   cache = TRUE,
   autodep = TRUE,
-  fig.path = "pcod-knitr-figs/",
-  cache.path = "pcod-knitr-cache/"
+  fig.path = "knitr-figs/",
+  cache.path = "knitr-cache/"
 )
 ```
 
