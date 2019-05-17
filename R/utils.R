@@ -11,6 +11,8 @@
 #' probably work for most people. You might try using
 #' `usethis::edit_r_profile()` if you need help finding your R profile file.
 #'
+#' @importFrom rlang .data
+#'
 #' @export
 run_sql <- function(database, query) {
   query <- paste(query, collapse = "\n")

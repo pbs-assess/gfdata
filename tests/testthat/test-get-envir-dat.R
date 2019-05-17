@@ -6,6 +6,7 @@ test_that("environmental data extraction works", {
   # skip_on_cran()
   skip_on_travis()
   skip_on_appveyor()
+  tryCatch(get_ssids(), error = function(e) skip("No database access"))
 
   d <- get_sensor_data_trawl(ssid = 1, "temperature")
   expect_equal(class(d$count), "integer")
