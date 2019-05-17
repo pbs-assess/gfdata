@@ -347,6 +347,13 @@ get_commercial_samples <- function(species, unsorted_only = TRUE,
                                    usability = NULL) {
   .q <- read_sql("get-comm-samples.sql")
   .q <- inject_filter("AND SM.SPECIES_CODE IN", species, sql_code = .q)
+
+  length_type <- get_spp_sample_length_type(species)
+  message(paste0("All or majority of length measurements are ", length_type))
+  search_flag <- "-- insert length type here"
+  i <- grep(search_flag, .q)
+  .q[i] <- paste0("CAST(ROUND(", length_type, "/ 10, 1) AS DECIMAL(8,1)) AS LENGTH,")
+
   .d <- run_sql("GFBioSQL", .q)
   names(.d) <- tolower(names(.d))
   .d$species_common_name <- tolower(.d$species_common_name)
