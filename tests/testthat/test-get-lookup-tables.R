@@ -31,8 +31,11 @@ test_that("get lookup functions work at PBS", {
   d <- d %>% filter(species_group_code == "RKF")
   expect_match(d$species_group_description, "Rockfishes")
 
-  d <- get_gear_types()
-  expect_type(d$gear, "character")
+  d <- get_comm_gear_types()
+  expect_type(d$gear_desc, "character")
+
+  d <- get_survey_gear_types()
+  expect_type(d$gear_desc, "character")
 
   d <- get_age_methods()
   expect_true(!is.null(d$ageing_method_desc))

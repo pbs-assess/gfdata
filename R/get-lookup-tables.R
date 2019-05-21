@@ -112,12 +112,12 @@ get_species_groups <- function() {
 get_comm_gear_types <- function() {
   .d <- run_sql(
     "GFFOS",
-    "SELECT GEAR
+    "SELECT GEAR GEAR_DESC
     FROM GFFOS.dbo.GF_MERGED_CATCH C
     GROUP BY GEAR"
   )
   names(.d) <- tolower(names(.d))
-  .d$gear <- tolower(.d$gear)
+  .d$gear_desc <- tolower(.d$gear_desc)
   as_tibble(.d)
 }
 
@@ -126,11 +126,11 @@ get_comm_gear_types <- function() {
 get_survey_gear_types <- function() {
   .d <- run_sql(
     "GFBioSQL",
-    "SELECT *
+    "SELECT GEAR_CODE, GEAR_DESC
     FROM GFBioSQL.dbo.GEAR"
   )
   names(.d) <- tolower(names(.d))
-  .d$gear <- tolower(.d$gear)
+  .d$gear_desc <- tolower(.d$gear_desc)
   as_tibble(.d)
 }
 
