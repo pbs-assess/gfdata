@@ -617,6 +617,17 @@ get_survey_index <- function(species, ssid = NULL) {
 }
 
 
+#' @export
+#' @rdname get_data
+get_eulachon_specimens <- function() {
+  .q <- read_sql("get-eulachon-specimens.sql")
+  .d <- run_sql("GFBioSQL", .q)
+  names(.d) <- tolower(names(.d))
+  .d$species_common_name <- tolower(.d$species_common_name)
+  .d$species_science_name <- tolower(.d$species_science_name)
+  as_tibble(.d)
+}
+
 
 #' @param species_group Species group code(s) to include (see lookup table
 #'   [get_species_groups()]). Defaults to all.

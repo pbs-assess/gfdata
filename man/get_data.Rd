@@ -14,6 +14,7 @@
 \alias{get_cpue_index_hl}
 \alias{get_age_precision}
 \alias{get_survey_index}
+\alias{get_eulachon_specimens}
 \alias{get_management}
 \alias{get_sara_dat}
 \alias{cache_pbs_data}
@@ -45,6 +46,8 @@ get_cpue_index_hl(min_cpue_year = 1980)
 get_age_precision(species, inside = NULL)
 
 get_survey_index(species, ssid = NULL)
+
+get_eulachon_specimens()
 
 get_management(species = NULL, species_group = NULL, fishery = NULL,
   area = NULL, start_year = NULL)
