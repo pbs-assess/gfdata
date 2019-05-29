@@ -18,8 +18,8 @@ SELECT YEAR(BEST_DATE) YEAR
 		THEN HOOKS_TRAPS_PER_SKATE
 		ELSE SKATE_LENGTH_FT/HOOK_TRAP_SPACING_FT 
 		END	hooks_per_skate
-		--below calculates the hooks per set by multiplying the observed skates per set (skates set - skates lost) by the reported hooks per skate
-		--when number of hooks per skate isn't given, it is calculated by the skate length in ft/hook spacing (ft per hook) if available
+		--below calculates the hooks per fe (set) by multiplying the observed skates per set (skates set - skates lost) by the reported hooks per skate
+		--when number of hooks per skate isn't given, it is calculated by the skate length in ft / hook spacing (ft per hook) if available
 	,(NUMBER_GEAR_SET - ISNULL(NUMBER_GEAR_LOST, 0)) * CAST(
 		CASE WHEN HOOKS_TRAPS_PER_SKATE IS NOT NULL 
 			THEN HOOKS_TRAPS_PER_SKATE
@@ -48,3 +48,5 @@ GROUP BY YEAR(BEST_DATE)
 	,HOOKS_TRAPS_PER_SKATE 
 	,HOOK_TRAP_SPACING_FT 
 	,SKATE_LENGTH_FT 
+
+	ORDER BY skates_obs
