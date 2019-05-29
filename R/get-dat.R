@@ -579,6 +579,17 @@ get_cpue_index_hl <- function(min_cpue_year = 1980) {
   as_tibble(.d)
 }
 
+get_commercial_hooks_per_fe <- function(min_cpue_year = 2008) {
+  .q <- read_sql("get-commercial-hooks-per-fe.sql")
+  i <- grep("-- insert filters here", .q)
+  .q[i] <- paste0(
+    "AND YEAR(BEST_DATE) >= ", min_cpue_year
+  )
+  .d <- run_sql("GFFOS", .q)
+  names(.d) <- tolower(names(.d))
+  as_tibble(.d)
+}
+
 #' @export
 #' @rdname get_data
 #' @param inside To select only the inside population (Strait of Georgia, area
