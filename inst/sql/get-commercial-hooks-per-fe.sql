@@ -12,19 +12,19 @@ SELECT YEAR(BEST_DATE) YEAR
 	,LATITUDE
 	,LONGITUDE
 	,NUMBER_GEAR_SET - ISNULL(NUMBER_GEAR_LOST, 0) skates_obs
+	,HOOK_TRAP_SPACING_FT ft_per_hook
+	,SKATE_LENGTH_FT skate_ft
 	,CASE WHEN HOOKS_TRAPS_PER_SKATE IS NOT NULL 
 		THEN HOOKS_TRAPS_PER_SKATE
 		ELSE SKATE_LENGTH_FT/HOOK_TRAP_SPACING_FT 
 		END	hooks_per_skate
+		--below calculates the hooks per set by multiplying the observed skates per set (skates set - skates lost) by the reported hooks per skate
+		--when number of hooks per skate isn't given, it is calculated by the skate length in ft/hook spacing (ft per hook) if available
 	,(NUMBER_GEAR_SET - ISNULL(NUMBER_GEAR_LOST, 0)) * CAST(
 		CASE WHEN HOOKS_TRAPS_PER_SKATE IS NOT NULL 
 			THEN HOOKS_TRAPS_PER_SKATE
 			ELSE SKATE_LENGTH_FT/HOOK_TRAP_SPACING_FT 
 			END AS BIGINT) hooks_per_fe
-	--,(NUMBER_GEAR_SET - ISNULL(NUMBER_GEAR_LOST, 0)) * CAST(SKATE_LENGTH_FT AS BIGINT)/HOOK_TRAP_SPACING_FT skate_ft_x_skates_obs_x_ft_per_hook
-	,HOOK_TRAP_SPACING_FT ft_per_hook
-	,SKATE_LENGTH_FT skate_ft
-
 FROM GFFOS.dbo.GF_FE_LONGLINE_GEAR_SPECS LLGS
 	LEFT JOIN GFFOS.dbo.GF_MERGED_CATCH C ON LLGS.FISHING_EVENT_ID = C.FISHING_EVENT_ID
 	INNER JOIN GFFOS.dbo.LONGLINE_GEAR_TYPE LLGT ON LLGT.LONGLINE_GEAR_TYPE_CODE = LLGS.LONGLINE_GEAR_TYPE_CODE
