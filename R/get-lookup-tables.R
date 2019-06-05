@@ -226,3 +226,12 @@ get_other_surveys <- function() {
     select(.data$survey, .data$surveys_conducted_since_2008)
   .d
 }
+
+#' Use to get all records of a table. It was added to make getting code key table contents easy
+#' @param name The name of the table to get all records from
+#'
+#' @export
+#' @rdname lookup
+get_table <- function(name){
+  run_sql("GFBioSQL", .paste("SELECT * FROM", name))
+}
