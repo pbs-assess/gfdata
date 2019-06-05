@@ -233,5 +233,5 @@ get_other_surveys <- function() {
 #' @export
 #' @rdname lookup
 get_table <- function(name){
-  run_sql("GFBioSQL", .paste("SELECT * FROM", name))
+  run_sql("GFBioSQL", paste("SELECT * FROM", name))
 }
