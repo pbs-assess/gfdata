@@ -227,7 +227,7 @@ get_other_surveys <- function() {
   .d
 }
 
-#' Use to get all records of a table. It was added to make getting code key table contents easy
+#' Use to get all records of a table. It was added to make getting code table contents easy
 #' @param name The name of the table to get all records from
 #'
 #' @export
