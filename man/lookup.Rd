@@ -16,6 +16,7 @@
 \alias{get_survey_ids}
 \alias{get_sensor_attributes}
 \alias{get_other_surveys}
+\alias{get_table}
 \title{Lookup PBS metadata and descriptive data filters}
 \usage{
 get_ssids()
@@ -45,6 +46,12 @@ get_survey_ids(ssid)
 get_sensor_attributes()
 
 get_other_surveys()
+
+get_table(name)
+}
+\arguments{
+\item{name}{The name of the table to get all records from.
+For code table use variable name without the'_code' suffix.}
 }
 \description{
 Extracts metadata and descriptive details useful in filtering data (i.e.
