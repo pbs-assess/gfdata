@@ -452,7 +452,7 @@ get_hake_catch <- function() {
   .d <- .d %>%
     filter(fishery_sector == 'GROUNDFISH TRAWL')  %>%
     filter(major_stat_area_code %in% c('03','04','05','06','07','08','09') |
-        major_stat_area_code == '01' & minor_stat_area_code == '20') %>%
+        (major_stat_area_code == '01' & minor_stat_area_code == '20')) %>%
     filter(gear == 'MIDWATER TRAWL') %>%
     filter(trip_type_code %in% c(12764, # OPT A - HAKE QUOTA (SHORESIDE)
       12766)) # OPT B - HAKE QUOTA (JV)
