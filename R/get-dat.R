@@ -428,13 +428,28 @@ get_catch <- function(species) {
 #' @rdname get_data
 get_hake_catch <- function() {
   .q <- read_sql("get-hake-catch.sql")
-  .q <- inject_filter("WHERE SP.SPECIES_CODE IN", "255", sql_code = .q)
+  .q <- inject_filter("WHERE SP.SPECIES_CODE IN", "225", sql_code = .q)
   .d <- run_sql("GFFOS", .q)
   names(.d) <- tolower(names(.d))
   .d$species_common_name <- tolower(.d$species_common_name)
   .d$species_scientific_name <- tolower(.d$species_scientific_name)
   .d$year <- lubridate::year(.d$best_date)
   as_tibble(.d)
+
+  .d <- .d %>% mutate(hake_fishery =
+      case_when(
+        trip_type_code == 12766 ~ 'JV',
+        trip_type_code == 12764 & vessel_name %in% ft ~ 'FT',
+        trip_type_code == 12764 & !vessel_name %in% ft ~ 'SS'
+      ))
+
+  .d <- .d %>%
+    filter(fishery_sector == 'GROUNDFISH TRAWL')  %>%
+    filter(major_stat_area_code %in% c('03','04','05','06','07','08','09') |
+        major_stat_area_code == '01' & minor_stat_area_code == '20') %>%
+    filter(gear == 'MIDWATER TRAWL') %>%
+    filter(trip_type_code %in% c(12764, # OPT A - HAKE QUOTA (SHORESIDE)
+      12766)) # OPT B - HAKE QUOTA (JV)
 }
 
 #' Get all fishing catch and effort to calculate historical commercial CPUE
