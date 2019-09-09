@@ -436,6 +436,12 @@ get_hake_catch <- function() {
   .d$year <- lubridate::year(.d$best_date)
   as_tibble(.d)
 
+  ft <- toupper(c("Viking Enterprise",
+    "Northern Alliance",
+    "Osprey #1",
+    "Raw Spirit",
+    "Viking Alliance"))
+
   .d <- .d %>% mutate(hake_fishery =
       case_when(
         trip_type_code == 12766 ~ 'JV',
