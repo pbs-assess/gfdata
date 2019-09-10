@@ -30,7 +30,7 @@ get_commercial_samples(species, unsorted_only = TRUE, usability = NULL)
 
 get_catch(species)
 
-get_hake_catch()
+get_hake_catch(modern = FALSE)
 
 get_cpue_historical_hl(species = NULL, alt_year_start_date = "04-01",
   areas = c("3[CD]+", "5[AB]+", "5[CDE]+"), end_year = NULL)

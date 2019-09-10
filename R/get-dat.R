@@ -426,7 +426,7 @@ get_catch <- function(species) {
 
 #' @export
 #' @rdname get_data
-get_hake_catch <- function() {
+get_hake_catch <- function(modern = FALSE) {
   .q <- read_sql("get-hake-catch.sql")
   .q <- inject_filter("WHERE SP.SPECIES_CODE IN", "225", sql_code = .q)
   .d <- run_sql("GFFOS", .q)
@@ -434,7 +434,6 @@ get_hake_catch <- function() {
   .d$species_common_name <- tolower(.d$species_common_name)
   .d$species_scientific_name <- tolower(.d$species_scientific_name)
   .d$year <- lubridate::year(.d$best_date)
-  as_tibble(.d)
 
   ft <- toupper(c("Viking Enterprise",
     "Northern Alliance",
@@ -449,13 +448,21 @@ get_hake_catch <- function() {
         trip_type_code == 12764 & !vessel_name %in% ft ~ 'SS'
       ))
 
-  .d <- .d %>%
-    filter(fishery_sector == 'GROUNDFISH TRAWL')  %>%
+    .d <- .d %>%
+    # filter(fishery_sector == 'GROUNDFISH TRAWL')  %>%
+    filter(landed_kg > 0) %>%
     filter(major_stat_area_code %in% c('03','04','05','06','07','08','09') |
-        major_stat_area_code == '01' & minor_stat_area_code == '20') %>%
-    filter(gear == 'MIDWATER TRAWL') %>%
+        (major_stat_area_code == '01' & minor_stat_area_code == '20')) %>%
+    filter(gear == 'MIDWATER TRAWL')
+
+    if(modern){
+      .d <- .d %>%
     filter(trip_type_code %in% c(12764, # OPT A - HAKE QUOTA (SHORESIDE)
       12766)) # OPT B - HAKE QUOTA (JV)
+  }
+
+  as_tibble(.d)
+
 }
 
 #' Get all fishing catch and effort to calculate historical commercial CPUE
@@ -515,6 +522,27 @@ get_cpue_historical <- function(species = NULL,
   .d$specific_area <- gfdata::assign_areas(.d$major_stat_area_description,
     area_regex = c("3C", "3D", "5A", "5B", "5C", "5D", "5E")
   )
+
+  as_tibble(.d)
+}
+
+get_cpue_historical_hake <- function(end_year = NULL) {
+  .q <- read_sql("get-cpue-historic-hake.sql")
+  .d <- run_sql(database = c("GFFOS", "GFCatch", "PacHarvest"), .q)
+  .d$SPECIES_COMMON_NAME[.d$SPECIES_COMMON_NAME == "SPINY DOGFISH"] <-
+    toupper("north pacific spiny dogfish") # to match GFBioSQL
+  names(.d) <- tolower(names(.d))
+  .d <- rename(.d, total = totcatch_kg, minor_stat_area_code = min)
+  .d$hours_fished <- as.numeric(as.character(.d$hours_fished))
+  .d$database_name <- tolower(.d$database_name)
+  .d$gear <- tolower(.d$gear)
+  .d$locality_description <- tolower(.d$locality_description)
+
+
+  # Filter out fishing records after last year required
+  if (!is.null(end_year)) {
+    .d <- .d %>% filter(year <= end_year)
+  }
 
   as_tibble(.d)
 }
