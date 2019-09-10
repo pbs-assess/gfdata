@@ -428,7 +428,6 @@ get_catch <- function(species) {
 #' @rdname get_data
 get_hake_catch <- function(modern = FALSE) {
   .q <- read_sql("get-hake-catch.sql")
-  .q <- inject_filter("WHERE SP.SPECIES_CODE IN", "225", sql_code = .q)
   .d <- run_sql("GFFOS", .q)
   names(.d) <- tolower(names(.d))
   .d$species_common_name <- tolower(.d$species_common_name)
@@ -449,7 +448,6 @@ get_hake_catch <- function(modern = FALSE) {
       ))
 
     .d <- .d %>%
-    # filter(fishery_sector == 'GROUNDFISH TRAWL')  %>%
     filter(landed_kg > 0) %>%
     filter(major_stat_area_code %in% c('03','04','05','06','07','08','09') |
         (major_stat_area_code == '01' & minor_stat_area_code == '20')) %>%
