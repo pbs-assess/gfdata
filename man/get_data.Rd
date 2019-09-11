@@ -14,6 +14,7 @@
 \alias{get_cpue_index_hl}
 \alias{get_age_precision}
 \alias{get_survey_index}
+\alias{get_survey_blocks}
 \alias{get_eulachon_specimens}
 \alias{get_management}
 \alias{get_sara_dat}
@@ -30,7 +31,7 @@ get_commercial_samples(species, unsorted_only = TRUE, usability = NULL)
 
 get_catch(species)
 
-get_hake_catch()
+get_hake_catch(modern = FALSE)
 
 get_cpue_historical_hl(species = NULL, alt_year_start_date = "04-01",
   areas = c("3[CD]+", "5[AB]+", "5[CDE]+"), end_year = NULL)
@@ -46,6 +47,8 @@ get_cpue_index_hl(min_cpue_year = 1980)
 get_age_precision(species, inside = NULL)
 
 get_survey_index(species, ssid = NULL)
+
+get_survey_blocks(ssid = NULL)
 
 get_eulachon_specimens()
 
