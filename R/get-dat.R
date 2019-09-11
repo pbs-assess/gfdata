@@ -675,6 +675,25 @@ get_survey_index <- function(species, ssid = NULL) {
 }
 
 
+
+#' @export
+#' @rdname get_data
+get_survey_blocks <- function(ssid = NULL) {
+  .q <- read_sql("get-survey-blocks.sql")
+
+  if (is.null(ssid)) {
+    stop("Please specify a survey series id.")
+  }
+  .q <- inject_filter("AND SURVEY_SERIES_ID IN", ssid, .q,
+      search_flag = "-- insert ssid here", conversion_func = I
+    )
+
+  .d <- run_sql("GFBioSQL", .q)
+  names(.d) <- tolower(names(.d))
+  as_tibble(.d)
+}
+
+
 #' @export
 #' @rdname get_data
 get_eulachon_specimens <- function() {

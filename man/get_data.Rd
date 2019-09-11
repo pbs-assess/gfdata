@@ -14,6 +14,7 @@
 \alias{get_cpue_index_hl}
 \alias{get_age_precision}
 \alias{get_survey_index}
+\alias{get_survey_blocks}
 \alias{get_eulachon_specimens}
 \alias{get_management}
 \alias{get_sara_dat}
@@ -46,6 +47,8 @@ get_cpue_index_hl(min_cpue_year = 1980)
 get_age_precision(species, inside = NULL)
 
 get_survey_index(species, ssid = NULL)
+
+get_survey_blocks(ssid = NULL)
 
 get_eulachon_specimens()
 
