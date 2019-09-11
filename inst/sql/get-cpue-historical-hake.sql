@@ -44,10 +44,10 @@ WHERE --MC.SPECIES_CODE = '225' AND
 	
 	--Ensure that GFCatch data are from trawl trip reports, trawl sales slips or landing records
 	CASE WHEN MC.DATABASE_NAME = 'GFCatch' THEN Source ELSE 1 END IN (1, 2) AND 
-
-	--Only midwater trawl gear 
+	
+	-- Remove gear types other than groundfish trawl (midwater and bottom trawl types)
 	CASE WHEN MC.DATABASE_NAME = 'GFCatch' THEN G.Gear_Type
-		ELSE MC.GEAR END ='MIDWATER TRAWL' AND
+		ELSE MC.GEAR END NOT IN ('Shrimp trawl', 'Gillnet drum trawl', 'Danish seine trawl') AND
 	
 	--Ensure tow time (measure of effort) is greater than 0
 	CASE WHEN MC.DATABASE_NAME = 'GFCatch' THEN E.Time
