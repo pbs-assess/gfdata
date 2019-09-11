@@ -8,15 +8,8 @@ get_cpue_historical(species = NULL, alt_year_start_date = "04-01",
   areas = c("3[CD]+", "5[AB]+", "5[CDE]+"), end_year = NULL)
 }
 \arguments{
-\item{species}{Species to filter for positive fishing events. Leave as `NULL`
-to include all fishing events. One or more species common names (e.g.
-`"pacific ocean perch"`) or one or more species codes (e.g. `396`). Species
-codes can be specified as numeric vectors `c(396, 442`) or characters
-`c("396", "442")`. Numeric values shorter than 3 digits will be expanded to
-3 digits and converted to character objects (`1` turns into `"001"`).
-Species common names and species codes should not be mixed. If any element
-is missing a species code, then all elements will be assumed to be species
-common names.}
+\item{species}{to include all fishing events. One or more species common names (e.g.
+`"pacific ocean perch"`) or one or more species codes (e.g. `396`).}
 
 \item{alt_year_start_date}{Alternative year starting date specified as a
 month-day combination. E.g. "03-01" for March 1st. Can be used to create
