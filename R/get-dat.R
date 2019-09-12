@@ -109,9 +109,12 @@ NULL
 #'   different survey stratifications.
 #' @param verbose If `TRUE` then extra messages were reprinted during data
 #'   extraction. Useful to monitor progress.
+#' @param sleep System sleep in seconds between each survey-year
+#'   to be kind to the server.
 #' @rdname get_data
 get_survey_sets <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36),
-                            join_sample_ids = FALSE, verbose = FALSE) {
+                            join_sample_ids = FALSE, verbose = FALSE,
+                            sleep = 2) {
   # Just to pull out up to date list of ssids associated with trawl/ll gear type.
   trawl <- run_sql("GFBioSQL", "SELECT
     S.SURVEY_SERIES_ID
@@ -186,13 +189,16 @@ get_survey_sets <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36),
           " and species code ", species_codes[i]
         )
       }
+      con <- db_connection(database = "GFBioSQL")
+      on.exit(DBI::dbDisconnect(con))
       d_survs[[k]] <- DBI::dbGetQuery(
-        db_connection(database = "GFBioSQL"),
-        paste0(
+        con, paste0(
           "EXEC ", sql_proc, " ", survey_ids$SURVEY_ID[j], ", '",
           species_codes[i], "'"
         )
       )
+      DBI::dbDisconnect(con)
+      Sys.sleep(sleep)
     }
   }
   .d <- bind_rows(d_survs)

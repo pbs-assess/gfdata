@@ -23,7 +23,7 @@
 \title{Get PBS data}
 \usage{
 get_survey_sets(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36),
-  join_sample_ids = FALSE, verbose = FALSE)
+  join_sample_ids = FALSE, verbose = FALSE, sleep = 2)
 
 get_survey_samples(species, ssid = NULL, remove_bad_data = TRUE,
   unsorted_only = TRUE, usability = NULL, inside = NULL)
@@ -84,6 +84,9 @@ different survey stratifications.}
 
 \item{verbose}{If `TRUE` then extra messages were reprinted during data
 extraction. Useful to monitor progress.}
+
+\item{sleep}{System sleep in seconds between each survey-year
+to be kind to the server.}
 
 \item{remove_bad_data}{Remove known bad data, such as unrealistic
 length or weight values.}
