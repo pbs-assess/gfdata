@@ -691,6 +691,8 @@ get_survey_blocks <- function(ssid = NULL) {
 
   .d <- run_sql("GFBioSQL", .q)
   names(.d) <- tolower(names(.d))
+  .d <- dplyr::distinct(.d)
+  .d$block_designation <- as.numeric(.d$block_designation)
   as_tibble(.d)
 }
 
