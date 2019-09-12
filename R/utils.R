@@ -25,7 +25,6 @@ run_sql <- function(database, query) {
 #' @export
 db_connection <- function(server = "DFBCV9TWVASP001",
                           database = "GFBioSQL") {
-
   pbs_uid <- getOption("pbs.uid")
   pbs_pwd <- getOption("pbs.pwd")
   pbs_ip <- getOption("pbs.ip")
@@ -77,9 +76,12 @@ inject_filter <- function(sql_precode, species, sql_code,
 }
 
 first_cap <- function(s, strict = FALSE) {
-  cap <- function(s) paste(toupper(substring(s, 1, 1)),
-    {s <- substring(s, 2); if(strict) tolower(s) else s},
-    sep = "", collapse = " " )
+  cap <- function(s) paste(toupper(substring(s, 1, 1)), {
+      s <- substring(s, 2)
+      if (strict) tolower(s) else s
+    },
+    sep = "", collapse = " "
+    )
   sapply(strsplit(s, split = " "), cap, USE.NAMES = !is.null(names(s)))
 }
 
@@ -122,7 +124,7 @@ codes2common <- function(spp_code) {
     "SELECT * FROM SPECIES"
   )
 
-  for (i in spp_code){
+  for (i in spp_code) {
     if (i == 033) {
       message("Code 033 deprecated for Basking Shark. Use code 034.")
     }
@@ -155,7 +157,7 @@ codes2common <- function(spp_code) {
 #' x <- c("5D: NORTHERN HECATE STRAIT", "3C: S.W. VANCOUVER ISLAND", "3D: N.W. VANCOUVER ISLAND")
 #' assign_areas(x)
 assign_areas <- function(major_stat_area_description,
-  area_regex = c("3[CD]+", "5[AB]+", "5[CDE]+")) {
+                         area_regex = c("3[CD]+", "5[AB]+", "5[CDE]+")) {
   out <- rep(NA, length(major_stat_area_description))
   for (i in seq_along(area_regex)) {
     out[grepl(area_regex[i], major_stat_area_description)] <-
@@ -178,12 +180,13 @@ get_spp_sample_length_type <- function(species) {
   .q <- inject_filter("WHERE SPECIES_CODE IN ", species, .q)
   .d <- run_sql("GFBioSQL", .q)
   .d <- .d %>%
-    tidyr::gather('Fork_Length'
-      , 'Standard_Length'
-      , 'Total_Length'
-      , 'Second_Dorsal_Length'
-      , key = 'length_type'
-      , value = 'count')
+    tidyr::gather("Fork_Length",
+      "Standard_Length",
+      "Total_Length",
+      "Second_Dorsal_Length",
+      key = "length_type",
+      value = "count"
+    )
   .d <- .d %>% filter(count == max(count))
   .d$length_type
 }
