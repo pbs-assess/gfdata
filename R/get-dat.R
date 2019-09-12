@@ -170,6 +170,7 @@ get_survey_sets <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36),
     -(FE_START_LONGITUDE_DEGREE + FE_START_LONGITUDE_MINUTE / 60) AS
       LONGITUDE, FE_BEGINNING_BOTTOM_DEPTH AS DEPTH_M
     FROM B21_Samples")
+  Sys.sleep(sleep)
 
   d_survs <- list()
   k <- 0
