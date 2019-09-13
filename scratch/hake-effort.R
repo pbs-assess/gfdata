@@ -28,7 +28,7 @@ gear <- d %>% filter(gear %in% c("midwater trawl", "midwater trawl (unknown type
 nrow(gear)
 
 # 2. extract all records with >500 kg catch
-min_catch <- d %>% filter(species_code == '225', total > 500)
+min_catch <- d %>% filter(species_code == "225", total > 500)
 nrow(min_catch)
 
 # 3. define fleet as all vessels which have caught > 500 kg hake on more than
@@ -43,10 +43,15 @@ min_positive_trips <- 5
 min_yrs_with_trips <- 5
 
 # hake tows >= 500 kg:
-catch <- d %>% filter(species_code == '225', total > 500,
-  hours_fished > 0, !is.na(vessel), !vessel == '0') %>%
-  select(year, vessel, trip_id, fishing_event_id,
-    species_code, total, hours_fished)
+catch <- d %>%
+  filter(
+    species_code == "225", total > 500,
+    hours_fished > 0, !is.na(vessel), !vessel == "0"
+  ) %>%
+  select(
+    year, vessel, trip_id, fishing_event_id,
+    species_code, total, hours_fished
+  )
 
 # figure out which vessels should be considered part of the hake fleet
 fleet <- catch %>%
@@ -73,35 +78,49 @@ d <- all_hake %>%
   filter(year <= 2018)
 
 d$area_grouped <- gfplot::assign_areas(d$major_stat_area_description,
-  area_regex = c("3[C]+", "3[D]+", "5[ABC]+", "5[DE]+", "4[B]+"))
+  area_regex = c("3[C]+", "3[D]+", "5[ABC]+", "5[DE]+", "4[B]+")
+)
 table(d$area_grouped)
 
-month_lookup1 <- data.frame(month = 1:12,
-  month_group1 = c(4, 4, 4, 1, 1, 2, 2, 3, 3, 3, 4, 4))
+month_lookup1 <- data.frame(
+  month = 1:12,
+  month_group1 = c(4, 4, 4, 1, 1, 2, 2, 3, 3, 3, 4, 4)
+)
 
-month_lookup2 <- data.frame(month = 1:12,
-  month_group2 = c(4, 1, 1, 1, 2, 2, 3, 3, 3, 4, 4, 4))
+month_lookup2 <- data.frame(
+  month = 1:12,
+  month_group2 = c(4, 1, 1, 1, 2, 2, 3, 3, 3, 4, 4, 4)
+)
 
 d <- left_join(d, month_lookup1) %>%
   left_join(month_lookup2)
 
-d2 <- d %>% group_by(trip_id) %>%
-  mutate(frac_hake =
-      sum(total[species_common_name == "PACIFIC HAKE"]) / sum(total)) %>%
+d2 <- d %>%
+  group_by(trip_id) %>%
+  mutate(
+    frac_hake =
+      sum(total[species_common_name == "PACIFIC HAKE"]) / sum(total)
+  ) %>%
   filter(frac_hake > 0.75)
 
 get_days <- function(x) {
   out <- lubridate::time_length(
-    lubridate::interval(min(x), max(x)), "day")
+    lubridate::interval(min(x), max(x)), "day"
+  )
   out
 }
 
 # First month grouping -------------------------------------
 
 d3 <- d2 %>%
-  group_by(year, month_group1, area_grouped, trip_id) %>%
-  summarize(n_fished_days = get_days(best_date),
-    vessel = unique(vessel))
+  # Ole's new line to make December 1999 to be linked with Jan, Feb, March 2000
+  mutate(year.mod = year, year.mod = ifelse(month %in% c(1, 2, 3), year.mod - 1, year.mod)) %>% # introduce new modified year column
+  # group_by(year, month_group1, area_grouped, trip_id) %>% # Sean's original line
+  group_by(year.mod, month_group1, area_grouped, trip_id) %>% # new grouping variables line
+  summarize(
+    n_fished_days = get_days(best_date),
+    vessel = unique(vessel)
+  )
 hist(d3$n_fished_days)
 nrow(d3)
 nrow(filter(d3, n_fished_days > 10))
@@ -109,25 +128,28 @@ nrow(filter(d3, n_fished_days > 25))
 nrow(filter(d3, n_fished_days > 50))
 
 d4 <- filter(d3, n_fished_days <= 30) %>%
-  group_by(year, month_group1, area_grouped) %>%
-  summarize(n_vessel = length(unique(vessel)),
-    n_fished_days = sum(n_fished_days))
+  group_by(year.mod, month_group1, area_grouped) %>% # carrying through grouping by year.mod
+  summarize(
+    n_vessel = length(unique(vessel)),
+    n_fished_days = sum(n_fished_days)
+  )
 
 all <- d4 %>%
   mutate(type = ">= 0") %>%
   mutate(n_fished_days = n_fished_days + 8)
 
-privacy <- d4 %>% filter(n_vessel >= 3) %>%
+privacy <- d4 %>%
+  filter(n_vessel >= 3) %>%
   mutate(type = ">= 3")
 
 bind_rows(all, privacy) %>%
-  ggplot(aes(year, n_fished_days, colour = type)) + geom_line() +
-  facet_grid(month_group1~area_grouped)
+  ggplot(aes(year.mod, n_fished_days, colour = type)) + geom_point() + geom_line() +
+  facet_grid(month_group1 ~ area_grouped)
 ggsave("scratch/hake-2019-09-12-ole-1.pdf", width = 8, height = 6)
 
 bind_rows(privacy) %>%
-  ggplot(aes(year, n_fished_days, colour = type)) + geom_line() +
-  facet_grid(month_group1~area_grouped)
+  ggplot(aes(year.mod, n_fished_days, colour = type)) + geom_point() + geom_line() +
+  facet_grid(month_group1 ~ area_grouped)
 ggsave("scratch/hake-2019-09-12-privacy-1.pdf", width = 8, height = 6)
 
 privacy %>%
@@ -137,29 +159,37 @@ privacy %>%
 # Second month grouping -------------------------------------
 
 d3_2 <- d2 %>%
-  group_by(year, month_group2, area_grouped, trip_id) %>%
-  summarize(n_fished_days = get_days(best_date),
-    vessel = unique(vessel))
+  # Ole's new line to make December 1999 to be linked with Jan 2000 instead of Dec 2000 with Jan 2000.
+  mutate(year.mod = year, year.mod = ifelse(month == 1, year.mod - 1, year.mod)) %>% # introduce new modified year column
+  # group_by(year, month_group2, area_grouped, trip_id) %>% # Sean's original line
+  group_by(year.mod, month_group2, area_grouped, trip_id) %>% # new grouping variables line
+  summarize(
+    n_fished_days = get_days(best_date),
+    vessel = unique(vessel)
+  )
 
 d4_2 <- filter(d3_2, n_fished_days <= 30) %>%
-  group_by(year, month_group2, area_grouped) %>%
-  summarize(n_vessel = length(unique(vessel)),
-    n_fished_days = sum(n_fished_days))
+  group_by(year.mod, month_group2, area_grouped) %>%
+  summarize(
+    n_vessel = length(unique(vessel)),
+    n_fished_days = sum(n_fished_days)
+  )
 
 all_2 <- d4_2 %>%
   mutate(type = ">= 0")
 
-privacy_2 <- d4_2 %>% filter(n_vessel >= 3) %>%
+privacy_2 <- d4_2 %>%
+  filter(n_vessel >= 3) %>%
   mutate(type = ">= 3")
 
 bind_rows(all_2, privacy_2) %>%
-  ggplot(aes(year, n_fished_days, colour = type)) + geom_line() +
-  facet_grid(month_group2~area_grouped)
+  ggplot(aes(year.mod, n_fished_days, colour = type)) + geom_point() + geom_line() +
+  facet_grid(month_group2 ~ area_grouped)
 ggsave("scratch/hake-2019-09-12-ole-2.pdf", width = 8, height = 6)
 
 bind_rows(privacy_2) %>%
-  ggplot(aes(year, n_fished_days, colour = type)) + geom_line() +
-  facet_grid(month_group2~area_grouped)
+  ggplot(aes(year.mod, n_fished_days, colour = type)) + geom_point() + geom_line() +
+  facet_grid(month_group2 ~ area_grouped)
 ggsave("scratch/hake-2019-09-12-privacy-2.pdf", width = 8, height = 6)
 
 privacy_2 %>%
