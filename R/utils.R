@@ -17,7 +17,7 @@
 run_sql <- function(database, query) {
   query <- paste(query, collapse = "\n")
   con <- db_connection(database = database)
-  on.exit(suppressWarnings(suppressMessages(WDBI::dbDisconnect(con))))
+  on.exit(suppressWarnings(suppressMessages(DBI::dbDisconnect(con))))
   DBI::dbGetQuery(con, query)
 }
 
