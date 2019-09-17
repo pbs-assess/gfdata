@@ -114,7 +114,7 @@ NULL
 #' @rdname get_data
 get_survey_sets <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36),
                             join_sample_ids = FALSE, verbose = FALSE,
-                            sleep = 2) {
+                            sleep = 0.25) {
   # Just to pull out up to date list of ssids associated with trawl/ll gear type.
   trawl <- run_sql("GFBioSQL", "SELECT
     S.SURVEY_SERIES_ID
