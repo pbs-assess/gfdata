@@ -1,7 +1,5 @@
 context("test-get-spp-dat")
 
-library(dplyr)
-
 test_that("get species data functions work at PBS", {
   # skip_on_cran()
   skip_on_travis()

@@ -67,7 +67,7 @@ collapse_filters <- function(x) {
 inject_filter <- function(sql_precode, species, sql_code,
                           search_flag = "-- insert species here",
                           conversion_func = common2codes) {
-  i <- grep(search_flag, sql_code)
+  i <- suppressWarnings(grep(search_flag, sql_code))
   sql_code[i] <- paste0(
     sql_precode, " (",
     collapse_filters(conversion_func(species)), ")"

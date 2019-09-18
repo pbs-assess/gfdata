@@ -1,7 +1,5 @@
 context("test-get-envir-dat")
 
-library(dplyr)
-
 test_that("environmental data extraction works", {
   # skip_on_cran()
   skip_on_travis()
@@ -29,12 +27,3 @@ test_that("environmental data extraction works", {
   expect_type(d$`dissolved oxygen_mlpL`, "double")
 
 })
-
-
-
-
-
-#
-# get_sensor_data_trawl <- function(ssid = NULL,
-#   attribute = c("temperature", "depth", "dissolved oxygen", "salinity"),
-#   spread_attributes = FALSE)
