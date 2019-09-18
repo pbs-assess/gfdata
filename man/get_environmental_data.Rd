@@ -71,6 +71,7 @@ number).
 longline survey sites for individual fishing events.
 }
 \examples{
+\dontrun{
 d <- get_sensor_data_trawl(ssid = 1, "temperature")
 head(d)
 head(get_sensor_data_trawl_fe(d$fishing_event_id[[1]], "temperature"))
@@ -81,4 +82,5 @@ head(get_sensor_data_ll_td_fe(d$fishing_event_id[[1]],"temperature"))
 
 d <- get_sensor_data_ll_ctd(40)
 head(d)
+}
 }

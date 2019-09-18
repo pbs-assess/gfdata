@@ -22,3 +22,8 @@ SQL driver will be \code{"SQL Server"} if not specified in the options. This wil
 probably work for most people. You might try using
 \code{usethis::edit_r_profile()} if you need help finding your R profile file.
 }
+\examples{
+\donttest{
+run_sql("GFBioSQL", "EXEC sp_who2")
+}
+}

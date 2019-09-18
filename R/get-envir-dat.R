@@ -20,6 +20,7 @@
 #' @rdname get_environmental_data
 #'
 #' @examples
+#' \dontrun{
 #' d <- get_sensor_data_trawl(ssid = 1, "temperature")
 #' head(d)
 #' head(get_sensor_data_trawl_fe(d$fishing_event_id[[1]], "temperature"))
@@ -30,6 +31,7 @@
 #'
 #' d <- get_sensor_data_ll_ctd(40)
 #' head(d)
+#' }
 
 get_sensor_data_trawl <- function(ssid = NULL,
   attribute = c("temperature", "depth", "dissolved oxygen", "salinity"),

@@ -7,6 +7,7 @@
 \alias{get_commercial_samples}
 \alias{get_catch}
 \alias{get_hake_catch}
+\alias{get_cpue_historical}
 \alias{get_cpue_historical_hake}
 \alias{get_cpue_historical_hl}
 \alias{get_cpue_spatial}
@@ -17,6 +18,7 @@
 \alias{get_survey_index}
 \alias{get_survey_blocks}
 \alias{get_eulachon_specimens}
+\alias{get_gear_types}
 \alias{get_management}
 \alias{get_sara_dat}
 \alias{cache_pbs_data}
@@ -33,6 +35,9 @@ get_commercial_samples(species, unsorted_only = TRUE, usability = NULL)
 get_catch(species)
 
 get_hake_catch(modern = FALSE)
+
+get_cpue_historical(species = NULL, alt_year_start_date = "04-01",
+  areas = c("3[CD]+", "5[AB]+", "5[CDE]+"), end_year = NULL)
 
 get_cpue_historical_hake(end_year = NULL)
 
@@ -54,6 +59,8 @@ get_survey_index(species, ssid = NULL)
 get_survey_blocks(ssid = NULL)
 
 get_eulachon_specimens()
+
+get_gear_types()
 
 get_management(species = NULL, species_group = NULL, fishery = NULL,
   area = NULL, start_year = NULL)
@@ -100,6 +107,19 @@ IPHC codes may be different to other surveys.}
 4B only), set inside = 1. To select only the outside population, set inside
 = 0.}
 
+\item{modern}{Logical for modern or historical (hake fishery only). If \code{TRUE}
+then filters by \code{trip_type_code} in \code{12764} (HAKE QUOTA (SHORESIDE)) and
+\code{12766} (HAKE QUOTA (JV)).}
+
+\item{alt_year_start_date}{Alternative year starting date specified as a
+month-day combination. E.g. "03-01" for March 1st. Can be used to create
+'fishing years'.}
+
+\item{areas}{Area groupings as a vector of regular expressions.
+See \code{\link[base:regex]{base::regex()}}.}
+
+\item{end_year}{Specify the last calendar year to be extracted.}
+
 \item{gear}{The gear type(s) to include for CPUE. Will be converted to
 uppercase. Run \code{\link[=get_gear_types]{get_gear_types()}} for a look-up table of available
 gear types to select from.}
@@ -131,12 +151,6 @@ reading and writing at the expense of disk space.}
 \item{survey_sets}{Logical for whether the survey set data should be
 extracted. You might set this to \code{FALSE} if you don't need these data and
 you want to substantially speed up data extraction.}
-
-\item{gear}{The gear type(s) to include for CPUE. Will be converted to
-uppercase. Run \code{\link[=get_gear_types]{get_gear_types()}} for a look-up table of available
-gear types to select from.}
-
-\item{min_cpue_year}{Minimum year for the CPUE data.}
 }
 \value{
 The \code{get_*} functions return a data frame. The \code{\link[=cache_pbs_data]{cache_pbs_data()}}

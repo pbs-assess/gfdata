@@ -8,6 +8,8 @@
 #' @importFrom dplyr semi_join
 #' @importFrom dplyr bind_rows case_when pull contains tibble rename as_tibble
 #' @importFrom magrittr %>%
+#' @importFrom rlang .data
+#'
 NULL
 
 if (getRversion() >= "2.15.1") utils::globalVariables(c("."))
@@ -45,7 +47,8 @@ if (getRversion() >= "2.15.1") {
       "unit",
       "usability_code",
       "value",
-      "year"
+      "year",
+      "SURVEY_ABBREV"
     )
   )
 }

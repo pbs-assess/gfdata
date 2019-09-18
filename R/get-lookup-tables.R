@@ -38,6 +38,9 @@ get_ssids <- function() {
 }
 
 #' @export
+#' @param ssid A numeric vector of survey series IDs. Run [get_ssids()] for a
+#'   look-up table of available survey series IDs with surveys series
+#'   descriptions.
 #' @rdname lookup
 get_active_survey_blocks <- function(ssid = NULL) {
   .q <- read_sql("get-active-survey-blocks.sql")

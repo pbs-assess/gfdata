@@ -432,6 +432,9 @@ get_catch <- function(species) {
 }
 
 #' @export
+#' @param modern Logical for modern or historical (hake fishery only). If `TRUE`
+#'   then filters by `trip_type_code` in `12764` (HAKE QUOTA (SHORESIDE)) and
+#'   `12766` (HAKE QUOTA (JV)).
 #' @rdname get_data
 get_hake_catch <- function(modern = FALSE) {
   .q <- read_sql("get-hake-catch.sql")
@@ -449,20 +452,20 @@ get_hake_catch <- function(modern = FALSE) {
 
   .d <- .d %>% mutate(hake_fishery =
       case_when(
-        trip_type_code == 12766 ~ 'JV',
-        trip_type_code == 12764 & vessel_name %in% ft ~ 'FT',
-        trip_type_code == 12764 & !vessel_name %in% ft ~ 'SS'
+        .data$trip_type_code == 12766 ~ 'JV',
+        .data$trip_type_code == 12764 & .data$vessel_name %in% ft ~ 'FT',
+        .data$trip_type_code == 12764 & !.data$vessel_name %in% ft ~ 'SS'
       ))
 
     .d <- .d %>%
-    filter(landed_kg > 0) %>%
-    filter(major_stat_area_code %in% c('03','04','05','06','07','08','09') |
-        (major_stat_area_code == '01' & minor_stat_area_code == '20')) %>%
-    filter(gear == 'MIDWATER TRAWL')
+    filter(.data$landed_kg > 0) %>%
+    filter(.data$major_stat_area_code %in% c('03','04','05','06','07','08','09') |
+        (.data$major_stat_area_code == '01' & .data$minor_stat_area_code == '20')) %>%
+    filter(.data$gear == 'MIDWATER TRAWL')
 
     if (modern){
       .d <- .d %>%
-        filter(trip_type_code %in% c(12764, # OPT A - HAKE QUOTA (SHORESIDE)
+        filter(.data$trip_type_code %in% c(12764, # OPT A - HAKE QUOTA (SHORESIDE)
           12766)) # OPT B - HAKE QUOTA (JV)
     }
 
@@ -471,9 +474,6 @@ get_hake_catch <- function(modern = FALSE) {
 
 #' Get all fishing catch and effort to calculate historical commercial CPUE
 #'
-#' @param species
-#'   to include all fishing events. One or more species common names (e.g.
-#'   `"pacific ocean perch"`) or one or more species codes (e.g. `396`).
 #' @param alt_year_start_date Alternative year starting date specified as a
 #'   month-day combination. E.g. "03-01" for March 1st. Can be used to create
 #'   'fishing years'.
@@ -481,6 +481,7 @@ get_hake_catch <- function(modern = FALSE) {
 #'   See [base::regex()].
 #' @param end_year Specify the last calendar year to be extracted.
 #' @export
+#' @rdname get_data
 get_cpue_historical <- function(species = NULL,
                                 alt_year_start_date = "04-01", areas = c("3[CD]+", "5[AB]+", "5[CDE]+"),
                                 end_year = NULL) {
@@ -611,10 +612,6 @@ get_cpue_index <- function(gear = "bottom trawl", min_cpue_year = 1996) {
   as_tibble(.d)
 }
 
-#' @param gear The gear type(s) to include for CPUE. Will be converted to
-#'  uppercase. Run [get_gear_types()] for a look-up table of available
-#'  gear types to select from.
-#' @param min_cpue_year Minimum year for the CPUE data.
 #' @export
 #' @rdname get_data
 get_cpue_index_hl <- function(min_cpue_year = 1980) {
@@ -707,6 +704,19 @@ get_eulachon_specimens <- function() {
   as_tibble(.d)
 }
 
+#' @export
+#' @rdname get_data
+get_gear_types <- function() {
+  .d <- run_sql(
+    "GFFOS",
+    "SELECT GEAR
+    FROM GFFOS.dbo.GF_MERGED_CATCH C
+    GROUP BY GEAR"
+  )
+  names(.d) <- tolower(names(.d))
+  .d$gear <- tolower(.d$gear)
+  as_tibble(.d)
+}
 
 #' @param species_group Species group code(s) to include (see lookup table
 #'   [get_species_groups()]). Defaults to all.
