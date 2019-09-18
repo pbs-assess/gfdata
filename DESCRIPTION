@@ -31,3 +31,6 @@ Suggests:
     knitr,
     rmarkdown
 VignetteBuilder: knitr
+Roxygen: list(markdown = TRUE)
+URL: https://github.com/pbs-assess/gfdata
+BugReports: https://github.com/pbs-assess/gfdata/issues
