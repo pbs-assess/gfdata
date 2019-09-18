@@ -9,14 +9,14 @@ get_cpue_historical(species = NULL, alt_year_start_date = "04-01",
 }
 \arguments{
 \item{species}{to include all fishing events. One or more species common names (e.g.
-`"pacific ocean perch"`) or one or more species codes (e.g. `396`).}
+\code{"pacific ocean perch"}) or one or more species codes (e.g. \code{396}).}
 
 \item{alt_year_start_date}{Alternative year starting date specified as a
 month-day combination. E.g. "03-01" for March 1st. Can be used to create
 'fishing years'.}
 
 \item{areas}{Area groupings as a vector of regular expressions.
-See [base::regex()].}
+See \code{\link[base:regex]{base::regex()}}.}
 
 \item{end_year}{Specify the last calendar year to be extracted.}
 }
