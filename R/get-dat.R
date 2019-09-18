@@ -114,7 +114,7 @@ NULL
 #' @rdname get_data
 get_survey_sets <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36),
                             join_sample_ids = FALSE, verbose = FALSE,
-                            sleep = 0.25) {
+                            sleep = 0.05) {
   # Just to pull out up to date list of ssids associated with trawl/ll gear type.
   trawl <- run_sql("GFBioSQL", "SELECT
     S.SURVEY_SERIES_ID
@@ -190,15 +190,13 @@ get_survey_sets <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36),
           " and species code ", species_codes[i]
         )
       }
-      con <- db_connection(database = "GFBioSQL")
-      on.exit(DBI::dbDisconnect(con))
-      d_survs[[k]] <- DBI::dbGetQuery(
-        con, paste0(
+      d_survs[[k]] <- run_sql(
+        "GFBioSQL",
+        paste0(
           "EXEC ", sql_proc, " ", survey_ids$SURVEY_ID[j], ", '",
           species_codes[i], "'"
         )
       )
-      DBI::dbDisconnect(con)
       Sys.sleep(sleep)
     }
   }
@@ -444,30 +442,36 @@ get_hake_catch <- function(modern = FALSE) {
   .d$species_scientific_name <- tolower(.d$species_scientific_name)
   .d$year <- lubridate::year(.d$best_date)
 
-  ft <- toupper(c("Viking Enterprise",
+  ft <- toupper(c(
+    "Viking Enterprise",
     "Northern Alliance",
     "Osprey #1",
     "Raw Spirit",
-    "Viking Alliance"))
+    "Viking Alliance"
+  ))
 
-  .d <- .d %>% mutate(hake_fishery =
+  .d <- .d %>% mutate(
+    hake_fishery =
       case_when(
-        .data$trip_type_code == 12766 ~ 'JV',
-        .data$trip_type_code == 12764 & .data$vessel_name %in% ft ~ 'FT',
-        .data$trip_type_code == 12764 & !.data$vessel_name %in% ft ~ 'SS'
-      ))
+        .data$trip_type_code == 12766 ~ "JV",
+        .data$trip_type_code == 12764 & .data$vessel_name %in% ft ~ "FT",
+        .data$trip_type_code == 12764 & !.data$vessel_name %in% ft ~ "SS"
+      )
+  )
 
-    .d <- .d %>%
+  .d <- .d %>%
     filter(.data$landed_kg > 0) %>%
-    filter(.data$major_stat_area_code %in% c('03','04','05','06','07','08','09') |
-        (.data$major_stat_area_code == '01' & .data$minor_stat_area_code == '20')) %>%
-    filter(.data$gear == 'MIDWATER TRAWL')
+    filter(.data$major_stat_area_code %in% c("03", "04", "05", "06", "07", "08", "09") |
+      (.data$major_stat_area_code == "01" & .data$minor_stat_area_code == "20")) %>%
+    filter(.data$gear == "MIDWATER TRAWL")
 
-    if (modern){
-      .d <- .d %>%
-        filter(.data$trip_type_code %in% c(12764, # OPT A - HAKE QUOTA (SHORESIDE)
-          12766)) # OPT B - HAKE QUOTA (JV)
-    }
+  if (modern) {
+    .d <- .d %>%
+      filter(.data$trip_type_code %in% c(
+        12764, # OPT A - HAKE QUOTA (SHORESIDE)
+        12766
+      )) # OPT B - HAKE QUOTA (JV)
+  }
 
   as_tibble(.d)
 }
@@ -551,14 +555,14 @@ get_cpue_historical_hake <- function(end_year = NULL) {
 #' @export
 #' @rdname get_data
 get_cpue_historical_hl <- function(species = NULL,
-  alt_year_start_date = "04-01", areas = c("3[CD]+", "5[AB]+", "5[CDE]+"),
-  end_year = NULL) {
+                                   alt_year_start_date = "04-01", areas = c("3[CD]+", "5[AB]+", "5[CDE]+"),
+                                   end_year = NULL) {
   .q <- read_sql("get-cpue-historic-hl-beta.sql")
   if (!is.null(species)) {
     .q <- inject_filter("AND MC.SPECIES_CODE IN", species, sql_code = .q)
   }
   .d <- run_sql(database = "GFFOS", .q)
-  #.d$SPECIES_COMMON_NAME[.d$SPECIES_COMMON_NAME == "SPINY DOGFISH"] <-
+  # .d$SPECIES_COMMON_NAME[.d$SPECIES_COMMON_NAME == "SPINY DOGFISH"] <-
   #  toupper("north pacific spiny dogfish") # to match GFBioSQL
   names(.d) <- tolower(names(.d))
   as_tibble(.d)
@@ -684,8 +688,8 @@ get_survey_blocks <- function(ssid = NULL) {
     stop("Please specify a survey series id.")
   }
   .q <- inject_filter("AND SURVEY_SERIES_ID IN", ssid, .q,
-      search_flag = "-- insert ssid here", conversion_func = I
-    )
+    search_flag = "-- insert ssid here", conversion_func = I
+  )
 
   .d <- run_sql("GFBioSQL", .q)
   names(.d) <- tolower(names(.d))
@@ -837,7 +841,8 @@ cache_pbs_data <- function(species, file_name = NULL, path = ".",
     }
     out$survey_samples <- get_survey_samples(this_sp)
     out$commercial_samples <- get_commercial_samples(this_sp,
-      unsorted_only = unsorted_only)
+      unsorted_only = unsorted_only
+    )
     out$catch <- get_catch(this_sp)
     out$cpue_spatial <- get_cpue_spatial(this_sp)
     out$cpue_spatial_ll <- get_cpue_spatial_ll(this_sp)
