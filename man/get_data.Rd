@@ -16,6 +16,7 @@
 \alias{get_cpue_index_hl}
 \alias{get_age_precision}
 \alias{get_survey_index}
+\alias{get_sable_landings}
 \alias{get_survey_blocks}
 \alias{get_eulachon_specimens}
 \alias{get_management}
@@ -33,9 +34,7 @@ get_commercial_samples(species, unsorted_only = TRUE, usability = NULL)
 
 get_catch(species)
 
-get_historical_catch(species = NULL, min_trawl_year = 1996,
-  min_halibut_year = 2000, min_lingdog_year = 2000,
-  min_sable_year = 2000, min_hlrock_year = 2000)
+get_historical_catch(species)
 
 get_hake_catch(modern = FALSE)
 
@@ -55,6 +54,8 @@ get_cpue_index_hl(min_cpue_year = 1980)
 get_age_precision(species, inside = NULL)
 
 get_survey_index(species, ssid = NULL)
+
+get_sable_landings(species, ssid = NULL)
 
 get_survey_blocks(ssid = NULL)
 
