@@ -6,6 +6,7 @@
 \alias{get_survey_samples}
 \alias{get_commercial_samples}
 \alias{get_catch}
+\alias{get_historical_catch}
 \alias{get_hake_catch}
 \alias{get_cpue_historical_hake}
 \alias{get_cpue_historical_hl}
@@ -31,6 +32,10 @@ get_survey_samples(species, ssid = NULL, remove_bad_data = TRUE,
 get_commercial_samples(species, unsorted_only = TRUE, usability = NULL)
 
 get_catch(species)
+
+get_historical_catch(species = NULL, min_trawl_year = 1996,
+  min_halibut_year = 2000, min_lingdog_year = 2000,
+  min_sable_year = 2000, min_hlrock_year = 2000)
 
 get_hake_catch(modern = FALSE)
 
