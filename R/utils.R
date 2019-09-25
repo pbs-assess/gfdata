@@ -14,15 +14,17 @@
 #' @importFrom rlang .data
 #'
 #' @export
+#' @examples
+#' \donttest{
+#' run_sql("GFBioSQL", "EXEC sp_who2")
+#' }
 run_sql <- function(database, query) {
   query <- paste(query, collapse = "\n")
   con <- db_connection(database = database)
-  on.exit(DBI::dbDisconnect(con))
+  on.exit(suppressWarnings(suppressMessages(DBI::dbDisconnect(con))))
   DBI::dbGetQuery(con, query)
 }
 
-#' Database connection
-#' @export
 db_connection <- function(server = "DFBCV9TWVASP001",
                           database = "GFBioSQL") {
   pbs_uid <- getOption("pbs.uid")
@@ -67,7 +69,7 @@ collapse_filters <- function(x) {
 inject_filter <- function(sql_precode, species, sql_code,
                           search_flag = "-- insert species here",
                           conversion_func = common2codes) {
-  i <- grep(search_flag, sql_code)
+  i <- suppressWarnings(grep(search_flag, sql_code))
   sql_code[i] <- paste0(
     sql_precode, " (",
     collapse_filters(conversion_func(species)), ")"
@@ -154,7 +156,8 @@ codes2common <- function(spp_code) {
 #' @param area_regex A vector of regular expressions describing the areas group.
 #' @export
 #' @examples
-#' x <- c("5D: NORTHERN HECATE STRAIT", "3C: S.W. VANCOUVER ISLAND", "3D: N.W. VANCOUVER ISLAND")
+#' x <- c("5D: NORTHERN HECATE STRAIT", "3C: S.W. VANCOUVER ISLAND",
+#'   "3D: N.W. VANCOUVER ISLAND")
 #' assign_areas(x)
 assign_areas <- function(major_stat_area_description,
                          area_regex = c("3[CD]+", "5[AB]+", "5[CDE]+")) {
@@ -167,14 +170,11 @@ assign_areas <- function(major_stat_area_description,
 }
 
 
-#' Length type
-#'
-#' Returns the most commonly recorded length measurement (of fork length, total
-#' length, length to end of second dorsal fin, or standard length) for the
-#' given species.
-#'
-#' @export
-#'
+# Length type
+#
+# Returns the most commonly recorded length measurement (of fork length, total
+# length, length to end of second dorsal fin, or standard length) for the
+# given species.
 get_spp_sample_length_type <- function(species) {
   .q <- read_sql("get-spp-sample-length-type.sql")
   .q <- inject_filter("WHERE SPECIES_CODE IN ", species, .q)

@@ -17,6 +17,7 @@ descriptions.}
 Assign areas
 }
 \examples{
-x <- c("5D: NORTHERN HECATE STRAIT", "3C: S.W. VANCOUVER ISLAND", "3D: N.W. VANCOUVER ISLAND")
+x <- c("5D: NORTHERN HECATE STRAIT", "3C: S.W. VANCOUVER ISLAND",
+  "3D: N.W. VANCOUVER ISLAND")
 assign_areas(x)
 }

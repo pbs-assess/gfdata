@@ -16,9 +16,14 @@ Run SQL
 }
 \details{
 If you need to use a user-password setup to access the databases, then you
-will need to set the R options in your .Rprofile file: `pbs.uid`, `pbs.pwd`,
-`pbs.ip`, `pbs.sqldriver`. E.g. `options(pbs.uid="MyUserName")` The default
-SQL driver will be `"SQL Server"` if not specified in the options. This will
+will need to set the R options in your .Rprofile file: \code{pbs.uid}, \code{pbs.pwd},
+\code{pbs.ip}, \code{pbs.sqldriver}. E.g. \code{options(pbs.uid="MyUserName")} The default
+SQL driver will be \code{"SQL Server"} if not specified in the options. This will
 probably work for most people. You might try using
-`usethis::edit_r_profile()` if you need help finding your R profile file.
+\code{usethis::edit_r_profile()} if you need help finding your R profile file.
+}
+\examples{
+\donttest{
+run_sql("GFBioSQL", "EXEC sp_who2")
+}
 }

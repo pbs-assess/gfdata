@@ -8,6 +8,7 @@
 \alias{get_catch}
 \alias{get_historical_catch}
 \alias{get_hake_catch}
+\alias{get_cpue_historical}
 \alias{get_cpue_historical_hake}
 \alias{get_cpue_historical_hl}
 \alias{get_cpue_spatial}
@@ -19,13 +20,14 @@
 \alias{get_sable_landings}
 \alias{get_survey_blocks}
 \alias{get_eulachon_specimens}
+\alias{get_gear_types}
 \alias{get_management}
 \alias{get_sara_dat}
 \alias{cache_pbs_data}
 \title{Get PBS data}
 \usage{
 get_survey_sets(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36),
-  join_sample_ids = FALSE, verbose = FALSE, sleep = 2)
+  join_sample_ids = FALSE, verbose = FALSE, sleep = 0.05)
 
 get_survey_samples(species, ssid = NULL, remove_bad_data = TRUE,
   unsorted_only = TRUE, usability = NULL, inside = NULL)
@@ -37,6 +39,9 @@ get_catch(species)
 get_historical_catch(species)
 
 get_hake_catch(modern = FALSE)
+
+get_cpue_historical(species = NULL, alt_year_start_date = "04-01",
+  areas = c("3[CD]+", "5[AB]+", "5[CDE]+"), end_year = NULL)
 
 get_cpue_historical_hake(end_year = NULL)
 
@@ -61,6 +66,8 @@ get_survey_blocks(ssid = NULL)
 
 get_eulachon_specimens()
 
+get_gear_types()
+
 get_management(species = NULL, species_group = NULL, fishery = NULL,
   area = NULL, start_year = NULL)
 
@@ -71,24 +78,23 @@ cache_pbs_data(species, file_name = NULL, path = ".",
   survey_sets = FALSE, verbose = TRUE)
 }
 \arguments{
-\item{species}{One or more species common names (e.g. `"pacific ocean
-perch"`) or one or more species codes (e.g. `396`). Species codes can be
-specified as numeric vectors `c(396, 442`) or characters `c("396", "442")`.
+\item{species}{One or more species common names (e.g. \code{"pacific ocean perch"}) or one or more species codes (e.g. \code{396}). Species codes can be
+specified as numeric vectors \code{c(396, 442}) or characters \code{c("396", "442")}.
 Numeric values shorter than 3 digits will be expanded to 3 digits and
-converted to character objects (`1` turns into `"001"`). Species common
+converted to character objects (\code{1} turns into \code{"001"}). Species common
 names and species codes should not be mixed. If any element is missing a
 species code, then all elements will be assumed to be species common
 names.}
 
-\item{ssid}{A numeric vector of survey series IDs. Run [get_ssids()] for a
+\item{ssid}{A numeric vector of survey series IDs. Run \code{\link[=get_ssids]{get_ssids()}} for a
 look-up table of available survey series IDs with surveys series
 descriptions.}
 
-\item{join_sample_ids}{If `TRUE` then the sample IDs will be joined in. This
+\item{join_sample_ids}{If \code{TRUE} then the sample IDs will be joined in. This
 may result in repeated rows of data if the same sample ID is part of
 different survey stratifications.}
 
-\item{verbose}{If `TRUE` then extra messages were reprinted during data
+\item{verbose}{If \code{TRUE} then extra messages were reprinted during data
 extraction. Useful to monitor progress.}
 
 \item{sleep}{System sleep in seconds between each survey-year
@@ -105,123 +111,121 @@ IPHC codes may be different to other surveys.}
 
 \item{inside}{To select only the inside population (Strait of Georgia, area
 4B only), set inside = 1. To select only the outside population, set inside
- = 0.}
+= 0.}
+
+\item{modern}{Logical for modern or historical (hake fishery only). If \code{TRUE}
+then filters by \code{trip_type_code} in \code{12764} (HAKE QUOTA (SHORESIDE)) and
+\code{12766} (HAKE QUOTA (JV)).}
+
+\item{alt_year_start_date}{Alternative year starting date specified as a
+month-day combination. E.g. "03-01" for March 1st. Can be used to create
+'fishing years'.}
+
+\item{areas}{Area groupings as a vector of regular expressions.
+See \code{\link[base:regex]{base::regex()}}.}
+
+\item{end_year}{Specify the last calendar year to be extracted.}
 
 \item{gear}{The gear type(s) to include for CPUE. Will be converted to
-uppercase. Run [get_gear_types()] for a look-up table of available
+uppercase. Run \code{\link[=get_gear_types]{get_gear_types()}} for a look-up table of available
 gear types to select from.}
 
 \item{min_cpue_year}{Minimum year for the CPUE data.}
 
 \item{species_group}{Species group code(s) to include (see lookup table
-[get_species_groups()]). Defaults to all.}
+\code{\link[=get_species_groups]{get_species_groups()}}). Defaults to all.}
 
-\item{fishery}{The fishery_id code(s) (see lookup table [get_fishery_ids()])
+\item{fishery}{The fishery_id code(s) (see lookup table \code{\link[=get_fishery_ids]{get_fishery_ids()}})
 for fisheries to include in data extraction. Defaults to all.}
 
-\item{area}{The fishery area(s) (see lookup table [get_management_areas()])
+\item{area}{The fishery area(s) (see lookup table \code{\link[=get_management_areas]{get_management_areas()}})
 to include in data extraction (eg. '5A'; c('3C', '3D', '5A', '5B')).}
 
 \item{start_year}{The minimum year to include management actions.
 Defaults to all.}
 
 \item{file_name}{Optional filename(s) for the cached file. Defaults to the
-same as the `species` argument.}
+same as the \code{species} argument.}
 
 \item{path}{The folder where the cached data will be saved.}
 
-\item{compress}{Compress the `.rds` file? Defaults to `FALSE` for faster
+\item{compress}{Compress the \code{.rds} file? Defaults to \code{FALSE} for faster
 reading and writing at the expense of disk space.}
 
 \item{historical_cpue}{Logical for whether historical CPUE should be included.}
 
 \item{survey_sets}{Logical for whether the survey set data should be
-extracted. You might set this to `FALSE` if you don't need these data and
+extracted. You might set this to \code{FALSE} if you don't need these data and
 you want to substantially speed up data extraction.}
-
-\item{gear}{The gear type(s) to include for CPUE. Will be converted to
-uppercase. Run [get_gear_types()] for a look-up table of available
-gear types to select from.}
-
-\item{min_cpue_year}{Minimum year for the CPUE data.}
 }
 \value{
-The `get_*` functions return a data frame. The [cache_pbs_data()]
-function writes an `.rds` file to `path` for each specified species. A data
+The \code{get_*} functions return a data frame. The \code{\link[=cache_pbs_data]{cache_pbs_data()}}
+function writes an \code{.rds} file to \code{path} for each specified species. A data
 object for a single species is a named list object with each element
-containing a data frame from a `get_*` function. The element name of the list
-reflects the function name with the `get_` part removed. For example, the
-output from [get_survey_samples()] is in a list element named
-`survey_samples()`.
+containing a data frame from a \code{get_*} function. The element name of the list
+reflects the function name with the \code{get_} part removed. For example, the
+output from \code{\link[=get_survey_samples]{get_survey_samples()}} is in a list element named
+\code{survey_samples()}.
 }
 \description{
 Automates fisheries and research survey data extraction from DFO Pacific
-groundfish databases. The output datasets feed into other functions (`tidy_`,
-`plot_`, or `fit_` functions) for data visualization, which can be used as
+groundfish databases. The output datasets feed into other functions (\code{tidy_},
+\code{plot_}, or \code{fit_} functions) for data visualization, which can be used as
 products themselves or can be fed into automated DFO Pacific groundfish data
 synopsis report production.
 }
 \details{
-* `get_survey_sets()` extracts survey catch data and spatial data for
-   plotting survey catchs on a map of British Columbia
+\itemize{
+\item \code{get_survey_sets()} extracts survey catch data and spatial data for
+plotting survey catchs on a map of British Columbia
+\item \code{get_survey_samples()} extracts all biological sample specimen records
+from research surveys for given species and survey series IDs from GFBio
+\item \code{get_commercial_samples()} extracts all biological sample specimen records
+from commercial data for given species from GFBio
+\item \code{get_catch()} extracts all landing and discard records for a given species
+from GFFOS.GF_MERGED_CATCH
+\item \code{get_hake_catch()} extracts all landing and discard records for Pacific Hake
+with some extra data used in the Hake assessment
+\item \code{get_cpue_spatial()} extracts catch, effort and spatial data from
+GFFOS.GF_D_OFFICIAL_CATCH for the groundfish trawl fishery
+\item \code{get_cpue_spatial_ll()} extracts catch, effort and spatial data from
+GFFOS.GF_D_OFFICIAL_CATCH for the longline fishery
+\item \code{get_cpue_index()} extracts catch and effort data from
+GFFOS.GF_MERGED_CATCH for the groundfish trawl fishery since 1996
+\item \code{get_cpue_historical()} extracts historical catch and effort data back into
+the 1950s. It's help file is on a separate page; see the link
+\item \code{get_age_precision()} extracts age readings from biological samples for a
+given species where there is a second ('precision') age reading
+\item \code{get_sara_dat()} scrubs Species At Risk website for up-to-date species
+status and listings
+\item \code{get_survey_index()} extracts survey catch data for given species
+and survey series IDs
+\item \code{get_management()} extracts management actions
+\item \code{cache_pbs_data()} runs all 'get' functions in the gfdata package
 
-* `get_survey_samples()` extracts all biological sample specimen records
-   from research surveys for given species and survey series IDs from GFBio
+(except those specific to IPHC data) and caches extracted data to a given
+folder
+}
 
-* `get_commercial_samples()` extracts all biological sample specimen records
-   from commercial data for given species from GFBio
-
-* `get_catch()` extracts all landing and discard records for a given species
-   from GFFOS.GF_MERGED_CATCH
-
-* `get_hake_catch()` extracts all landing and discard records for Pacific Hake
-   with some extra data used in the Hake assessment
-
-* `get_cpue_spatial()` extracts catch, effort and spatial data from
-   GFFOS.GF_D_OFFICIAL_CATCH for the groundfish trawl fishery
-
-* `get_cpue_spatial_ll()` extracts catch, effort and spatial data from
-   GFFOS.GF_D_OFFICIAL_CATCH for the longline fishery
-
-* `get_cpue_index()` extracts catch and effort data from
-   GFFOS.GF_MERGED_CATCH for the groundfish trawl fishery since 1996
-
-* `get_cpue_historical()` extracts historical catch and effort data back into
-   the 1950s. It's help file is on a separate page; see the link
-
-* `get_age_precision()` extracts age readings from biological samples for a
-   given species where there is a second ('precision') age reading
-
-* `get_sara_dat()` scrubs Species At Risk website for up-to-date species
-   status and listings
-
-* `get_survey_index()` extracts survey catch data for given species
-   and survey series IDs
-
-* `get_management()` extracts management actions
-
-* `cache_pbs_data()` runs all 'get' functions in the gfdata package
-
-   (except those specific to IPHC data) and caches extracted data to a given
-   folder
-
-This [cache_pbs_data()] function caches data from
-* [get_survey_samples()]
-* [get_commercial_samples()]
-* [get_catch()]
-* [get_cpue_spatial()]
-* [get_cpue_spatial_ll()]
-* [get_survey_index()]
-* [get_age_precision()]
-* and optionally from [get_survey_sets()] and [get_cpue_historical()]
+This \code{\link[=cache_pbs_data]{cache_pbs_data()}} function caches data from
+\itemize{
+\item \code{\link[=get_survey_samples]{get_survey_samples()}}
+\item \code{\link[=get_commercial_samples]{get_commercial_samples()}}
+\item \code{\link[=get_catch]{get_catch()}}
+\item \code{\link[=get_cpue_spatial]{get_cpue_spatial()}}
+\item \code{\link[=get_cpue_spatial_ll]{get_cpue_spatial_ll()}}
+\item \code{\link[=get_survey_index]{get_survey_index()}}
+\item \code{\link[=get_age_precision]{get_age_precision()}}
+\item and optionally from \code{\link[=get_survey_sets]{get_survey_sets()}} and \code{\link[=get_cpue_historical]{get_cpue_historical()}}
+}
 }
 \section{Authentication}{
 
-`get_*` functions only extract data when performed on a computer connected to
+\code{get_*} functions only extract data when performed on a computer connected to
 the Pacific Biological Station DFO network. By default, the functions assume
 that you are on an authorized DFO Windows computer where authentication with
 the databases happens automatically. If instead, you wish to connect by
-username and password, see the details section in [run_sql()].
+username and password, see the details section in \code{\link[=run_sql]{run_sql()}}.
 }
 
 \examples{
