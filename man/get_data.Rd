@@ -6,7 +6,6 @@
 \alias{get_survey_samples}
 \alias{get_commercial_samples}
 \alias{get_catch}
-\alias{get_historical_catch}
 \alias{get_hake_catch}
 \alias{get_cpue_historical}
 \alias{get_cpue_historical_hake}
@@ -35,8 +34,6 @@ get_survey_samples(species, ssid = NULL, remove_bad_data = TRUE,
 get_commercial_samples(species, unsorted_only = TRUE, usability = NULL)
 
 get_catch(species)
-
-get_historical_catch(species)
 
 get_hake_catch(modern = FALSE)
 
@@ -112,10 +109,6 @@ IPHC codes may be different to other surveys.}
 \item{inside}{To select only the inside population (Strait of Georgia, area
 4B only), set inside = 1. To select only the outside population, set inside
 = 0.}
-
-\item{modern}{Logical for modern or historical (hake fishery only). If \code{TRUE}
-then filters by \code{trip_type_code} in \code{12764} (HAKE QUOTA (SHORESIDE)) and
-\code{12766} (HAKE QUOTA (JV)).}
 
 \item{alt_year_start_date}{Alternative year starting date specified as a
 month-day combination. E.g. "03-01" for March 1st. Can be used to create

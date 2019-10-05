@@ -430,27 +430,6 @@ get_catch <- function(species) {
 }
 
 #' @export
-#' @param modern Logical for modern or historical (hake fishery only). If `TRUE`
-#'   then filters by `trip_type_code` in `12764` (HAKE QUOTA (SHORESIDE)) and
-#'   `12766` (HAKE QUOTA (JV)).
-#' @rdname get_data
-get_historical_catch <- function(species) {
-  # min_trawl_year = 1996,
-  # min_halibut_year = 2000,
-  # min_lingdog_year = 2000,
-  # min_sable_year = 2000,
-  # min_hlrock_year = 2000){
-  .q <- read_sql("get-historical-catch.sql")
-  .q <- inject_filter("WHERE SP.SPECIES_CODE IN", species, sql_code = .q)
-  .d <- run_sql("GFFOS", .q)
-  .d$SPECIES_COMMON_NAME[.d$SPECIES_COMMON_NAME == "SPINY DOGFISH"] <-
-    toupper("north pacific spiny dogfish") # to match GFBioSQL
-  names(.d) <- tolower(names(.d))
-  .d$species_common_name <- tolower(.d$species_common_name)
-  as_tibble(.d)
-}
-
-#' @export
 #' @rdname get_data
 get_hake_catch <- function(modern = FALSE) {
   .q <- read_sql("get-hake-catch.sql")
