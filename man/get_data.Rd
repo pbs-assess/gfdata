@@ -3,6 +3,7 @@
 \name{get_data}
 \alias{get_data}
 \alias{get_survey_sets}
+\alias{get_ll_hook_data}
 \alias{get_survey_samples}
 \alias{get_commercial_samples}
 \alias{get_catch}
@@ -27,6 +28,8 @@
 \usage{
 get_survey_sets(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36),
   join_sample_ids = FALSE, verbose = FALSE, sleep = 0.05)
+
+get_ll_hook_data(species = NULL, ssid = NULL)
 
 get_survey_samples(species, ssid = NULL, remove_bad_data = TRUE,
   unsorted_only = TRUE, usability = NULL, inside = NULL)

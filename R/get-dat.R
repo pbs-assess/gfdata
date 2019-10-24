@@ -252,6 +252,28 @@ get_survey_sets <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36),
   as_tibble(.d)
 }
 
+#' @param species
+#' @param ssid
+#' @export
+#'
+#' @rdname get_data
+get_ll_hook_data <- function(species = NULL, ssid = NULL){
+  .q <- read_sql("get-ll-hooks.sql")
+  .q <- inject_filter("", species, sql_code = .q)
+  if (!is.null(ssid)) {
+    .q <- inject_filter(" ", ssid,
+      sql_code = .q,
+      search_flag = "-- insert ssid here", conversion_func = I
+    )
+  }
+  .d <- run_sql("GFBioSQL", .q)
+  names(.d) <- tolower(names(.d))
+  # .d$species_common_name <- tolower(.d$species_common_name)
+  # .d$species_science_name <- tolower(.d$species_science_name)
+
+  as_tibble(.d)
+}
+
 #' @export
 #' @rdname get_data
 #' @param remove_bad_data Remove known bad data, such as unrealistic

@@ -74,5 +74,7 @@ fishing event ID
 each stratum within surveys
 \item \code{get_survey_ids()} produces lookup table for survey IDs for a given
 survey series ID
+\item \code{get_major_areas()} produces lookup table for major area descriptions for
+a given major area code
 }
 }
