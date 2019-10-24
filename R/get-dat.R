@@ -258,7 +258,7 @@ get_survey_sets <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36),
 #'
 #' @rdname get_data
 get_ll_hook_data <- function(species = NULL, ssid = NULL){
-  .q <- read_sql("get-ll-hooks.sql")
+  .q <- read_sql("get-ll-hook-data.sql")
   .q <- inject_filter("", species, sql_code = .q)
   if (!is.null(ssid)) {
     .q <- inject_filter(" ", ssid,

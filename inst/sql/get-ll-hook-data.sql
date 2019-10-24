@@ -1,15 +1,15 @@
 -- Adapted from query written by Norm Olsen for Marie-Pierre Etienne (Yelloweye Rockfish outside hbll and iphc surveys)
    SELECT S.SURVEY_DESC AS Survey,
       YEAR(TRIP_START_DATE) AS Year,
-      CAST(MAJOR_STAT_AREA_CODE AS SMALLINT) AS StatArea,
+      CAST(MAJOR_STAT_AREA_CODE AS SMALLINT) AS major,
       ISNULL(ISNULL(ISNULL(ISNULL(FE_MODAL_BOTTOM_DEPTH, FE_BEGINNING_BOTTOM_DEPTH),
          FE_END_BOTTOM_DEPTH), FE_MIN_BOTTOM_DEPTH), FE_MAX_BOTTOM_DEPTH) AS Depth,
       DATEDIFF(minute, FE_END_DEPLOYMENT_TIME, FE_BEGIN_RETRIEVAL_TIME) AS soaktime,
-      NT,
-      NNT,
-      Nb,
-      Ne,
-      Nbr,
+      NT count_target_species,
+      NNT count_non_target_species,
+      Nb count_bait_only,
+      Ne count_empty_hooks,
+      Nbr count_bent_broken,
       CASE MAJOR_STAT_AREA_CODE WHEN '01' THEN '4B' WHEN '03' THEN '3C'
          WHEN '04' THEN '3D' WHEN '05' THEN '5A/B' WHEN '06' THEN '5A/B'
          WHEN '07' THEN '5C/D/E' WHEN '08' THEN '5C/D/E' WHEN '09' THEN '5C/D/E' ELSE NULL END AS areagrp

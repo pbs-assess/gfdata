@@ -60,4 +60,8 @@ test_that("get species data functions work at PBS", {
   d <- get_sara_dat()
   expect_type(d$sara_status, "character")
 
+  d <- get_ll_hook_data(442, c(39, 40))
+  expect_type(d$count_non_target_species, "integer")
+  expect_gt(sum(d$count_target_species), 1)
+
 })
