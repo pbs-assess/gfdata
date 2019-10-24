@@ -14,14 +14,14 @@ test_that("get species data functions work at PBS", {
   d <- get_survey_sets("lingcod", 16)
   expect_gte(d$catch_weight[[1]], 0)
   d <- dplyr::filter(d, year %in% 2018)
-  expect_known_value(d, file = paste0(.dir, "get_survey_sets.rds"))
+  expect_known_value(d, file = file.path(.dir, "get_survey_sets.rds"))
 
   d <- get_survey_samples("lingcod", 16)
   expect_type(d$survey_id, "integer")
   d <- dplyr::filter(d, year %in% 2016) %>%
     # could be later aged:
     select(-age, -ageing_method_code, -species_ageing_group)
-  expect_known_value(d, file = paste0(.dir, "get_survey_samples.rds"))
+  expect_known_value(d, file = file.path(.dir, "get_survey_samples.rds"))
 
   d <- get_commercial_samples("lingcod")
   expect_gte(d$year[[1]], 1900L)

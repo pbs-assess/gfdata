@@ -252,8 +252,6 @@ get_survey_sets <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36),
   as_tibble(.d)
 }
 
-#' @param species
-#' @param ssid
 #' @export
 #'
 #' @rdname get_data
