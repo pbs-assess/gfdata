@@ -418,7 +418,9 @@ get_commercial_samples <- function(species, unsorted_only = TRUE,
 #' @rdname get_data
 get_catch <- function(species) {
   .q <- read_sql("get-catch.sql")
+  if (!is.null(species)) {
   .q <- inject_filter("WHERE SP.SPECIES_CODE IN", species, sql_code = .q)
+  }
   .d <- run_sql("GFFOS", .q)
   .d$SPECIES_COMMON_NAME[.d$SPECIES_COMMON_NAME == "SPINY DOGFISH"] <-
     toupper("north pacific spiny dogfish") # to match GFBioSQL
