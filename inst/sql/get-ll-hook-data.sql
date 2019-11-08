@@ -1,5 +1,7 @@
 -- Adapted from query written by Norm Olsen for Marie-Pierre Etienne (Yelloweye Rockfish outside hbll and iphc surveys)
    SELECT S.SURVEY_DESC AS Survey,
+   SURVEY_SERIES_ID AS ssid,
+   FISHING_EVENT_ID,
       YEAR(TRIP_START_DATE) AS Year,
       CAST(MAJOR_STAT_AREA_CODE AS SMALLINT) AS major,
       ISNULL(ISNULL(ISNULL(ISNULL(FE_MODAL_BOTTOM_DEPTH, FE_BEGINNING_BOTTOM_DEPTH),
@@ -34,10 +36,10 @@
                   T.VESSEL_ID,
                   FE.FE_MAJOR_LEVEL_ID,
                   FE.FISHING_EVENT_ID,
-                  SUM(CASE SPECIES_CODE WHEN 
+                  SUM(CASE SPECIES_CODE WHEN
 				 -- insert species here
 				   THEN 1 ELSE 0 END) AS NT,
-                  SUM(CASE WHEN SPECIES_CODE IS NOT NULL AND SPECIES_CODE <> 
+                  SUM(CASE WHEN SPECIES_CODE IS NOT NULL AND SPECIES_CODE <>
 				 -- insert species here
 				   THEN 1 ELSE 0 END) AS NNT,
                   SUM(CASE HOOK_YIELD_CODE WHEN 1 THEN 1 ELSE 0 END) AS Ne,

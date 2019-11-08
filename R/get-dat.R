@@ -279,7 +279,7 @@ get_ll_hook_data <- function(species = NULL, ssid = NULL){
 #' @param usability A vector of usability codes to include. Defaults to all.
 #'   IPHC codes may be different to other surveys.
 get_survey_samples <- function(species, ssid = NULL, remove_bad_data = TRUE,
-                               unsorted_only = TRUE, usability = NULL, inside = NULL) {
+                               unsorted_only = TRUE, usability = NULL, inside = FALSE) {
   .q <- read_sql("get-survey-samples.sql")
   .q <- inject_filter("AND SP.SPECIES_CODE IN", species, sql_code = .q)
   if (!is.null(ssid)) {
@@ -288,7 +288,7 @@ get_survey_samples <- function(species, ssid = NULL, remove_bad_data = TRUE,
       search_flag = "-- insert ssid here", conversion_func = I
     )
   }
-  if (!is.null(inside)) {
+  if (inside) {
     .q <- inject_filter("AND CASE WHEN SM.MAJOR_STAT_AREA_CODE ='01' THEN 1 ELSE 0 END IN", inside, .q,
       search_flag = "-- insert inside here", conversion_func = I
     )
