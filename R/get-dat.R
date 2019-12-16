@@ -451,11 +451,16 @@ get_catch <- function(species) {
   as_tibble(.d)
 }
 
+#' Get the hake catch from the Oracle FOS database
+#' @param end_date A string repersenting the date. Must be of the format dd/mm/yyyy
+#'
 #' @export
 #' @rdname get_data
-get_hake_catch <- function(modern = FALSE) {
+get_hake_catch <- function(end_date = format(Sys.Date(), "%d/%m/%Y")){
   .q <- read_sql("get-hake-catch.sql")
-  .d <- run_sql("GFFOS", .q)
+  .q <- gsub("--to-dd-mm-yyyy--", end_date, .q)
+  browser()
+  .d <- run_sql("GFBioSQL", .q)
   names(.d) <- tolower(names(.d))
   .d$species_common_name <- tolower(.d$species_common_name)
   .d$species_scientific_name <- tolower(.d$species_scientific_name)
