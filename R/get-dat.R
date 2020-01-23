@@ -666,21 +666,20 @@ get_commercial_hooks_per_fe <- function(min_cpue_year = 2008) {
 
 #' @export
 #' @rdname get_data
-#' @param inside To select only the inside population (Strait of Georgia, area
+#' @param major To select only the inside population (Strait of Georgia, area
 #'  4B only), set inside = 1. To select only the outside population, set inside
 #'   = 0.
-get_age_precision <- function(species, inside = NULL) {
+get_age_precision <- function(species, major = NULL) {
   .q <- read_sql("get-age-precision.sql")
   .q <- inject_filter("AND SM.SPECIES_CODE IN", species, .q)
-  if (!is.null(inside)) {
-    .q <- inject_filter("AND CASE WHEN MAJOR_STAT_AREA_CODE ='01' THEN 1 ELSE 0 END IN", inside, .q,
-      search_flag = "-- insert inside here", conversion_func = I
+  if (!is.null(major)) {
+    .q <- inject_filter("AND MAJOR_STAT_AREA_CODE =", major, .q,
+      search_flag = "-- insert major here", conversion_func = I
     )
   }
   .d <- run_sql("GFBioSQL", .q)
   names(.d) <- tolower(names(.d))
   .d$species_common_name <- tolower(.d$species_common_name)
-  .d <- .d %>% select(-inside)
   as_tibble(.d)
 }
 
