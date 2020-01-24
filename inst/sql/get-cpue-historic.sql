@@ -62,4 +62,5 @@ WHERE
 	CASE WHEN MC.DATABASE_NAME = 'GFFOS' THEN TRSP.SUCCESS_CODE ELSE 0 END IN (0, 11710, 11711)
 
 	-- insert species here
+	-- insert major here
 

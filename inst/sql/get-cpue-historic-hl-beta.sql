@@ -24,4 +24,4 @@ WHERE
 		AND FISHERY_SECTOR IN ('ZN', 'ROCKFISH OUTSIDE', 'HALIBUT', 'HALIBUT AND SABLEFISH', 'SABLEFISH')
 
 	-- insert species here
-
+	-- insert major here

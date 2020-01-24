@@ -274,12 +274,15 @@ get_ll_hook_data <- function(species = NULL, ssid = NULL){
 
 #' @export
 #' @rdname get_data
+#' @param major Character string (or vector, though doesn't work yet with
+#'  `cache_pbs_data`) of major stat area code to include (characters). Use
+#'  get_major_areas() to lookup area codes with descriptions.
 #' @param remove_bad_data Remove known bad data, such as unrealistic
 #'  length or weight values.
 #' @param usability A vector of usability codes to include. Defaults to all.
 #'   IPHC codes may be different to other surveys.
 get_survey_samples <- function(species, ssid = NULL, remove_bad_data = TRUE,
-                               unsorted_only = TRUE, usability = NULL, inside = FALSE) {
+                               unsorted_only = TRUE, usability = NULL, major = NULL) {
   .q <- read_sql("get-survey-samples.sql")
   .q <- inject_filter("AND SP.SPECIES_CODE IN", species, sql_code = .q)
   if (!is.null(ssid)) {
@@ -288,9 +291,9 @@ get_survey_samples <- function(species, ssid = NULL, remove_bad_data = TRUE,
       search_flag = "-- insert ssid here", conversion_func = I
     )
   }
-  if (inside) {
-    .q <- inject_filter("AND CASE WHEN SM.MAJOR_STAT_AREA_CODE ='01' THEN 1 ELSE 0 END IN", inside, .q,
-      search_flag = "-- insert inside here", conversion_func = I
+  if (!is.null(major)) {
+    .q <- inject_filter("AND SM.MAJOR_STAT_AREA_CODE =", major, .q,
+      search_flag = "-- insert major here", conversion_func = I
     )
   }
   length_type <- get_spp_sample_length_type(species)
@@ -368,7 +371,7 @@ get_survey_samples <- function(species, ssid = NULL, remove_bad_data = TRUE,
 #' @param unsorted_only Remove sorted biological data ('keepers' and 'discards'
 #'  and unknown). Default = TRUE.
 #' @rdname get_data
-get_commercial_samples <- function(species, unsorted_only = TRUE,
+get_commercial_samples <- function(species, unsorted_only = TRUE, major = NULL,
                                    usability = NULL) {
   .q <- read_sql("get-comm-samples.sql")
   .q <- inject_filter("AND SM.SPECIES_CODE IN", species, sql_code = .q)
@@ -378,7 +381,11 @@ get_commercial_samples <- function(species, unsorted_only = TRUE,
   search_flag <- "-- insert length type here"
   i <- grep(search_flag, .q)
   .q[i] <- paste0("CAST(ROUND(", length_type, "/ 10, 1) AS DECIMAL(8,1)) AS LENGTH,")
-
+  if (!is.null(major)) {
+    .q <- inject_filter("AND SM.MAJOR_STAT_AREA_CODE =", major, .q,
+      search_flag = "-- insert major here", conversion_func = I
+    )
+  }
   .d <- run_sql("GFBioSQL", .q)
   names(.d) <- tolower(names(.d))
   .d$species_common_name <- tolower(.d$species_common_name)
@@ -436,10 +443,15 @@ get_commercial_samples <- function(species, unsorted_only = TRUE,
 
 #' @export
 #' @rdname get_data
-get_catch <- function(species) {
+get_catch <- function(species, major = NULL) {
   .q <- read_sql("get-catch.sql")
   if (!is.null(species)) {
   .q <- inject_filter("WHERE SP.SPECIES_CODE IN", species, sql_code = .q)
+  }
+  if (!is.null(major)) {
+    .q <- inject_filter("AND MC.MAJOR_STAT_AREA_CODE =", major, .q,
+      search_flag = "-- insert major here", conversion_func = I
+    )
   }
   .d <- run_sql("GFFOS", .q)
   .d$SPECIES_COMMON_NAME[.d$SPECIES_COMMON_NAME == "SPINY DOGFISH"] <-
@@ -510,12 +522,17 @@ get_hake_catch <- function(end_date = format(Sys.Date(), "%d/%m/%Y")){
 #' @param end_year Specify the last calendar year to be extracted.
 #' @export
 #' @rdname get_data
-get_cpue_historical <- function(species = NULL,
+get_cpue_historical <- function(species = NULL, major = NULL,
                                 alt_year_start_date = "04-01", areas = c("3[CD]+", "5[AB]+", "5[CDE]+"),
                                 end_year = NULL) {
   .q <- read_sql("get-cpue-historic.sql")
   if (!is.null(species)) {
     .q <- inject_filter("AND MC.SPECIES_CODE IN", species, sql_code = .q)
+  }
+  if (!is.null(major)) {
+    .q <- inject_filter("AND MC.MAJOR_STAT_AREA_CODE =", major, .q,
+      search_flag = "-- insert major here", conversion_func = I
+    )
   }
   .d <- run_sql(database = c("GFFOS", "GFCatch", "PacHarvest"), .q)
   .d$SPECIES_COMMON_NAME[.d$SPECIES_COMMON_NAME == "SPINY DOGFISH"] <-
@@ -578,12 +595,17 @@ get_cpue_historical_hake <- function(end_year = NULL) {
 
 #' @export
 #' @rdname get_data
-get_cpue_historical_hl <- function(species = NULL,
+get_cpue_historical_hl <- function(species = NULL, major = NULL,
                                    alt_year_start_date = "04-01", areas = c("3[CD]+", "5[AB]+", "5[CDE]+"),
                                    end_year = NULL) {
   .q <- read_sql("get-cpue-historic-hl-beta.sql")
   if (!is.null(species)) {
     .q <- inject_filter("AND MC.SPECIES_CODE IN", species, sql_code = .q)
+  }
+  if (!is.null(major)) {
+    .q <- inject_filter("AND MC.MAJOR_STAT_AREA_CODE =", major, .q,
+      search_flag = "-- insert major here", conversion_func = I
+    )
   }
   .d <- run_sql(database = "GFFOS", .q)
   # .d$SPECIES_COMMON_NAME[.d$SPECIES_COMMON_NAME == "SPINY DOGFISH"] <-
@@ -594,9 +616,14 @@ get_cpue_historical_hl <- function(species = NULL,
 
 #' @export
 #' @rdname get_data
-get_cpue_spatial <- function(species) {
+get_cpue_spatial <- function(species, major = NULL) {
   .q <- read_sql("get-cpue-spatial.sql")
   .q <- inject_filter("AND SP.SPECIES_CODE IN", species, sql_code = .q)
+  if (!is.null(major)) {
+    .q <- inject_filter("AND MAJOR_STAT_AREA_CODE =", major, .q,
+      search_flag = "-- insert major here", conversion_func = I
+    )
+  }
   .d <- run_sql("GFFOS", .q)
   .d$SPECIES_COMMON_NAME[.d$SPECIES_COMMON_NAME == "SPINY DOGFISH"] <-
     toupper("north pacific spiny dogfish") # to match GFBioSQL
@@ -608,9 +635,14 @@ get_cpue_spatial <- function(species) {
 
 #' @export
 #' @rdname get_data
-get_cpue_spatial_ll <- function(species) {
+get_cpue_spatial_ll <- function(species, major = NULL) {
   .q <- read_sql("get-cpue-spatial-ll.sql")
   .q <- inject_filter("AND SP.SPECIES_CODE IN", species, sql_code = .q)
+  if (!is.null(major)) {
+    .q <- inject_filter("AND C.MAJOR_STAT_AREA_CODE =", major, .q,
+      search_flag = "-- insert major here", conversion_func = I
+    )
+  }
   .d <- run_sql("GFFOS", .q)
   .d$SPECIES_COMMON_NAME[.d$SPECIES_COMMON_NAME == "SPINY DOGFISH"] <-
     toupper("north pacific spiny dogfish") # to match GFBioSQL
@@ -628,13 +660,19 @@ get_cpue_spatial_ll <- function(species) {
 #' @param min_cpue_year Minimum year for the CPUE data.
 #' @export
 #' @rdname get_data
-get_cpue_index <- function(gear = "bottom trawl", min_cpue_year = 1996) {
+get_cpue_index <- function(gear = "bottom trawl", min_cpue_year = 1996,
+  major = NULL) {
   .q <- read_sql("get-cpue-index.sql")
   i <- grep("-- insert filters here", .q)
   .q[i] <- paste0(
     "WHERE GEAR IN(", collapse_filters(toupper(gear)),
     ") AND YEAR(BEST_DATE) >= ", min_cpue_year
   )
+  if (!is.null(major)) {
+    .q <- inject_filter("AND MAJOR_STAT_AREA_CODE =", major, .q,
+      search_flag = "-- insert major here", conversion_func = I
+    )
+  }
   .d <- run_sql("GFFOS", .q)
   names(.d) <- tolower(names(.d))
   as_tibble(.d)
@@ -642,12 +680,17 @@ get_cpue_index <- function(gear = "bottom trawl", min_cpue_year = 1996) {
 
 #' @export
 #' @rdname get_data
-get_cpue_index_hl <- function(min_cpue_year = 1980) {
+get_cpue_index_hl <- function(min_cpue_year = 1980, major = NULL) {
   .q <- read_sql("get-cpue-index-hl.sql")
   i <- grep("-- insert filters here", .q)
   .q[i] <- paste0(
     "AND YEAR(BEST_DATE) >= ", min_cpue_year
   )
+  if (!is.null(major)) {
+    .q <- inject_filter("AND MAJOR_STAT_AREA_CODE =", major, .q,
+      search_flag = "-- insert major here", conversion_func = I
+    )
+  }
   .d <- run_sql("GFFOS", .q)
   names(.d) <- tolower(names(.d))
   as_tibble(.d)
@@ -848,7 +891,7 @@ get_sara_dat <- function() {
 #' * and optionally from [get_survey_sets()] and [get_cpue_historical()]
 
 #' @rdname get_data
-cache_pbs_data <- function(species, file_name = NULL, path = ".",
+cache_pbs_data <- function(species, major = NULL, file_name = NULL, path = ".",
                            compress = FALSE, unsorted_only = TRUE, historical_cpue = FALSE,
                            survey_sets = FALSE, verbose = TRUE) {
   dir.create(path, showWarnings = FALSE)
@@ -881,10 +924,17 @@ cache_pbs_data <- function(species, file_name = NULL, path = ".",
     out$survey_index <- get_survey_index(this_sp)
     # out$management         <- get_management(this_sp)
     out$age_precision <- get_age_precision(this_sp)
+    if(is.null(major)) {
     saveRDS(out,
       file = paste0(file.path(path, this_sp_clean), ".rds"),
       compress = compress
     )
+    } else {
+      saveRDS(out,
+        file = paste0(file.path(path, paste0(this_sp_clean, "_", major)), ".rds"),
+        compress = compress
+      )
+    }
   }
   message("All data extracted and saved in the folder `", path, "`.")
 }

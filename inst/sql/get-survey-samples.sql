@@ -80,4 +80,5 @@ SM.SAMPLE_TYPE_CODE IN (1, 2, 6, 7, 8) AND
   S.SURVEY_SERIES_ID <> 0
 -- insert species here
 -- insert ssid here
+-- insert major here
 ORDER BY SURVEY_ABBREV, YEAR(TRIP_START_DATE)

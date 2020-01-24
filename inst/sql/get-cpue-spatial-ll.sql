@@ -43,6 +43,7 @@ HAVING
 	YEAR(START_DATE) = YEAR(END_DATE) AND
 	ISNULL(LANDED_COUNT, 0) > 0
 -- insert species here
+-- insert major here
 ORDER BY 
 	YEAR,
 	TRIP_ID,

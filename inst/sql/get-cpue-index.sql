@@ -21,4 +21,5 @@ SELECT BEST_DATE
 FROM GFFOS.dbo.GF_MERGED_CATCH C
 INNER JOIN GFFOS.dbo.SPECIES S ON S.SPECIES_CODE = C.SPECIES_CODE
 -- insert filters here
+-- insert major here
 
