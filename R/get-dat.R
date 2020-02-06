@@ -471,7 +471,7 @@ get_catch <- function(species, major = NULL) {
 get_hake_catch <- function(end_date = format(Sys.Date(), "%d/%m/%Y")){
   .q <- read_sql("get-hake-catch.sql")
   .q <- gsub("--to-dd-mm-yyyy--", end_date, .q)
-  browser()
+
   .d <- run_sql("GFBioSQL", .q)
   names(.d) <- tolower(names(.d))
   .d$species_common_name <- tolower(.d$species_common_name)
@@ -501,13 +501,13 @@ get_hake_catch <- function(end_date = format(Sys.Date(), "%d/%m/%Y")){
       (.data$major_stat_area_code == "01" & .data$minor_stat_area_code == "20")) %>%
     filter(.data$gear == "MIDWATER TRAWL")
 
-  if (modern) {
-    .d <- .d %>%
-      filter(.data$trip_type_code %in% c(
-        12764, # OPT A - HAKE QUOTA (SHORESIDE)
-        12766
-      )) # OPT B - HAKE QUOTA (JV)
-  }
+  # if (modern) {
+  #   .d <- .d %>%
+  #     filter(.data$trip_type_code %in% c(
+  #       12764, # OPT A - HAKE QUOTA (SHORESIDE)
+  #       12766
+  #     )) # OPT B - HAKE QUOTA (JV)
+  # }
 
   as_tibble(.d)
 }
