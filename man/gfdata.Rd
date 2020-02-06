@@ -3,7 +3,6 @@
 \docType{package}
 \name{gfdata}
 \alias{gfdata}
-\alias{gfdata-package}
 \title{gfdata package}
 \description{
 gfdata package

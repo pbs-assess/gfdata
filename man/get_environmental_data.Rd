@@ -9,24 +9,39 @@
 \alias{get_sensor_data_ll_ctd_fe}
 \title{Environmental data extraction functions from surveys}
 \usage{
-get_sensor_data_trawl(ssid = NULL, attribute = c("temperature",
-  "depth", "dissolved oxygen", "salinity"), spread_attributes = FALSE)
-
-get_sensor_data_trawl_fe(fishing_event_id = NULL,
+get_sensor_data_trawl(
+  ssid = NULL,
   attribute = c("temperature", "depth", "dissolved oxygen", "salinity"),
-  sensor_name = NULL)
+  spread_attributes = FALSE
+)
 
-get_sensor_data_ll_td(ssid = NULL, attribute = c("temperature",
-  "depth"), spread_attributes = FALSE)
+get_sensor_data_trawl_fe(
+  fishing_event_id = NULL,
+  attribute = c("temperature", "depth", "dissolved oxygen", "salinity"),
+  sensor_name = NULL
+)
 
-get_sensor_data_ll_td_fe(fishing_event_id = NULL,
-  attribute = c("temperature", "depth"))
+get_sensor_data_ll_td(
+  ssid = NULL,
+  attribute = c("temperature", "depth"),
+  spread_attributes = FALSE
+)
 
-get_sensor_data_ll_ctd(ssid = NULL, attribute = c("temperature",
-  "depth", "dissolved oxygen", "salinity"), spread_attributes = FALSE)
+get_sensor_data_ll_td_fe(
+  fishing_event_id = NULL,
+  attribute = c("temperature", "depth")
+)
 
-get_sensor_data_ll_ctd_fe(fishing_event_id = NULL,
-  attribute = c("temperature", "depth", "dissolved oxygen", "salinity"))
+get_sensor_data_ll_ctd(
+  ssid = NULL,
+  attribute = c("temperature", "depth", "dissolved oxygen", "salinity"),
+  spread_attributes = FALSE
+)
+
+get_sensor_data_ll_ctd_fe(
+  fishing_event_id = NULL,
+  attribute = c("temperature", "depth", "dissolved oxygen", "salinity")
+)
 }
 \arguments{
 \item{ssid}{A numeric vector of survey series IDs. Run \code{\link[=get_ssids]{get_ssids()}} for a
@@ -38,7 +53,7 @@ descriptions.}
 
 \item{spread_attributes}{Logical for whether the attributes should be
 returned in a wider format. Allows for user to choose whether data are
-output in wide format (\code{TRUE``) with min and max values for each attribute for each fishing event, or in long format (}FALSE``) with only mean values
+output in wide format (\verb{TRUE``) with min and max values for each attribute for each fishing event, or in long format (}FALSE``) with only mean values
 for each attribute and fishing event.}
 
 \item{fishing_event_id}{A vector of fishing events to filter for}
