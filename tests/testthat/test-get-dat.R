@@ -29,6 +29,10 @@ test_that("get species data functions work at PBS", {
   d <- get_catch("lingcod")
   expect_gte(nrow(d), 1L)
 
+  d <- get_cocaught_species(610, "groundfish trawl", "bottom trawl")
+  expect_gt(nrow(d), 1L)
+  expect_match(class(d$total_landed_kg), "numeric")
+
   d <- get_hake_catch()
   expect_false(is.null(sum(d$landed_kg)))
   expect_match(class(d$discarded_kg), "numeric")
