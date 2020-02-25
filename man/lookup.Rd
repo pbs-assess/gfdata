@@ -15,6 +15,7 @@
 \alias{get_strata_areas}
 \alias{get_survey_ids}
 \alias{get_sensor_attributes}
+\alias{get_fishery_sectors}
 \alias{get_other_surveys}
 \alias{get_table}
 \title{Lookup PBS metadata and descriptive data filters}
@@ -44,6 +45,8 @@ get_strata_areas()
 get_survey_ids(ssid)
 
 get_sensor_attributes()
+
+get_fishery_sectors()
 
 get_other_surveys()
 

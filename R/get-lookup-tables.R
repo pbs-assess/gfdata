@@ -222,6 +222,18 @@ get_sensor_attributes <- function() {
 
 #' @export
 #' @rdname lookup
+get_fishery_sectors <- function() {
+  .d <- run_sql(
+    "GFFOS",
+    "SELECT DISTINCT(FISHERY_SECTOR)
+  FROM GF_MERGED_CATCH"
+  )
+  names(.d) <- tolower(names(.d))
+  as_tibble(.d)
+}
+
+#' @export
+#' @rdname lookup
 get_other_surveys <- function() {
   .q <- read_sql("get-other-surveys.sql")
   .d <- run_sql("GFBioSQL", .q)
