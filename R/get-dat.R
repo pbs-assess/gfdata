@@ -463,6 +463,12 @@ get_catch <- function(species, major = NULL) {
   as_tibble(.d)
 }
 
+#' For a given species, extracts all species co-caught with the given species
+#'  from 2008 (with minimum catch of 100 kg of each species). Output includes
+#'  the number of fishing events in which each species was co-caught, the number
+#'  of years from 2008 in which each species was co-caught in at least one
+#'  fishing event, and the sum of landed kg for each species over all of the
+#'  fishing events it was caught with the given species.
 #' @export
 #' @rdname get_data
 #' @param fishery_sector Name of fishery sector to filter on (optional). Will
