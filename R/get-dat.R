@@ -489,7 +489,7 @@ get_cocaught_species <- function(species, fishery_sector = NULL, gear = NULL,
     search_flag = "-- insert target_min here", conversion_func = I)
   .q <- inject_filter("AND LANDED_KG >= ", target_min, .q,
     search_flag = "-- insert cocaught_min here", conversion_func = I)
-  if (!is.null(fishery)) {
+  if (!is.null(fishery_sector)) {
     .q <- inject_filter("AND FISHERY_SECTOR IN", toupper(fishery_sector), sql_code = .q,
       search_flag = "-- insert fishery here", conversion_func = I)
   }

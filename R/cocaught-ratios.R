@@ -18,6 +18,7 @@ arrange_catch <- function(species){
   # summing here (before the join) because need ratio of target to cocaught from ALL records, not just cocaught records
 }
 
+#' @export
 #' @param species1
 #' @param species2
 #' @param start_year
