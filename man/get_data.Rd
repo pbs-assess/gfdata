@@ -55,7 +55,13 @@ get_commercial_samples(
 
 get_catch(species, major = NULL)
 
-get_cocaught_species(species, fishery_sector = NULL, gear = NULL)
+get_cocaught_species(
+  species,
+  fishery_sector = NULL,
+  gear = NULL,
+  target_min = 10,
+  cocaught_min = 10
+)
 
 get_hake_catch(end_date = format(Sys.Date(), "\%d/\%m/\%Y"))
 
@@ -303,4 +309,7 @@ get_cpue_index(gear = "bottom trawl", min_cpue_year = 2012)
 get_survey_index("pacific cod", ssid = c(1, 3, 4, 16))
 }
 
+\dontrun{
+rex_cocaught <- get_cocaught_species(610, "groundfish trawl")
+}
 }

@@ -477,9 +477,18 @@ get_catch <- function(species, major = NULL) {
 #' @param gear Name of gear type to filter on (optional). Will be converted to
 #'  uppercase. Run [get_comm_gear_types()] for a look-up table of available gear
 #'  types to select from.
-get_cocaught_species <- function(species, fishery_sector = NULL, gear = NULL) {
+#' @examples
+#' \dontrun{
+#' rex_cocaught <- get_cocaught_species(610, "groundfish trawl")
+#' }
+get_cocaught_species <- function(species, fishery_sector = NULL, gear = NULL,
+  target_min = 10, cocaught_min = 10) {
   .q <- read_sql("get-cocaught-species.sql")
   .q <- inject_filter("WHERE MC.SPECIES_CODE IN", species, sql_code = .q)
+  .q <- inject_filter("AND LANDED_KG >= ", target_min, .q,
+    search_flag = "-- insert target_min here", conversion_func = I)
+  .q <- inject_filter("AND LANDED_KG >= ", target_min, .q,
+    search_flag = "-- insert cocaught_min here", conversion_func = I)
   if (!is.null(fishery)) {
     .q <- inject_filter("AND FISHERY_SECTOR IN", toupper(fishery_sector), sql_code = .q,
       search_flag = "-- insert fishery here", conversion_func = I)

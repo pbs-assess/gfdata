@@ -27,10 +27,10 @@ FROM(
 					AND YEAR(BEST_DATE) > 2007 AND FISHING_EVENT_ID <> 0
 					-- insert fishery here
 					-- insert gear here
-					AND LANDED_KG > 100
+					-- insert target_min here
 				GROUP BY TRIP_ID, FISHING_EVENT_ID) A ON A.FISHING_EVENT_ID = MC.FISHING_EVENT_ID AND A.TRIP_ID = MC.TRIP_ID
 		
-		WHERE LANDED_KG > 100	
+		WHERE -- insert cocaught_min here	
 		) B
 
 	--WHERE RANK <=10
