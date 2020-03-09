@@ -9,20 +9,21 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
 library(gfdata)
+library(ggplot2)
 ```
 
 # Background
 We want to estimate historical Rex Sole discards. Our approach is to apply a 
 ratio of modern Rex Sole discards to modern landings of a commonly co-caught
-species that was recorded well historically.
+species, or group of species, that was recorded well historically.
 
-1. Pull catch for Rex and cocaught species (from 
+1. Pull modern catch data for Rex and cocaught species (from 
 gfdata::get_cocaught_species()).
 
 ```{r}
 get_cocaught_species
 
-rex <- get_cocaught_species(610)
+rex <- get_cocaught_species(610, "groundfish trawl")
 head(rex)
 ```
 
@@ -32,8 +33,8 @@ so will build modern Rex discard ratios relative to Pcod landings (as is done
 in reconstructing rockfish historic discards). 
 
 
-2. Sum annual catch of Rex and cocaught (here, Pcod) landings and discards (from
-groundfish trawl fishery 1996-2006), and calculate annual ratio of target 
+2. Sum annual catch of Rex and cocaught species (here, Pcod) landings and discards (from
+groundfish trawl fishery 1996-2006), and calculate annual ratio of target (Rex)
 discard to cocaught landings.
 
 
@@ -44,11 +45,31 @@ cocaught_ratios
 rex_pcod <- cocaught_ratios(610, 222, start_year = 1996, end_year = 2006, 
   sector = "groundfish trawl")
 head(rex_pcod)
+
+
 ```
 
-3. Next, select trusted reported years, calculate overall mean ratio (mean of
+3. Next, select trusted reported years (if not 1996-2006), calculate overall mean ratio (mean of
 annual means, as is done for rockfish), and apply to desired historic catch 
 years.
+
+```{r}
+discard_ratio_pcod <- mean(rex_pcod$`target_discard/cocaught_landed`)
+discard_ratio_pcod
+
+rex_discards_pcod <- arrange_catch(222) %>%
+  filter(fishery_sector == toupper("groundfish trawl"), between(year,1970,1996)) %>% 
+  group_by(year, fishery_sector) %>% 
+  summarise(landed_kg = sum(landed_kg)) %>% 
+  ungroup() %>% 
+  mutate(rex_discards = landed_kg * discard_ratio_pcod,
+    rex_discards_t_pcod = rex_discards/1000)
+head(rex_discards_pcod)
+
+
+ggplot(rex_discards_pcod, aes(x = year, y = rex_discards_t_pcod)) +
+  geom_col()
+```
 
 # Some questions:
 
@@ -59,3 +80,69 @@ Do we also want to calculate historical Rex landings in this way?
 Or, if we trust our historical Rex landing records, do we want to base our 
 discard estimates on those instead of a co-caught species?
 
+# Attempt # 2
+
+Trying a reference species group instead of a single species - the top 5
+co-caught species with Rex in the trawl fishery since 2008.
+
+```{r}
+
+rex_group <- cocaught_ratios(610, c("dover sole", "pacific cod", "english sole", "petrale sole", "arrowtooth flounder"), start_year = 1996, end_year = 2006, 
+  sector = "groundfish trawl")
+head(rex_group)
+```
+
+Or without Arrowtooth Flounder:
+
+```{r}
+rex_group2 <- cocaught_ratios(610, c("dover sole", "pacific cod", "english sole", "petrale sole"), start_year = 1996, end_year = 2006, 
+  sector = "groundfish trawl")
+head(rex_group2)
+```
+
+Estimate Rex discard ratio from mean of mean annual Rex discards/reference 
+group landings (1996-2006). Here I'm using years from 1996-2006 to calculate 
+the discard ratio because the trawl records are trusted in these years for 
+rockfish reconstructions - is there a reason to restrict this period or use a 
+different time period altogether?
+
+```{r}
+discard_ratio_group <- mean(rex_group$`target_discard/cocaught_landed`)
+discard_ratio_group
+
+discard_ratio_group2 <- mean(rex_group2$`target_discard/cocaught_landed`)
+discard_ratio_group2
+```
+
+Apply Rex discard ratio to historic time period of interest.
+ 
+```{r}
+rex_discards_group <- arrange_catch(c("dover sole", "pacific cod", "english sole", "petrale sole", "arrowtooth flounder")) %>%
+  filter(fishery_sector == toupper("groundfish trawl"), between(year,1970,1996)) %>% 
+  group_by(year, fishery_sector) %>% 
+  summarise(landed_kg = sum(landed_kg)) %>% 
+  ungroup() %>% 
+  mutate(rex_discards = landed_kg * discard_ratio_group,
+    rex_discards_t_group = rex_discards/1000)
+head(rex_discards_group)
+
+rex_discards_group2 <- arrange_catch(c("dover sole", "pacific cod", "english sole", "petrale sole")) %>%
+  filter(fishery_sector == toupper("groundfish trawl"), between(year,1970,1996)) %>% 
+  group_by(year, fishery_sector) %>% 
+  summarise(landed_kg = sum(landed_kg)) %>% 
+  ungroup() %>% 
+  mutate(rex_discards = landed_kg * discard_ratio_group2,
+    rex_discards_t_group2 = rex_discards/1000)
+head(rex_discards_group2)
+
+
+```
+
+```{r}
+ggplot(rex_discards_group, aes(x = year, y = rex_discards_t_group)) +
+  geom_col()
+
+ggplot(rex_discards_group2, aes(x = year, y = rex_discards_t_group2)) +
+  geom_col()
+
+```

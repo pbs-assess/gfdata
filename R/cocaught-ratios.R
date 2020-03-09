@@ -39,4 +39,3 @@
 #     filter(between(year, start_year, end_year), fishery_sector == toupper(sector)) %>%
 #     mutate(target_landed/cocaught_landed, target_discard/cocaught_landed)
 # }
-
