@@ -7,7 +7,6 @@
 \alias{get_survey_samples}
 \alias{get_commercial_samples}
 \alias{get_catch}
-\alias{get_cocaught_species}
 \alias{get_hake_catch}
 \alias{get_cpue_historical}
 \alias{get_cpue_historical_hake}
@@ -54,14 +53,6 @@ get_commercial_samples(
 )
 
 get_catch(species, major = NULL)
-
-get_cocaught_species(
-  species,
-  fishery_sector = NULL,
-  gear = NULL,
-  target_min = 10,
-  cocaught_min = 10
-)
 
 get_hake_catch(end_date = format(Sys.Date(), "\%d/\%m/\%Y"))
 
@@ -161,14 +152,6 @@ IPHC codes may be different to other surveys.}
 4B only), set inside = 1. To select only the outside population, set inside
 = 0.}
 
-\item{fishery_sector}{Name of fishery sector to filter on (optional). Will
-be converted to uppercase. Run \code{\link[=get_fishery_sectors]{get_fishery_sectors()}} for a look-up table of
-available fishery sectors to select from.}
-
-\item{gear}{The gear type(s) to include for CPUE. Will be converted to
-uppercase. Run \code{\link[=get_comm_gear_types]{get_comm_gear_types()}} for a look-up table of available
-gear types to select from.}
-
 \item{end_date}{A string repersenting the date. Must be of the format dd/mm/yyyy}
 
 \item{alt_year_start_date}{Alternative year starting date specified as a
@@ -179,6 +162,10 @@ month-day combination. E.g. "03-01" for March 1st. Can be used to create
 See \code{\link[base:regex]{base::regex()}}.}
 
 \item{end_year}{Specify the last calendar year to be extracted.}
+
+\item{gear}{The gear type(s) to include for CPUE. Will be converted to
+uppercase. Run \code{\link[=get_comm_gear_types]{get_comm_gear_types()}} for a look-up table of available
+gear types to select from.}
 
 \item{min_cpue_year}{Minimum year for the CPUE data.}
 
@@ -309,7 +296,4 @@ get_cpue_index(gear = "bottom trawl", min_cpue_year = 2012)
 get_survey_index("pacific cod", ssid = c(1, 3, 4, 16))
 }
 
-\dontrun{
-rex_cocaught <- get_cocaught_species(610, "groundfish trawl")
-}
 }

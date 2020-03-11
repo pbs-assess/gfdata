@@ -2,12 +2,10 @@
 
 export(assign_areas)
 export(cache_pbs_data)
-export(cocaught_ratios)
 export(get_active_survey_blocks)
 export(get_age_methods)
 export(get_age_precision)
 export(get_catch)
-export(get_cocaught_species)
 export(get_comm_gear_types)
 export(get_commercial_samples)
 export(get_cpue_historical)

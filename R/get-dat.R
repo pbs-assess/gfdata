@@ -463,48 +463,48 @@ get_catch <- function(species, major = NULL) {
   as_tibble(.d)
 }
 
-#' For a given species, extracts all species co-caught with the given species
-#'  from 2008 (with minimum catch of 100 kg of each species). Output includes
-#'  the number of fishing events in which each species was co-caught, the number
-#'  of years from 2008 in which each species was co-caught in at least one
-#'  fishing event, and the sum of landed kg for each species over all of the
-#'  fishing events it was caught with the given species.
-#' @export
-#' @rdname get_data
-#' @param fishery_sector Name of fishery sector to filter on (optional). Will
-#'  be converted to uppercase. Run [get_fishery_sectors()] for a look-up table of
-#'  available fishery sectors to select from.
-#' @param gear Name of gear type to filter on (optional). Will be converted to
-#'  uppercase. Run [get_comm_gear_types()] for a look-up table of available gear
-#'  types to select from.
-#' @examples
-#' \dontrun{
-#' rex_cocaught <- get_cocaught_species(610, "groundfish trawl")
-#' }
-get_cocaught_species <- function(species, fishery_sector = NULL, gear = NULL,
-  target_min = 10, cocaught_min = 10) {
-  .q <- read_sql("get-cocaught-species.sql")
-  .q <- inject_filter("WHERE MC.SPECIES_CODE IN", species, sql_code = .q)
-  .q <- inject_filter("AND LANDED_KG >= ", target_min, .q,
-    search_flag = "-- insert target_min here", conversion_func = I)
-  .q <- inject_filter("AND LANDED_KG >= ", target_min, .q,
-    search_flag = "-- insert cocaught_min here", conversion_func = I)
-  if (!is.null(fishery_sector)) {
-    .q <- inject_filter("AND FISHERY_SECTOR IN", toupper(fishery_sector), sql_code = .q,
-      search_flag = "-- insert fishery here", conversion_func = I)
-  }
-  if (!is.null(gear)) {
-    .q <- inject_filter("AND GEAR IN", toupper(gear), .q,
-      search_flag = "-- insert gear here", conversion_func = I
-    )
-  }
-  .d <- run_sql("GFFOS", .q)
-  .d$SPECIES_COMMON_NAME[.d$SPECIES_COMMON_NAME == "SPINY DOGFISH"] <-
-    toupper("north pacific spiny dogfish") # to match GFBioSQL
-  names(.d) <- tolower(names(.d))
-  .d$species_common_name <- tolower(.d$species_common_name)
-  as_tibble(.d)
-}
+# #' For a given species, extracts all species co-caught with the given species
+# #' from 2008 (with minimum catch of 100 kg of each species). Output includes
+# #' the number of fishing events in which each species was co-caught, the number
+# #' of years from 2008 in which each species was co-caught in at least one
+# #' fishing event, and the sum of landed kg for each species over all of the
+# #' fishing events it was caught with the given species.
+# #'
+# #' @export
+# #' @param fishery_sector Name of fishery sector to filter on (optional). Will
+# #'  be converted to uppercase. Run [get_fishery_sectors()] for a look-up table of
+# #'  available fishery sectors to select from.
+# #' @param gear Name of gear type to filter on (optional). Will be converted to
+# #'  uppercase. Run [get_comm_gear_types()] for a look-up table of available gear
+# #'  types to select from.
+# #' @examples
+# #' \dontrun{
+# #' rex_cocaught <- get_cocaught_species(610, "groundfish trawl")
+# #' }
+# get_cocaught_species <- function(species, fishery_sector = NULL, gear = NULL,
+#   target_min = 10, cocaught_min = 10) {
+#   .q <- read_sql("get-cocaught-species.sql")
+#   .q <- inject_filter("WHERE MC.SPECIES_CODE IN", species, sql_code = .q)
+#   .q <- inject_filter("AND LANDED_KG >= ", target_min, .q,
+#     search_flag = "-- insert target_min here", conversion_func = I)
+#   .q <- inject_filter("AND LANDED_KG >= ", target_min, .q,
+#     search_flag = "-- insert cocaught_min here", conversion_func = I)
+#   if (!is.null(fishery_sector)) {
+#     .q <- inject_filter("AND FISHERY_SECTOR IN", toupper(fishery_sector), sql_code = .q,
+#       search_flag = "-- insert fishery here", conversion_func = I)
+#   }
+#   if (!is.null(gear)) {
+#     .q <- inject_filter("AND GEAR IN", toupper(gear), .q,
+#       search_flag = "-- insert gear here", conversion_func = I
+#     )
+#   }
+#   .d <- run_sql("GFFOS", .q)
+#   .d$SPECIES_COMMON_NAME[.d$SPECIES_COMMON_NAME == "SPINY DOGFISH"] <-
+#     toupper("north pacific spiny dogfish") # to match GFBioSQL
+#   names(.d) <- tolower(names(.d))
+#   .d$species_common_name <- tolower(.d$species_common_name)
+#   as_tibble(.d)
+# }
 
 #' Get the hake catch from the Oracle FOS database
 #' @param end_date A string repersenting the date. Must be of the format dd/mm/yyyy
