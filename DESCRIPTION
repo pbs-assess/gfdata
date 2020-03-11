@@ -1,9 +1,10 @@
 Package: gfdata
 Title: Data Extraction for DFO PBS Groundfish Stocks
 Version: 0.0.0.9000
-Authors@R: c(person(c("Sean", "C."), "Anderson",
-    email = "sean.anderson@dfo-mpo.gc.ca", role = c("aut", "cre")),
+Authors@R: c(
     person(c("Elise", "A."), "Keppel", role = "aut"),
+    person(c("Sean", "C."), "Anderson",
+      email = "sean.anderson@dfo-mpo.gc.ca", role = c("aut", "cre")),
     person(c("Andrew", "M."), "Edwards", role = "aut"),
     person("Chris", "Grandin", role = "aut"))
 Description: Facilitates groundfish data extraction at the Canadian Department
