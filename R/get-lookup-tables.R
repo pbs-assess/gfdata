@@ -184,7 +184,8 @@ get_species <- function() {
 get_strata_areas <- function() {
   run_sql(
     "GFBioSQL",
-    "SELECT SG.SURVEY_ID,
+    "SELECT SURVEY_SERIES_ID,
+    SG.SURVEY_ID,
     SG.GROUPING_CODE,
     G.AREA_KM2
     FROM SURVEY_GROUPING SG
