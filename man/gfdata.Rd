@@ -4,6 +4,3 @@
 \name{gfdata}
 \alias{gfdata}
 \title{gfdata package}
-\description{
-gfdata package
-}

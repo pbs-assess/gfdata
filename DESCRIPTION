@@ -25,7 +25,7 @@ Imports:
   tidyr,
   xml2,
   rlang
-RoxygenNote: 7.0.2
+RoxygenNote: 7.1.0
 Suggests: 
     usethis,
     testthat,
