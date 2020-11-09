@@ -2,6 +2,8 @@ context("test-utils")
 
 
 test_that("run_sql works", {
+  skip_on_travis()
+  skip_on_appveyor()
   tryCatch(get_ssids(), error = function(e) skip("No database access"))
   .q <- paste(
     "SELECT DISTINCT(SS.SURVEY_SERIES_ID),
@@ -78,4 +80,3 @@ test_that("codes2common() works", {
   expect_message(codes2common(465), "Code 465 deprecated for Lingcod. Use code 467.")
   expect_equal(codes2common("222"), "PACIFIC COD")
 })
-
