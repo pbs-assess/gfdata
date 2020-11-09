@@ -53,6 +53,9 @@ test_that("first_cap() works", {
 })
 
 test_that("read_sql works", {
+  skip_on_travis()
+  skip_on_appveyor()
+
   x <- read_sql("get-catch.sql")
   expect_gte(length(x), 1)
   expect_type(x, "character")
