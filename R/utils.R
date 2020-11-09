@@ -15,7 +15,7 @@
 #'
 #' @export
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' run_sql("GFBioSQL", "EXEC sp_who2")
 #' }
 run_sql <- function(database, query) {
