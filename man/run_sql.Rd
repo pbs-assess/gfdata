@@ -23,7 +23,7 @@ probably work for most people. You might try using
 \code{usethis::edit_r_profile()} if you need help finding your R profile file.
 }
 \examples{
-\donttest{
+\dontrun{
 run_sql("GFBioSQL", "EXEC sp_who2")
 }
 }

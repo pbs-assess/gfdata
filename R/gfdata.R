@@ -1,5 +1,7 @@
 #' gfdata package
 #'
+#' @description An R package to facilitate extracting ground fish data at PBS
+#'
 #' @docType package
 #' @name gfdata
 

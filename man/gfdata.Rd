@@ -4,3 +4,6 @@
 \name{gfdata}
 \alias{gfdata}
 \title{gfdata package}
+\description{
+An R package to facilitate extracting ground fish data at PBS
+}
