@@ -632,6 +632,25 @@ get_cpue_spatial <- function(species, major = NULL) {
 
 #' @export
 #' @rdname get_data
+get_catch_spatial <- function(species, major = NULL) {
+  .q <- read_sql("get-catch-spatial.sql")
+  .q <- inject_filter("AND SP.SPECIES_CODE IN", species, sql_code = .q)
+  if (!is.null(major)) {
+    .q <- inject_filter("AND MAJOR_STAT_AREA_CODE =", major, .q,
+                        search_flag = "-- insert major here", conversion_func = I
+    )
+  }
+  .d <- run_sql("GFFOS", .q)
+  .d$SPECIES_COMMON_NAME[.d$SPECIES_COMMON_NAME == "SPINY DOGFISH"] <-
+    toupper("north pacific spiny dogfish") # to match GFBioSQL
+  names(.d) <- tolower(names(.d))
+  .d$species_common_name <- tolower(.d$species_common_name)
+  .d$species_scientific_name <- tolower(.d$species_scientific_name)
+  as_tibble(.d)
+}
+
+#' @export
+#' @rdname get_data
 get_cpue_spatial_ll <- function(species, major = NULL) {
   .q <- read_sql("get-cpue-spatial-ll.sql")
   .q <- inject_filter("AND SP.SPECIES_CODE IN", species, sql_code = .q)
@@ -884,6 +903,7 @@ get_sara_dat <- function() {
 #' * [get_catch()]
 #' * [get_cpue_spatial()]
 #' * [get_cpue_spatial_ll()]
+#' * [get_catch_spatial()]
 #' * [get_survey_index()]
 #' * [get_age_precision()]
 #' * and optionally from [get_survey_sets()] and [get_cpue_historical()]
@@ -919,6 +939,7 @@ cache_pbs_data <- function(species, major = NULL, file_name = NULL, path = ".",
     out$catch <- get_catch(this_sp)
     out$cpue_spatial <- get_cpue_spatial(this_sp)
     out$cpue_spatial_ll <- get_cpue_spatial_ll(this_sp)
+    out$catch_spatial <- get_catch_spatial(this_sp)
     out$survey_index <- get_survey_index(this_sp)
     # out$management         <- get_management(this_sp)
     out$age_precision <- get_age_precision(this_sp)

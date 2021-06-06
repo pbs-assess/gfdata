@@ -11,6 +11,7 @@
 \alias{get_cpue_historical_hake}
 \alias{get_cpue_historical_hl}
 \alias{get_cpue_spatial}
+\alias{get_catch_spatial}
 \alias{get_cpue_spatial_ll}
 \alias{get_cpue_index}
 \alias{get_cpue_index_hl}
@@ -74,6 +75,8 @@ get_cpue_historical_hl(
 )
 
 get_cpue_spatial(species, major = NULL)
+
+get_catch_spatial(species, major = NULL)
 
 get_cpue_spatial_ll(species, major = NULL)
 
@@ -256,6 +259,7 @@ This \code{\link[=cache_pbs_data]{cache_pbs_data()}} function caches data from
 \item \code{\link[=get_catch]{get_catch()}}
 \item \code{\link[=get_cpue_spatial]{get_cpue_spatial()}}
 \item \code{\link[=get_cpue_spatial_ll]{get_cpue_spatial_ll()}}
+\item \code{\link[=get_catch_spatial]{get_catch_spatial()}}
 \item \code{\link[=get_survey_index]{get_survey_index()}}
 \item \code{\link[=get_age_precision]{get_age_precision()}}
 \item and optionally from \code{\link[=get_survey_sets]{get_survey_sets()}} and \code{\link[=get_cpue_historical]{get_cpue_historical()}}
