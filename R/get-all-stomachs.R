@@ -12,7 +12,7 @@ get_survey_stomachs <- function(
   unsorted_only = FALSE, usability = NULL,
   major = NULL
   ) {
-  .q <- read_sql("get-stomach.sql")
+  .q <- read_sql("get-survey-stomachs.sql")
   # .q <- inject_filter("AND SP.SPECIES_CODE IN", species, sql_code = .q)
   if (!is.null(ssid)) {
     .q <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid,
