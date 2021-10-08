@@ -92,3 +92,79 @@ get_survey_stomachs <- function(
 
   as_tibble(.d)
 }
+
+
+#' @param unsorted_only Remove sorted biological data ('keepers' and 'discards'
+#'  and unknown). Default = TRUE.
+get_comm_stomachs <- function(
+  # species,
+  unsorted_only = TRUE, major = NULL,
+  usability = NULL) {
+  .q <- read_sql("get-comm-stomachs.sql")
+  # .q <- inject_filter("AND SM.SPECIES_CODE IN", species, sql_code = .q)
+  #
+  # length_type <- get_spp_sample_length_type(species)
+  # message(paste0("All or majority of length measurements are ", length_type))
+  # search_flag <- "-- insert length type here"
+  # i <- grep(search_flag, .q)
+  # .q[i] <- paste0("CAST(ROUND(", length_type, "/ 10, 1) AS DECIMAL(8,1)) AS LENGTH,")
+  if (!is.null(major)) {
+    .q <- inject_filter("AND SM.MAJOR_STAT_AREA_CODE =", major, .q,
+      search_flag = "-- insert major here", conversion_func = I
+    )
+  }
+  .d <- run_sql("GFBioSQL", .q)
+  names(.d) <- tolower(names(.d))
+  .d$species_common_name <- tolower(.d$species_common_name)
+  .d$species_science_name <- tolower(.d$species_science_name)
+  .d <- mutate(.d, year = lubridate::year(trip_start_date))
+  duplicate_specimen_ids <- sum(duplicated(.d$specimen_id))
+  if (duplicate_specimen_ids > 0) {
+    warning(
+      "Duplicate specimen IDs are present because more than one",
+      "species can be found in the same stomach."
+    )
+  }
+  # assertthat::assert_that(sum(duplicated(.d$specimen_id)) == 0)
+
+  if (unsorted_only) {
+    .d <- filter(.d, sampling_desc == "UNSORTED")
+  }
+
+  if (!is.null(usability)) {
+    .d <- filter(.d, usability_code %in% usability)
+  }
+
+  # # # remove ages from unaccepted ageing methods:
+  # file <- system.file("extdata", "ageing_methods.csv",
+  #   package = "gfdata"
+  # )
+  #
+  # ageing_methods <- readr::read_csv(file,
+  #   col_types = readr::cols(
+  #     species_code = readr::col_character()
+  #   )
+  # )
+  #
+  # .d <- left_join(.d,
+  #   select(ageing_methods, species_code, .data$species_ageing_group),
+  #   by = "species_code"
+  # )
+  #
+  # .d <- .d %>%
+  #   mutate(
+  #     age = case_when(
+  #       species_ageing_group == "rockfish_flatfish_hake" & ageing_method_code %in% c(1, 3, 16, 17) ~ .d$age,
+  #       species_ageing_group == "sharks_skates" & ageing_method_code %in% c(12) ~ .d$age,
+  #       species_ageing_group == "dogfish" & ageing_method_code %in% c(11) ~ .d$age,
+  #       species_ageing_group == "pcod_lingcod" & ageing_method_code %in% c(6) ~ .d$age,
+  #       species_ageing_group == "pollock" & ageing_method_code %in% c(7) ~ .d$age,
+  #       species_ageing_group == "shortraker_thornyheads" & ageing_method_code %in% c(1, 3, 4, 16, 17) ~ .d$age,
+  #       is.na(species_ageing_group) ~ NA_real_
+  #     )
+  #   )
+
+  as_tibble(.d)
+}
+
+
