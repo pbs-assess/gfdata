@@ -35,6 +35,8 @@ get_survey_stomachs <- function(
   names(.d) <- tolower(names(.d))
   .d$species_common_name <- tolower(.d$species_common_name)
   .d$species_science_name <- tolower(.d$species_science_name)
+  .d$prey_species <- tolower(.d$prey_species)
+  .d$prey_science_name <- tolower(.d$prey_science_name)
 
   if (unsorted_only) {
     .d <- filter(.d, sampling_desc == "UNSORTED")
@@ -117,6 +119,8 @@ get_comm_stomachs <- function(
   names(.d) <- tolower(names(.d))
   .d$species_common_name <- tolower(.d$species_common_name)
   .d$species_science_name <- tolower(.d$species_science_name)
+  .d$prey_species <- tolower(.d$prey_species)
+  .d$prey_science_name <- tolower(.d$prey_science_name)
   .d <- mutate(.d, year = lubridate::year(trip_start_date))
   duplicate_specimen_ids <- sum(duplicated(.d$specimen_id))
   if (duplicate_specimen_ids > 0) {
