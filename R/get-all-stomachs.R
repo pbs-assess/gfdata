@@ -100,7 +100,7 @@ get_survey_stomachs <- function(
 #'  and unknown). Default = TRUE.
 get_comm_stomachs <- function(
   # species,
-  unsorted_only = TRUE, major = NULL,
+  unsorted_only = FALSE, major = NULL,
   usability = NULL) {
   .q <- read_sql("get-comm-stomachs.sql")
   # .q <- inject_filter("AND SM.SPECIES_CODE IN", species, sql_code = .q)
