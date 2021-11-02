@@ -98,11 +98,11 @@ get_survey_stomachs <- function(
 
 #' @param unsorted_only Remove sorted biological data ('keepers' and 'discards'
 #'  and unknown). Default = TRUE.
-get_comm_stomachs <- function(
+get_all_stomachs <- function(
   # species,
-  unsorted_only = TRUE, major = NULL,
+  unsorted_only = FALSE, major = NULL,
   usability = NULL) {
-  .q <- read_sql("get-comm-stomachs.sql")
+  .q <- read_sql("get-all-stomachs.sql")
   # .q <- inject_filter("AND SM.SPECIES_CODE IN", species, sql_code = .q)
   #
   # length_type <- get_spp_sample_length_type(species)
