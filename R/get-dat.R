@@ -172,9 +172,9 @@ get_survey_sets <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36),
     FE_START_LATTITUDE_DEGREE + FE_START_LATTITUDE_MINUTE / 60 AS LATITUDE,
     -(FE_START_LONGITUDE_DEGREE + FE_START_LONGITUDE_MINUTE / 60) AS
       LONGITUDE,
-    FE_END_LATTITUDE_DEGREE + FE_END_LATTITUDE_MINUTE / 60 AS LATITUDE2,
+    FE_END_LATTITUDE_DEGREE + FE_END_LATTITUDE_MINUTE / 60 AS LATITUDE_END,
     -(FE_END_LONGITUDE_DEGREE + FE_END_LONGITUDE_MINUTE / 60) AS
-      LONGITUDE2,
+      LONGITUDE_END,
       FE_BEGINNING_BOTTOM_DEPTH AS DEPTH_M
     FROM B21_Samples")
   Sys.sleep(sleep)
@@ -227,8 +227,8 @@ get_survey_sets <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36),
     unique(select(
       fe,
       FISHING_EVENT_ID,
-      LATITUDE2,
-      LONGITUDE2
+      LATITUDE_END,
+      LONGITUDE_END
     )),
     by = "FISHING_EVENT_ID"
   )
