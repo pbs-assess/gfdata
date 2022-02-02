@@ -22,7 +22,6 @@
 \alias{get_eulachon_specimens}
 \alias{get_gear_types}
 \alias{get_management}
-\alias{get_sara_dat}
 \alias{cache_pbs_data}
 \alias{get_hake_survey_samples}
 \alias{get_hake_catch}
@@ -103,8 +102,6 @@ get_management(
   area = NULL,
   start_year = NULL
 )
-
-get_sara_dat()
 
 cache_pbs_data(
   species,
