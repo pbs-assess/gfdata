@@ -2,6 +2,7 @@
 % Please edit documentation in R/get-all-stomachs.R
 \name{get_survey_stomachs}
 \alias{get_survey_stomachs}
+\alias{get_all_stomachs}
 \title{Get stomach contents}
 \usage{
 get_survey_stomachs(
@@ -10,10 +11,19 @@ get_survey_stomachs(
   usability = NULL,
   major = NULL
 )
+
+get_all_stomachs(unsorted_only = FALSE, major = NULL, usability = NULL)
 }
 \arguments{
-\item{usability}{A vector of usability codes to include. Defaults to all.
+\item{ssid}{A numeric vector of survey series IDs. Run \code{\link[=get_ssids]{get_ssids()}} for a
+look-up table of available survey series IDs with surveys series
+descriptions.}
+
+\item{unsorted_only}{Remove sorted biological data ('keepers' and 'discards'
+and unknown). Default = FALSE.
 IPHC codes may be different to other surveys.}
+
+\item{usability}{A vector of usability codes to include. Defaults to all.}
 
 \item{major}{Character string (or vector, though doesn't work yet with
 \code{cache_pbs_data}) of major stat area code to include (characters). Use

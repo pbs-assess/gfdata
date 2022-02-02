@@ -1,10 +1,18 @@
 #' Get stomach contents
 #' @rdname get_stomach
+#'
 #' @param major Character string (or vector, though doesn't work yet with
 #'  `cache_pbs_data`) of major stat area code to include (characters). Use
 #'  get_major_areas() to lookup area codes with descriptions.
 #' @param usability A vector of usability codes to include. Defaults to all.
+#' @param ssid A numeric vector of survey series IDs. Run [get_ssids()] for a
+#'   look-up table of available survey series IDs with surveys series
+#'   descriptions.
+#' @param unsorted_only Remove sorted biological data ('keepers' and 'discards'
+#'  and unknown). Default = FALSE.
 #'   IPHC codes may be different to other surveys.
+#'
+#' @export
 get_survey_stomachs <- function(
  # species,
   ssid = NULL,
@@ -96,8 +104,8 @@ get_survey_stomachs <- function(
 }
 
 
-#' @param unsorted_only Remove sorted biological data ('keepers' and 'discards'
-#'  and unknown). Default = TRUE.
+#' @export
+#' @rdname get_stomach
 get_all_stomachs <- function(
   # species,
   unsorted_only = FALSE, major = NULL,
