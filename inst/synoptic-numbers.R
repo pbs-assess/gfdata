@@ -1,8 +1,12 @@
-# x <- readRDS("/Volumes/Extreme-SSD/src/gfsynopsis-2021/report/data-cache/north-pacific-spiny-dogfish.rds")
+x <- readRDS("/Volumes/Extreme-SSD/src/gfsynopsis-2021/report/data-cache/north-pacific-spiny-dogfish.rds")
 # sets <- x$survey_sets
 # samps <- x$survey_samples
-# data_survey_samples <- get_survey_samples(species = "north pacific spiny dogfish")
-# data_survey_samples
+data_survey_samples <- get_survey_samples(species = "north pacific spiny dogfish")
+data_survey_samples
+
+library(tidyverse)
+library(gfdata)
+library(here)
 
 data_surveysets <- get_survey_sets(species = "north pacific spiny dogfish")
 data_surveysets
@@ -10,14 +14,19 @@ data_surveysets
 sets <- data_surveysets
 samps <- data_survey_samples
 
-library(tidyverse)
-
 sets <- filter(sets, survey_abbrev == "SYN QCS")
 samps <- filter(samps, survey_abbrev == "SYN QCS")
 
 glimpse(samps)
 glimpse(sets)
-test <- readRDS("output/predicted_weight_trawl.rds")
+
+test2<- filter(samps, fishing_event_id == 1925746)
+test3 <- filter (test, fishing_event_id == 1925746 )
+sum(test2$weight)/1000
+
+sum(test3$weight_predicted)
+
+test <- readRDS("C:/Dogfish_stitch/output/predicted_weight_trawl.rds")
 glimpse(test)
 
 y <- left_join(sets, select(test, year, survey_abbrev, survey_id, species_code, sample_id, length, weight, specimen_id, weight_predicted))
@@ -103,7 +112,7 @@ get_nfish <- function(x, too_small = 0.1, too_big = 12) { #too small amd too big
   catch_weight <- x$catch_weight[1] #catch weight of tow
 
   #check
-  if (x$catch_count > 1 || is.na(tot_samp_weight) || tot_samp_weight == 0) { # no samples, check if set count looks reasonable by estimating mean weight of fish:
+  if (x$catch_count >= 1 || is.na(tot_samp_weight) || tot_samp_weight == 0) { # no samples, check if set count looks reasonable by estimating mean weight of fish:
     implied_weight_per_fish <- catch_weight / x$catch_count
     if (implied_weight_per_fish < too_small || implied_weight_per_fish > too_big) #check mean weight of fish
       stop("Implied fish weight using set data is too small or big. Will calculate count using sample data", call. = FALSE) #meaning something is up with the set weight and set count, count then ignore these columns and estimate based on samples.
@@ -132,6 +141,7 @@ get_nfish <- function(x, too_small = 0.1, too_big = 12) { #too small amd too big
 
 
 z <- filter(y, fishing_event_id == 5491292)
+sum(z$weight/1000)
 b <- z$catch_weight[1]
 xmean <- ((sum(z$weight))/1000)/(length(unique(z$specimen_id)))
 count = b/xmean
