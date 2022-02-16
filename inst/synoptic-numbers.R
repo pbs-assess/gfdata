@@ -1,10 +1,11 @@
-x <- readRDS("/Volumes/Extreme-SSD/src/gfsynopsis-2021/report/data-cache/north-pacific-spiny-dogfish.rds")
 
 library(tidyverse)
 library(gfdata)
+library(gfplot)
 library(here)
 library(testthat)
 
+#x <- readRDS("/Volumes/Extreme-SSD/src/gfsynopsis-2021/report/data-cache/north-pacific-spiny-dogfish.rds")
 
 data_survey_samples <- get_survey_samples(species = "north pacific spiny dogfish")
 data_survey_samples
@@ -15,94 +16,79 @@ data_surveysets
 sets <- data_surveysets
 samps <- data_survey_samples
 
-sets <- filter(sets, survey_abbrev == "SYN QCS")
-samps <- filter(samps, survey_abbrev == "SYN QCS")
+#sets <- filter(sets, survey_abbrev == "SYN QCS")
+#samps <- filter(samps, survey_abbrev == "SYN QCS")
 
 sets <- filter(sets, survey_abbrev == "SYN WCVI")
 samps <- filter(samps, survey_abbrev == "SYN WCVI")
 
+samps <- filter(samps, !is.na(species_common_name) == TRUE)
 glimpse(samps)
 glimpse(sets)
 
 test2<- filter(samps, fishing_event_id == 1925746)
-test3 <- filter (test, fishing_event_id == 1925746 )
+test3 <- filter (samps, fishing_event_id == 1925746 )
 sum(test2$weight)/1000
 sum(test3$weight_predicted)
+unique(samps$species_common_name)
 
-test <- readRDS("C:/Dogfish_stitch/output/predicted_weight_trawl.rds")
+###################################################################################
+#calculate length weight relationship to have predicted weights in the database
+###################################################################################
+#predict length weight relationships as not all trawls have weight information (but do have length)
+femaletw <- fit_length_weight(
+  samps,
+  sex = ("female"),
+  downsample = Inf,
+  min_samples = 50L,
+  method = c("tmb"), # method = c("tmb", "rlm", "lm"),
+  # df = 3,
+  # too_high_quantile = 1,
+  usability_codes = NULL,
+  scale_weight = 1 / 1000 # grams to kgs
+)
+
+maletw <- fit_length_weight(
+  samps,
+  sex = ("male"),
+  # sex = c("female", "male", "all"),
+  downsample = Inf,
+  min_samples = 50L,
+  method = c("tmb"), # method = c("tmb", "rlm", "lm"),
+  # df = 3,
+  # too_high_quantile = 1,
+  usability_codes = NULL,
+  scale_weight = 1 / 1000
+
+)
+
+
+trawl_f <- filter(samps, sex == 2)
+trawl_f$weight_predicted <- exp(femaletw$pars$log_a +
+                                  femaletw$pars$b * log(trawl_f$length)) * 1000
+
+trawl_m <- filter(samps, sex == 1)
+trawl_m$weight_predicted <- exp(maletw$pars$log_a +
+                                  maletw$pars$b * log(trawl_m$length)) * 1000
+
+
+predicted_weight_tw <- rbind(trawl_m, trawl_f)
+predicted_weight_tw2 <- select(predicted_weight_tw, year, survey_abbrev, survey_id, species_code, sample_id, length, weight, specimen_id, weight_predicted)
+test <- saveRDS(predicted_weight_tw2, "output/predicted_weight_trawl.rds")
+test <- readRDS("output/predicted_weight_trawl.rds")
 glimpse(test)
+#make a column that has the raw weight data and then includes the predicted weight data if nas.
+test$weight_complete <- ifelse(!is.na(test$weight) == TRUE, test$weight, test$weight_predicted)
+test$weight_complete
 
-# y <- left_join(sets, select(samps, year, survey_abbrev, survey_id, species_code, sample_id, length, weight, specimen_id))
-
-y <- left_join(sets, select(test, year, survey_abbrev, survey_id, species_code, sample_id, length, weight, specimen_id, weight_predicted))
+#join set and samples with predicted weight
+y <- left_join(sets, select(test, year, survey_abbrev, survey_id, species_code, sample_id, length, weight_complete, specimen_id))
 glimpse(y)
 
-# plot(sets$catch_weight, sets$catch_count)
-#
-# filter(sets, catch_count > 10) %>% glimpse() #how many sets have catch counts greater than 10? most have zero catch counts
-#
-# filter(y, sample_id == 233645) %>% glimpse
-#
-# filter(y, is.na(sample_id)) %>% glimpse #any rows without a fishing_id or sample id
-#
-# group_by(y, sample_id) %>%
-#   summarise(n = length(unique(specimen_id))) #number of samples per sample id (fishing id)
-#
-# filter(y, !is.na(weight))
-# filter(y, is.na(weight)) #weight of individual samples
-#
-# filter(samps, !is.na(weight))
-# filter(samps, is.na(weight))
-#
-# #x <- filter(y, !is.na(sample_id)) %>% tail %>% glimpse
-#
-# #x <- filter(y, fishing_event_id == 5491292)
 
-
-
-#NEST THIS IN THE FUNCTION??
-# #predict length weight relationships as not all trawls have weight information (but do have length)
-# femaletw <- fit_length_weight(
-#   x,
-#   sex = ("female"),
-#   downsample = Inf,
-#   min_samples = 50L,
-#   method = c("tmb"), # method = c("tmb", "rlm", "lm"),
-#   # df = 3,
-#   # too_high_quantile = 1,
-#   usability_codes = NULL,
-#   scale_weight = 1 / 1000 # grams to kgs
-# )
-#
-# maletw <- fit_length_weight(
-#   x,
-#   sex = ("male"),
-#   # sex = c("female", "male", "all"),
-#   downsample = Inf,
-#   min_samples = 50L,
-#   method = c("tmb"), # method = c("tmb", "rlm", "lm"),
-#   # df = 3,
-#   # too_high_quantile = 1,
-#   usability_codes = NULL,
-#   scale_weight = 1 / 1000
-# )
-#
-#
-# trawl_f <- filter(x, sex == 2)
-# trawl_f$weight_predicted <- exp(femaletw$pars$log_a +
-#                                   femaletw$pars$b * log(trawl_f$length)) * 1000
-#
-# trawl_m <- filter(x, sex == 1)
-# trawl_m$weight_predicted <- exp(maletw$pars$log_a +
-#                                   maletw$pars$b * log(trawl_m$length)) * 1000
-#
-#
-# predicted_weight_tw <- rbind(trawl_m, trawl_f)
-# predicted_weight_tw2 <- select(predicted_weight_tw, year, survey_abbrev, survey_id, species_code, sample_id, length, weight, specimen_id, weight_predicted)
-# test <- readRDS("output/predicted_weight_trawl.rds")
-#
-
-
+###########################################################################
+#function that will check if the weight calculatiosn make sense
+###########################################################################
 check_implied_weight <- function(implied_weight_per_fish, too_small, too_big) {
     if (implied_weight_per_fish < too_small || implied_weight_per_fish > too_big) {
       stop("Implied fish weight using set data is too small or big. ",
@@ -111,8 +97,10 @@ check_implied_weight <- function(implied_weight_per_fish, too_small, too_big) {
     }
 }
 
-# ifelse(is.na(catch_weight), predicted-one, catch_weight)
 
+###########################################################################
+#function that convert the weight to counts
+###########################################################################
 # need a function with logic for an individual fishing event:
 # too small amd too big are min and max weights in kg
 get_nfish <- function(x, too_small = 0.04, too_big = 12) {
@@ -121,8 +109,8 @@ get_nfish <- function(x, too_small = 0.04, too_big = 12) {
   # check for no catch counts or catch weights
   stopifnot(length(unique(x$catch_count)) == 1L)
   stopifnot(length(unique(x$catch_weight)) == 1L)
-  if (any(is.na(x$weight))) {
-    stop("Some `weight`s are NA.", call. = FALSE)
+  if (any(is.na(x$weight_complete))) {
+    stop("Some `weight`s are NA. Run length weight relationship or double check data", call. = FALSE)
   }
 
   # 1. check if no dogfish:
@@ -132,7 +120,7 @@ get_nfish <- function(x, too_small = 0.04, too_big = 12) {
 
   # 2. check if we can just use `catch_count`:
   # sum up sample weight, samp count, and catch weight for each tow:
-  tot_samp_weight <- sum(x$weight, na.rm = TRUE) / 1000 # grams to kg
+  tot_samp_weight <- sum(x$weight_complete, na.rm = TRUE) / 1000 # grams to kg
   tot_samp_count <- nrow(x) # number of individuals
   catch_weight <- x$catch_weight[1] # catch weight of tow
   catch_count <- x$catch_count[1]
@@ -162,7 +150,7 @@ get_nfish <- function(x, too_small = 0.04, too_big = 12) {
 }
 
 
-
+unique(fishing_event_id)
 z <- filter(y, fishing_event_id == 5491292)
 expect_equal(round(get_nfish(z), 3), 8.135)
 
@@ -176,7 +164,7 @@ z <- filter(y, fishing_event_id == 308673)
 expect_error(get_nfish(z), regexp = "weight")
 
 yy <- group_by(y, fishing_event_id) %>%
-  mutate(any_weight_na = any(is.na(weight))) %>%
+  mutate(any_weight_na = any(is.na(weight_complete))) %>%
   filter(!any_weight_na)
 
 counts <- yy %>%
