@@ -47,16 +47,61 @@ predict_weight <- function(xx) {
     stop("All weights are included in your dataset, no need to predict weights.", call. = FALSE)
   }
 
-  # 2. convert 0 to males
-  x <- 0
-  if (any(unique(xx$sex) %in% x)) {
-    print(paste(length(filter(xx, sex == 0)), "samples are missing sex information (coded as 0), these individuals will be coded as males (1)."))
-    xx$sex <- replace(xx$sex, xx$sex == 0, 1) # males are 1
+  #2 . check sex codes are correct
+  x <- c(0,1,2)
+  if (!any(unique(xx$sex) %in% x)) {
+    stop("codes do not match 0,1,2", call. = FALSE)
   }
 
-  # check if there are codes for male and female, if only one sex then run one, other wise run both.
+  # 3. convert 0 to males
+  x <- 0
+  if (any(unique(xx$sex) %in% x)) {
+    print(paste(nrow(filter(xx, sex == 0)), "samples are missing sex information (coded as 0), the predicted weight for these individuals will be the average of male and female predicted weights."))
+    xy <- filter(xx, sex == 0 | sex == 1)
+    xy$sex <- replace(xy$sex, xy$sex == 0, 1) # males are 1
+    maletw <- fit_length_weight(
+      xy,
+      sex = ("male"),
+      # sex = c("female", "male", "all"),
+      downsample = Inf,
+      min_samples = 50L,
+      method = c("tmb"), # method = c("tmb", "rlm", "lm"),
+      # df = 3,
+      # too_high_quantile = 1,
+      usability_codes = NULL,
+      scale_weight = 1 / 1000
+    )
+
+    trawl_m <- filter(xx, sex == 0)
+    trawl_m$weight_predicted_m <- exp(maletw$pars$log_a +
+                                      maletw$pars$b * log(trawl_m$length)) * 1000
+
+    xxx <- filter(xx, sex == 2 | sex == 0)
+    xxx$sex <- replace(xxx$sex, xxx$sex == 0, 2) # females are 2
+    femaletw <- fit_length_weight(
+      xxx,
+      sex = ("female"),
+      downsample = Inf,
+      min_samples = 50L,
+      method = c("tmb"), # method = c("tmb", "rlm", "lm"),
+      # df = 3,
+      # too_high_quantile = 1,
+      usability_codes = NULL,
+      scale_weight = 1 / 1000 # grams to kgs
+    )
+
+    trawl_f <- filter(xx, sex == 0)
+    trawl_f$weight_predicted_f <- exp(femaletw$pars$log_a +
+                                      femaletw$pars$b * log(trawl_f$length)) * 1000
+
+    predicted_weight_tw <- inner_join(trawl_m,trawl_f)
+    predicted_weight_tw <- predicted_weight_tw %>% mutate(weight_predicted = rowSums(across(weight_predicted_f:weight_predicted_f))/2)
+    predicted_weight_nosex <- select(predicted_weight_tw, year, survey_abbrev, fishing_event_id, survey_id, species_code, sample_id, sex, length, weight, specimen_id, weight_predicted)
+       }
+
+  # check if there are codes for male and female, if only one sex then run one, otherwise run both.
   x <- c(1, 2)
-  if (!any(unique(xx$sex) %in% x)) {
+  if (any(unique(xx$sex) %in% x)) {
     # 2. run fit_length_weight for males and females separately.
     femaletw <- fit_length_weight(
       xx,
@@ -94,55 +139,10 @@ predict_weight <- function(xx) {
 
     predicted_weight_tw <- rbind(trawl_m, trawl_f)
     predicted_weight_tw2 <- select(predicted_weight_tw, year, survey_abbrev, fishing_event_id, survey_id, species_code, sample_id, sex, length, weight, specimen_id, weight_predicted)
-    # predicted_weight_tw2, "C:/Users/DAVIDSONLI/OneDrive - DFO-MPO/Documents/gfdata/predicted_weight_trawl.rds")
-  }
 
-  x <- 1
-  if (any(unique(xx$sex) %in% x) == TRUE) {
-    # 2. run fit_length_weight for males and females separately.
-    maletw <- fit_length_weight(
-      xx,
-      sex = ("male"),
-      # sex = c("female", "male", "all"),
-      downsample = Inf,
-      min_samples = 50L,
-      method = c("tmb"), # method = c("tmb", "rlm", "lm"),
-      # df = 3,
-      # too_high_quantile = 1,
-      usability_codes = NULL,
-      scale_weight = 1 / 1000
-    )
-
-    trawl_m <- filter(xx, sex == 1)
-    trawl_m$weight_predicted <- exp(maletw$pars$log_a +
-      maletw$pars$b * log(trawl_m$length)) * 1000
-
-
-    predicted_weight_tw2 <- select(trawl_m, year, survey_abbrev, fishing_event_id, survey_id, species_code, sample_id, sex, length, weight, specimen_id, weight_predicted)
-    # saveRDS(predicted_weight_males, "C:/Users/DAVIDSONLI/OneDrive - DFO-MPO/Documents/gfdata/predicted_weight_trawl.rds")
-  }
-
-  x <- 2
-  if (any(unique(xx$sex) %in% x)) {
-    femaletw <- fit_length_weight(
-      xx,
-      sex = ("female"),
-      downsample = Inf,
-      min_samples = 50L,
-      method = c("tmb"), # method = c("tmb", "rlm", "lm"),
-      # df = 3,
-      # too_high_quantile = 1,
-      usability_codes = NULL,
-      scale_weight = 1 / 1000 # grams to kgs
-    )
-
-    trawl_f <- filter(xx, sex == 2)
-    trawl_f$weight_predicted <- exp(femaletw$pars$log_a +
-      femaletw$pars$b * log(trawl_f$length)) * 1000
-
-    predicted_weight_tw2 <- select(trawl_f, year, survey_abbrev, fishing_event_id, survey_id, species_code, sample_id, sex, length, weight, specimen_id, weight_predicted)
-  }
-  return(predicted_weight_tw2)
+    }
+  predicted_weight_tw3 <- rbind(predicted_weight_nosex, predicted_weight_tw2)
+  return(predicted_weight_tw3)
 }
 
 
@@ -220,18 +220,53 @@ get_nfish <- function(x, too_small = 0.04, too_big = 12) {
 ##############################################################################################
 #predict weights
 samps_weightcomplete <- predict_weight(samps)
+
 #create a weight column that has either predicted and collected weights
 samps_weightcomplete$weight_complete <- ifelse(!is.na(samps_weightcomplete$weight) == TRUE, samps_weightcomplete$weight, samps_weightcomplete$weight_predicted)
+
 # join set and samples with predicted weight
 y2 <- left_join(sets, select(samps_weightcomplete, year, survey_abbrev, survey_id, species_code, sample_id, length, weight_complete, specimen_id, fishing_event_id),
                 by = c("year" = "year", "survey_abbrev" = "survey_abbrev", "fishing_event_id" = "fishing_event_id"))
 dim(y2)
+
 ## get rid of sets with no samples
 unique(y2$survey_abbrev)
+names(y2)
 
+#plot of samp weights
+y3 <- y2 %>% group_by(fishing_event_id) %>% summarize(sample_sum)
+ggplot(y2, aes(catch_weight, weight_complete/1000)) + #shows very high catch_weights
+  geom_point() +
+  scale_color_viridis_c(trans = "log10") +
+  #scale_x_log10() +
+  scale_y_log10() +
+  geom_text(aes(label = as.character(fishing_event_id)))
+  #facet_wrap(~survey_abbrev)
+
+ggplot(y2, aes(catch_weight)) + #shows very high catch_weights
+  geom_density() +
+  scale_x_log10() #+
+test <- filter(y2, fishing_event_id == 3233304)
+
+ggplot(y2, aes(weight_complete/1000)) + #shows very high catch_weights
+  geom_density() +
+  scale_x_log10() #+
+#  facet_wrap(~survey_abbrev)
+
+
+#
 yy <- group_by(y2, survey_abbrev, fishing_event_id) %>%
   mutate(any_weight_na = any(is.na(weight_complete))) %>%
   filter(!any_weight_na)
+length(unique(y2$fishing_event_id))
+length(unique(yy$fishing_event_id))
+
+## fishing events with no samples
+yy_nosamples <- group_by(y2, survey_abbrev, fishing_event_id) %>%
+  mutate(any_weight_na = any(is.na(weight_complete))) %>%
+  filter(any_weight_na)
+yy_nosamples2 <- yy_nosamples %>% distinct()
+length(unique(yy_nosamples$fishing_event_id))
 
 # run weights to counts conversion function
 counts <- yy %>%
@@ -239,6 +274,7 @@ counts <- yy %>%
   group_split() %>%
   purrr::map_dfr(get_nfish)
 unique(counts$method)
+filter(counts, fishing_event_id ==481885)
 
 #problems
 #look at some of the entires that had warnings
@@ -280,3 +316,63 @@ ggplot(yy2, aes(calculated_count, catch_weight, colour = implied_weight_per_fish
   scale_y_log10() +
   facet_wrap(~survey_abbrev)
 
+
+
+#####looking for problems and resolving
+#plot of samp weights
+y3 <- y2 %>% group_by(fishing_event_id) %>% summarize(sample_sum)
+ggplot(y2, aes(catch_weight, weight_complete/1000)) + #shows very high catch_weights
+  geom_point() +
+  scale_color_viridis_c(trans = "log10") +
+  scale_x_log10() +
+  scale_y_log10() +
+  geom_text(aes(label = as.character(fishing_event_id)))
+#facet_wrap(~survey_abbrev)
+
+df <- select(y2, catch_weight, weight_complete)
+#create new column in data frame to hold Mahalanobis distances
+df2 <- df %>% drop_na() %>% filter(catch_weight > 0 & weight_complete>0) %>% mutate(logcatch_weight = log10(catch_weight), logweight_complete = log10(weight_complete)) %>%
+  select(logcatch_weight, logweight_complete)
+df2$mahal <- mahalanobis(df2, colMeans(df2, na.rm = TRUE), cov(df2))
+
+#create new column in data frame to hold p-value for each Mahalanobis distance
+df2$p <- pchisq(df2$mahal, df=3, lower.tail=FALSE)
+plot(df2$logcatch_weight, df2$logweight_complete)
+df3 <- filter(df2, p < 0.001)
+points(df3$logcatch_weight, df3$logweight_complete, col = 'red')
+
+#outlier catch weights
+below_2sd <- function(z) {
+  x <- log(z$catch_weight)
+  x[is.infinite(x)] <- NA
+  x <- exp(sd(x, na.rm = TRUE))
+  z$within_2sd <- abs(exp(log(z$catch_weight)-mean(log(z$catch_weight), na.rm = TRUE))) < 3*x
+ return (z)
+}
+
+p <- y2 %>% below_2sd()
+#x2 <- y2 %>% group_by(fishing_event_id) %>% below_2sd()
+x2 <- filter(p, within_2sd == FALSE)
+length(unique(x2$survey_desc)) #6 surveys with catch_weights outside of the 99% CI
+plot(x$catch_weight, x$weight_complete )
+x2 <- x %>% filter(within_2sd == FALSE)
+points(x2$catch_weight,x2$weight_complete,  col = 'red')
+
+
+#outlier reported sample weights
+test <- filter(y2, fishing_event_id == 3233304)
+z <- test
+
+below_2sd <- function(z) {
+  x <- exp(sd(log(z$weight_complete), na.rm = TRUE))
+  z$within_2sd <- abs(exp(log(z$weight_complete)-mean(log(z$weight_complete), na.rm = TRUE))) < 3*x
+  return(z)
+}
+
+x <- y2 %>% below_2sd()
+#x2 <- y2 %>% group_by(fishing_event_id) %>% below_2sd()
+x2 <- filter(x, within_2sd == FALSE)
+length(unique(x2$survey_desc)) #6 surveys with catch_weights outside of the 99% CI
+plot(x$weight_complete, x$catch_weight)
+x2 <- x %>% filter(within_2sd == FALSE)
+points(x2$weight_complete, x2$catch_weight, col = 'red')
