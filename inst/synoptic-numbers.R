@@ -37,8 +37,7 @@ samps <- filter(samps, !is.na(species_common_name) == TRUE)
 
 # assumptions male/female are coded as 1 and 2 respectively
 # assumptions weight is collected in g
-# assumes that samples with no sex information (coded as 0) are males.
-
+# specimens with no sex information are given a predicted weight that is the average of the male and female predictions.
 
 predict_weight <- function(xx) {
 
@@ -158,6 +157,7 @@ check_implied_weight <- function(implied_weight_per_fish, too_small, too_big) {
 }
 
 
+
 ###########################################################################
 # function that convert the weight to counts
 ###########################################################################
@@ -212,6 +212,135 @@ get_nfish <- function(x, too_small = 0.04, too_big = 12) {
 }
 
 
+##########################################################################################################################
+# function that runs diagnostics on catch weight and sample weights to identify potential errors in recoring or outliers
+##########################################################################################################################
+below_3sd_catchweight <- function(z) {
+  x <- log10(z$catch_weight)
+  x[is.infinite(x)] <- NA
+  x1 <- exp(sd(x, na.rm = TRUE))
+  mean <- mean(x, na.rm = TRUE)
+  z$within_3sd <- abs(exp(log10(z$catch_weight) - mean)) < 3 * x1
+  return(z)
+}
+
+below_3sd <- function(z) {
+  x <- exp(sd(log(z$weight_complete), na.rm = TRUE))
+  z$within_3sd <- abs(exp(log(z$weight_complete) - mean(log(z$weight_complete), na.rm = TRUE))) < 3 * x
+  return(z)
+}
+
+
+sample_catchweight_checks <- function(y2) {
+  stopifnot(length(unique(y2$species_common_name)) == 1L)
+
+  # 1. check for sets with no samples
+  nosamps <- y2 %>%
+    group_by(survey_abbrev, fishing_event_id) %>%
+    summarize(na_in_sample_id = sum(sample_id)) %>%
+    filter(is.na(na_in_sample_id) == TRUE)
+  tibble(fishing_event_id = nosamps$fishing_event_id, report = "no samples for this fishing event id")
+
+
+  # 2. check for sets where sum sample weight is greater than catch_weight
+  higher_sampsweight <- y2 %>%
+    group_by(fishing_event_id, catch_weight) %>%
+    summarize(sample_sum = sum(weight_complete) / 1000)
+
+  higher_sampsweight2 <- higher_sampsweight %>%
+    filter(sample_sum > catch_weight) %>%
+    distinct(fishing_event_id)
+
+  df <- tibble(fishing_event_id = higher_sampsweight2$fishing_event_id, report = "sum of sample weights > catch weight")
+
+  plot_sample_bigger_catch <-
+    ggplot(y3, aes(catch_weight, sample_sum), colour = "grey50") +
+    geom_point() +
+    scale_color_viridis_c(trans = "log10") # +
+
+  diag_setweightgreater <- plot_sample_bigger_catch +
+    geom_point(data = y4, mapping = aes(catch_weight, sample_sum), col = "red") +
+    scale_x_log10() +
+    scale_y_log10() +
+    theme_sleek
+
+
+  # 3. check for multivariate outliers - create new column in data frame to hold Mahalanobis distances
+  multi_outliers <- higher_sampsweight %>%
+    select(catch_weight, sample_sum, fishing_event_id) %>%
+    drop_na() %>%
+    filter(catch_weight > 0 & sample_sum > 0) %>%
+    mutate(
+      logcatch_weight = log10(catch_weight),
+      logsample_sum = log10(sample_sum)
+    ) %>%
+    select(logcatch_weight, logsample_sum, fishing_event_id)
+
+  multi_outliers$mahal <- mahalanobis(multi_outliers, colMeans(multi_outliers, na.rm = TRUE), cov(multi_outliers))
+  multi_outliers$p <- pchisq(multi_outliers$mahal, df = 3, lower.tail = FALSE)
+
+  multi_outliers2 <- filter(multi_outliers, p < 0.001)
+  multi_outliers3 <- filter(multi_outliers, p < 0.001) %>% distinct()
+
+  x <- ggplot(multi_outliers, aes(logcatch_weight, logsample_sum / 1000)) + # shows very high catch_weights
+    geom_point() +
+    scale_color_viridis_c(trans = "log10") #+
+
+  diag_malahdistance <- x + geom_point(multi_outliers2, mapping = aes(logcatch_weight, logsample_sum / 1000), colour = "red")
+
+  df <- rbind(df, tibble(
+    fishing_event_id = multi_outliers3$fishing_event_id,
+    report = "mutivariate outlier between catch weight and sample weight (mahalanobis distance"
+  ))
+
+
+  # 4. find catch_weights that fall outside 3 SD
+  catch_weight_SD <- y2 %>%
+    distinct(fishing_event_id, .keep_all = TRUE) %>%
+    below_3sd_catchweight()
+  catch_weight_SD2 <- filter(catch_weight_SD, within_3sd == FALSE)
+
+  df <- rbind(df, tibble(
+    fishing_event_id = catch_weight_SD2$fishing_event_id,
+    report = "catch_weight falls outside of 3 SD of all catch weights"
+  ))
+
+  catch_weight_3sd <- ggplot(catch_weight_SD, aes(weight_complete / 1000, catch_weight)) +
+    geom_point() +
+    scale_color_viridis_c(trans = "log10") #+
+
+  diag_catchweight3sd <- catch_weight_3sd + geom_point(catch_weight_SD2, mapping = aes(weight_complete / 1000, catch_weight), colour = "red")
+
+
+  # 5. find sample weight values outside of 3 SD
+  sample_weight_SD <- y2 %>% below_3sd()
+  sample_weight_SD2 <- filter(sample_weight_SD, within_3sd == FALSE)
+
+  sample_weight_3SDplot <- ggplot(sample_weight_SD, aes(weight_complete / 1000, catch_weight)) +
+    geom_point() +
+    scale_color_viridis_c(trans = "log10") #+
+
+  diag_sampleweight3sd <- sample_weight_3SDplot + geom_point(sample_weight_SD2, mapping = aes(weight_complete / 1000, catch_weight), colour = "red")
+
+  df <- rbind(df, tibble(
+    fishing_event_id = sample_weight_SD2$fishing_event_id,
+    report = "sum of sample weight per fishing id falls outside of 3 SD of all summed sample weights"
+  ))
+
+  x <- cowplot::plot_grid(diag_setweightgreater, diag_malahdistance, diag_catchweight3sd, diag_sampleweight3sd,
+                          ncol = 2,
+                          labels = c(
+                            "sum sample weight greater than catch weight",
+                            "Multivariate outliers (catch_weight and sample weights)",
+                            "Catch weights outside of 3 SD",
+                            "sample weights outside of 3 SD"
+                          )
+  )
+  print(x)
+  return(df)
+}
+
+
 
 # Run all -------------------------------------------------------------
 ##############################################################################################
@@ -230,13 +359,16 @@ y2 <- left_join(sets, select(samps_weightcomplete, year, survey_abbrev, survey_i
 )
 dim(y2)
 
+#run checks
+checkoutput <- sample_catchweight_checks(y2) #see database here and fixed any obvious issues with fishnig_event_ids
+
+#get rid of fishing events with no samples
 yy <- group_by(y2, survey_abbrev, fishing_event_id) %>%
   mutate(any_weight_na = any(is.na(weight_complete))) %>%
   filter(!any_weight_na)
 length(unique(y2$fishing_event_id))
 length(unique(yy$fishing_event_id))
 
-## fishing events with no samples
 yy_nosamples <- group_by(y2, survey_abbrev, fishing_event_id) %>%
   mutate(any_weight_na = any(is.na(weight_complete))) %>%
   filter(any_weight_na)
@@ -252,12 +384,11 @@ unique(counts$method)
 filter(counts, fishing_event_id == 481885)
 
 # problems
-# look at some of the entires that had warnings
+# look at some of the entries that had warnings
 ch <- filter(y2, fishing_event_id == 2179105)
 x <- filter(y, fishing_event_id == 1281290)
 sum(ch$weight_complete) / 1000
 ch$catch_weight
-
 
 # look at distribution of counts
 unname(quantile(counts$count, probs = 0.9)) * 10 # upper quantile number of counts if 5,440 fish
@@ -291,129 +422,4 @@ ggplot(yy2, aes(calculated_count, catch_weight, colour = implied_weight_per_fish
   facet_wrap(~survey_abbrev)
 
 
-#############################
-# end of run
-##############################
-below_3sd_catchweight <- function(z) {
-  x <- log10(z$catch_weight)
-  x[is.infinite(x)] <- NA
-  x1 <- exp(sd(x, na.rm = TRUE))
-  mean <- mean(x, na.rm = TRUE)
-  z$within_3sd <- abs(exp(log10(z$catch_weight) - mean)) < 3 * x1
-  return(z)
-}
 
-below_3sd <- function(z) {
-  x <- exp(sd(log(z$weight_complete), na.rm = TRUE))
-  z$within_3sd <- abs(exp(log(z$weight_complete) - mean(log(z$weight_complete), na.rm = TRUE))) < 3 * x
-  return(z)
-}
-
-
-### write a function that completes checks on the database
-y2 # has sets with no sampes
-
-x <- set_sample_check(y2)
-
-set_sample_check <- function(y2) {
-
-  stopifnot(length(unique(y2$species_common_name)) == 1L)
-  # stopifnot(length(unique(x$catch_weight)) == 1L)
-
-  # 1. check for sets with no samples
-  nosamps <- y2 %>%
-    group_by(survey_abbrev, fishing_event_id) %>%
-    summarize(na_in_sample_id = sum(sample_id)) %>%
-    filter(is.na(na_in_sample_id) == TRUE)
-  tibble(fishing_event_id = nosamps$fishing_event_id, report = "no samples for this fishing event id")
-
-  # 2. check for sets where sum sample weight is greater than catch_weight
-  #  ##### multivariate outliers catch weight and sum of weight of samples
-  # calculate where sum samples are > weight_complete
-  # plot of samp weights
-  higher_sampsweight <- y2 %>%
-    group_by(fishing_event_id, catch_weight) %>%
-    summarize(sample_sum = sum(weight_complete) / 1000)
-
-  higher_sampsweight2 <- higher_sampsweight %>% filter(sample_sum > catch_weight) %>% distinct(fishing_event_id)
-
-  df <- tibble(fishing_event_id = higher_sampsweight2$fishing_event_id, report = "sample weight is > catch weight")
-
-  plot_sample_bigger_catch <-
-    ggplot(y3, aes(catch_weight, sample_sum), colour = "grey50") +
-    geom_point() +
-    scale_color_viridis_c(trans = "log10") # +
-  # geom_text(aes(label = as.character(fishing_event_id)))
-  diag <- plot_sample_bigger_catch +
-    geom_point(data = y4, mapping = aes(catch_weight, sample_sum), col = "red") +
-    scale_x_log10() +
-    scale_y_log10()
-
-
-  # create new column in data frame to hold Mahalanobis distances
-  multi_outliers <- higher_sampsweight %>%
-    select(catch_weight, sample_sum, fishing_event_id) %>%
-    drop_na() %>%
-    filter(catch_weight > 0 & sample_sum > 0) %>%
-    mutate(
-      logcatch_weight = log10(catch_weight),
-      logsample_sum = log10(sample_sum)
-    ) %>%
-    select(logcatch_weight, logsample_sum, fishing_event_id)
-
-
-  multi_outliers$mahal <- mahalanobis(multi_outliers, colMeans(multi_outliers, na.rm = TRUE), cov(multi_outliers))
-  multi_outliers$p <- pchisq(multi_outliers$mahal, df = 3, lower.tail = FALSE)
-
-  multi_outliers2 <- filter(multi_outliers, p < 0.001)
-  multi_outliers3 <- filter(multi_outliers, p < 0.001) %>% distinct()
-
-  x <- ggplot(multi_outliers, aes(logcatch_weight, logsample_sum / 1000)) + # shows very high catch_weights
-    geom_point() +
-    scale_color_viridis_c(trans = "log10") #+
-  #  geom_text(aes(label = as.character(fishing_event_id)))
-
-  diag2 <- x + geom_point(multi_outliers2, mapping = aes(logcatch_weight, logsample_sum / 1000), colour = "red")
-
-  df <- rbind(df, tibble(fishing_event_id = multi_outliers3$fishing_event_id,
-                         report = "mutivariate outlier between catch weight and sample weight (mahalanobis distance"))
-
-
-  # 4. find catch_weights that fall outside 3 SD
-  catch_weight_SD <- y2 %>%
-    distinct(fishing_event_id, .keep_all = TRUE) %>%
-    below_3sd_catchweight()
-  catch_weight_SD2 <- filter(catch_weight_SD, within_3sd == FALSE)
-  length(unique(catch_weight_SD2$survey_desc)) # 38 surveys with catch_weights outside of the 99% CI
-
-  df <- rbind(df, tibble(fishing_event_id = catch_weight_SD2$fishing_event_id,
-                         report = "catch_weight falls outside of 3 SD of all catch weights"))
-
-  catch_weight_3sd <- ggplot(catch_weight_SD, aes(weight_complete / 1000, catch_weight)) + # shows very high catch_weights
-    geom_point() +
-    # scale_x_log10() +
-    # scale_y_log10() +
-    scale_color_viridis_c(trans = "log10") #+
-  #  geom_text(aes(label = as.character(fishing_event_id)))
-
-  diag3 <- catch_weight_3sd + geom_point(catch_weight_SD2, mapping = aes(weight_complete / 1000, catch_weight), colour = "red")
-
-
-  # 5. find sample weight values outside of 3 SD
-  sample_weight_SD <- y2 %>% below_3sd()
-  # x2 <- y2 %>% group_by(fishing_event_id) %>% below_2sd()
-  sample_weight_SD2 <- filter(sample_weight_SD, within_3sd == FALSE)
-  # length(unique(x2$survey_desc)) # 6 surveys with catch_weights outside of the 99% CI
-
-  sample_weight_3SDplot <- ggplot(sample_weight_SD, aes(weight_complete / 1000, catch_weight)) + # shows very high catch_weights
-    geom_point() +
-    scale_color_viridis_c(trans = "log10") #+
-  #  geom_text(aes(label = as.character(fishing_event_id)))
-
-  diag4 <- sample_weight_3SDplot + geom_point(sample_weight_SD2, mapping = aes(weight_complete / 1000, catch_weight), colour = "red")
-
-  df <- rbind(df, tibble(fishing_event_id = sample_weight_SD2$fishing_event_id,
-                         report = "sum of sample weight per fishing id falls outside of 3 SD of all summed sample weights"))
-
-  return(df)
-}
