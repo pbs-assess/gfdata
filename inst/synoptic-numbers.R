@@ -4,6 +4,8 @@ library(gfdata)
 library(gfplot)
 library(here)
 library(testthat)
+library(ggsidekick) # for fourth_root_power_trans and theme_sleek
+theme_set(ggsidekick::theme_sleek())
 
 #############################
 # Load data
@@ -14,10 +16,10 @@ if (Sys.info()[["user"]] == "seananderson") {
   sets <- x$survey_sets
   samps <- x$survey_samples
 } else {
-  data_survey_samples <- get_survey_samples(species = "north pacific spiny dogfish")
+  data_survey_samples <- get_survey_samples(species = "pacific spiny dogfish")
   data_survey_samples
 
-  data_surveysets <- get_survey_sets(species = "north pacific spiny dogfish")
+  data_surveysets <- get_survey_sets(species = "pacific spiny dogfish")
   data_surveysets
 
   sets <- data_surveysets
@@ -39,24 +41,24 @@ samps <- filter(samps, !is.na(species_common_name) == TRUE)
 # assumptions weight is collected in g
 # specimens with no sex information are given a predicted weight that is the average of the male and female predictions.
 
-predict_weight <- function(xx) {
+predict_weight <- function(x) {
 
   # 1. check if this is necessary
-  if (!anyNA(xx$weight)) {
+  if (!anyNA(x$weight)) {
     stop("All weights are included in your dataset, no need to predict weights.", call. = FALSE)
   }
 
   # 2 . check sex codes are correct
-  x <- c(0, 1, 2)
-  if (!any(unique(xx$sex) %in% x)) {
+  y <- c(0, 1, 2)
+  if (!any(unique(x$sex) %in% y)) {
     stop("codes do not match 0,1,2", call. = FALSE)
   }
 
   # 3. convert 0 to males
-  x <- 0
-  if (any(unique(xx$sex) %in% x)) {
-    print(paste(nrow(filter(xx, sex == 0)), "samples are missing sex information (coded as 0), the predicted weight for these individuals will be the average of male and female predicted weights."))
-    xy <- filter(xx, sex == 0 | sex == 1)
+  xy <- 0
+  if (any(unique(x$sex) %in% xy)) {
+    print(paste(nrow(filter(x, sex == 0)), "samples are missing sex information (coded as 0), the predicted weight for these individuals will be the average of male and female predicted weights."))
+    xy <- filter(x, sex == 0 | sex == 1)
     xy$sex <- replace(xy$sex, xy$sex == 0, 1) # males are 1
     maletw <- fit_length_weight(
       xy,
@@ -71,14 +73,14 @@ predict_weight <- function(xx) {
       scale_weight = 1 / 1000
     )
 
-    trawl_m <- filter(xx, sex == 0)
+    trawl_m <- filter(x, sex == 0)
     trawl_m$weight_predicted_m <- exp(maletw$pars$log_a +
       maletw$pars$b * log(trawl_m$length)) * 1000
 
-    xxx <- filter(xx, sex == 2 | sex == 0)
-    xxx$sex <- replace(xxx$sex, xxx$sex == 0, 2) # females are 2
+    xx <- filter(x, sex == 2 | sex == 0)
+    xx$sex <- replace(xx$sex, xx$sex == 0, 2) # females are 2
     femaletw <- fit_length_weight(
-      xxx,
+      xx,
       sex = ("female"),
       downsample = Inf,
       min_samples = 50L,
@@ -89,7 +91,7 @@ predict_weight <- function(xx) {
       scale_weight = 1 / 1000 # grams to kgs
     )
 
-    trawl_f <- filter(xx, sex == 0)
+    trawl_f <- filter(x, sex == 0)
     trawl_f$weight_predicted_f <- exp(femaletw$pars$log_a +
       femaletw$pars$b * log(trawl_f$length)) * 1000
 
@@ -249,21 +251,30 @@ sample_catchweight_checks <- function(y2) {
 
   higher_sampsweight2 <- higher_sampsweight %>%
     filter(sample_sum > catch_weight) %>%
-    distinct(fishing_event_id)
+    distinct(fishing_event_id, sample_sum, catch_weight)
 
   df <- tibble(fishing_event_id = higher_sampsweight2$fishing_event_id, report = "sum of sample weights > catch weight")
 
   plot_sample_bigger_catch <-
-    ggplot(y3, aes(catch_weight, sample_sum), colour = "grey50") +
-    geom_point() +
-    scale_color_viridis_c(trans = "log10") # +
+    ggplot(higher_sampsweight, aes(catch_weight, sample_sum), colour = "grey50") +
+    geom_point()
 
   diag_setweightgreater <- plot_sample_bigger_catch +
-    geom_point(data = y4, mapping = aes(catch_weight, sample_sum), col = "red") +
+    geom_point(data = higher_sampsweight2, mapping = aes(catch_weight, sample_sum), col = "red") +
     scale_x_log10() +
     scale_y_log10() +
-    theme_sleek
-
+    labs(x = "log10(set catch weight)", y = "log10(sum of samples weight)") +
+    theme_sleek() +
+    ggrepel::geom_text_repel(
+      data = higher_sampsweight %>%
+        mutate(label = ifelse(sample_sum > catch_weight,
+          as.character(fishing_event_id), NA
+        )),
+      aes(label = label),
+      box.padding = 0.5,
+      max.overlaps = Inf,
+      show.legend = FALSE
+    )
 
   # 3. check for multivariate outliers - create new column in data frame to hold Mahalanobis distances
   multi_outliers <- higher_sampsweight %>%
@@ -283,10 +294,23 @@ sample_catchweight_checks <- function(y2) {
   multi_outliers3 <- filter(multi_outliers, p < 0.001) %>% distinct()
 
   x <- ggplot(multi_outliers, aes(logcatch_weight, logsample_sum / 1000)) + # shows very high catch_weights
-    geom_point() +
-    scale_color_viridis_c(trans = "log10") #+
+    geom_point()
 
-  diag_malahdistance <- x + geom_point(multi_outliers2, mapping = aes(logcatch_weight, logsample_sum / 1000), colour = "red")
+  diag_malahdistance <- x + geom_point(multi_outliers2, mapping = aes(logcatch_weight, logsample_sum / 1000), colour = "red") +
+    labs(x = "log10(catch weight) (kg)", y = "log10(samples weight) (kg)") +
+    theme_sleek() +
+    # geom_text(aes(label = fishing_event_id), check_overlap = TRUE) +
+    ggrepel::geom_text_repel(
+      data = multi_outliers %>%
+        mutate(label = ifelse(p < 0.001,
+          as.character(fishing_event_id), NA
+        )),
+      aes(label = label),
+      box.padding = 1,
+      max.overlaps = Inf,
+      show.legend = FALSE
+    )
+
 
   df <- rbind(df, tibble(
     fishing_event_id = multi_outliers3$fishing_event_id,
@@ -306,10 +330,21 @@ sample_catchweight_checks <- function(y2) {
   ))
 
   catch_weight_3sd <- ggplot(catch_weight_SD, aes(weight_complete / 1000, catch_weight)) +
-    geom_point() +
-    scale_color_viridis_c(trans = "log10") #+
+    geom_point()
 
-  diag_catchweight3sd <- catch_weight_3sd + geom_point(catch_weight_SD2, mapping = aes(weight_complete / 1000, catch_weight), colour = "red")
+  diag_catchweight3sd <- catch_weight_3sd +
+    geom_point(catch_weight_SD2, mapping = aes(weight_complete / 1000, catch_weight), colour = "red") +
+    labs(x = "samples weight (kg)", y = "set catch weight (kg)") +
+    theme_sleek() +
+    ggrepel::geom_text_repel(
+      data = catch_weight_SD %>%
+        mutate(label = ifelse(within_3sd == FALSE,
+                              as.character(fishing_event_id), NA
+        )),
+      aes(label = label),
+      box.padding = 1,
+      max.overlaps = Inf,
+      show.legend = FALSE)
 
 
   # 5. find sample weight values outside of 3 SD
@@ -317,10 +352,21 @@ sample_catchweight_checks <- function(y2) {
   sample_weight_SD2 <- filter(sample_weight_SD, within_3sd == FALSE)
 
   sample_weight_3SDplot <- ggplot(sample_weight_SD, aes(weight_complete / 1000, catch_weight)) +
-    geom_point() +
-    scale_color_viridis_c(trans = "log10") #+
+    geom_point()
 
-  diag_sampleweight3sd <- sample_weight_3SDplot + geom_point(sample_weight_SD2, mapping = aes(weight_complete / 1000, catch_weight), colour = "red")
+  diag_sampleweight3sd <- sample_weight_3SDplot +
+    geom_point(sample_weight_SD2, mapping = aes(weight_complete / 1000, catch_weight), colour = "red") +
+    labs(x = "samples weight (kg)", y = "set catch weight (kg)") +
+    theme_sleek() +
+    ggrepel::geom_text_repel(
+      data = sample_weight_SD %>%
+        mutate(label = ifelse(within_3sd == FALSE,
+                              as.character(fishing_event_id), NA
+        )),
+      aes(label = label),
+      box.padding = 1,
+      max.overlaps = Inf,
+      show.legend = FALSE)
 
   df <- rbind(df, tibble(
     fishing_event_id = sample_weight_SD2$fishing_event_id,
@@ -328,13 +374,13 @@ sample_catchweight_checks <- function(y2) {
   ))
 
   x <- cowplot::plot_grid(diag_setweightgreater, diag_malahdistance, diag_catchweight3sd, diag_sampleweight3sd,
-                          ncol = 2,
-                          labels = c(
-                            "sum sample weight greater than catch weight",
-                            "Multivariate outliers (catch_weight and sample weights)",
-                            "Catch weights outside of 3 SD",
-                            "sample weights outside of 3 SD"
-                          )
+    ncol = 2,
+    labels = c(
+      "sum sample weights > catch weight",
+      "Multivariate outliers (catch & sample weights)",
+      "Catch weights > 3 SD",
+      "Sample weights > 3 SD"
+    )
   )
   print(x)
   return(df)
@@ -359,10 +405,11 @@ y2 <- left_join(sets, select(samps_weightcomplete, year, survey_abbrev, survey_i
 )
 dim(y2)
 
-#run checks
-checkoutput <- sample_catchweight_checks(y2) #see database here and fixed any obvious issues with fishnig_event_ids
+# run checks
+checkoutput <- sample_catchweight_checks(y2) # see database here and fixed any obvious issues with fishnig_event_ids
+write.table(checkoutput, "C:/GFdata_function/dogfish_diagnostics_output.csv", sep = ",", row.names = FALSE)
 
-#get rid of fishing events with no samples
+# get rid of fishing events with no samples
 yy <- group_by(y2, survey_abbrev, fishing_event_id) %>%
   mutate(any_weight_na = any(is.na(weight_complete))) %>%
   filter(!any_weight_na)
@@ -420,6 +467,3 @@ ggplot(yy2, aes(calculated_count, catch_weight, colour = implied_weight_per_fish
   scale_x_log10() +
   scale_y_log10() +
   facet_wrap(~survey_abbrev)
-
-
-
