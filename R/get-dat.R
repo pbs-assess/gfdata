@@ -167,11 +167,13 @@ get_survey_sets <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36),
   survey_ids <- get_survey_ids(ssid)
   surveys <- get_ssids()
 
+  # CAPTAIN_ID,
+  # VESSEL_ID,
+  # FE.CAPTAIN_ID,
+  # VESSEL_ID,
+
   fe <- run_sql("GFBioSQL", "SELECT
     FISHING_EVENT_ID,
-      SKIPPER_ID,
-      skipper_alpha_cde,
-      skipper_desc,
     FE_START_LATTITUDE_DEGREE + FE_START_LATTITUDE_MINUTE / 60 AS LATITUDE,
     -(FE_START_LONGITUDE_DEGREE + FE_START_LONGITUDE_MINUTE / 60) AS
       LONGITUDE,
@@ -179,7 +181,9 @@ get_survey_sets <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36),
     -(FE_END_LONGITUDE_DEGREE + FE_END_LONGITUDE_MINUTE / 60) AS
       LONGITUDE_END,
       FE_BEGINNING_BOTTOM_DEPTH AS DEPTH_M
-    FROM B21_Samples")
+    FROM FISHING_EVENT FE
+    INNER JOIN TRIP T ON T.TRIP_ID = FE.TRIP_ID")
+
   Sys.sleep(sleep)
 
   d_survs <- list()
