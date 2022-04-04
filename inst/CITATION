@@ -17,7 +17,7 @@ citEntry(
 
 citEntry(
   entry    = "article",
-  title    = "A Reproducible Data Synopsis for over 100 Species of {{British Columbia}} Groundfish",
+  title    = "A Reproducible Data Synopsis for over 100 Species of {British Columbia} Groundfish",
   author = "Anderson, S.C. and Keppel, E. A. and Edwards, A. M.",
   year     = "2019",
   volume = "2019/041",
