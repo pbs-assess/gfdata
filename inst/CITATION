@@ -1,0 +1,14 @@
+citHeader("To cite gfdata in publications use:")
+
+citEntry(
+  entry    = "manual",
+  title    = "{gfdata}: Data Extraction for {DFO} {PBS} Groundfish Stocks",
+  year     = "2022",
+  note     = "R package version 0.0.0.9000",
+  url      = "https://github.com/pbs-assess/gfdata",
+  textVersion = paste(
+  "Keppel, E.A., S.C. Anderson, A.M. Edwards, and C. Grandin (2022).
+  gfdata: Data Extraction for DFO PBS Groundfish Stocks. R package version
+  0.0.0.9000. https://github.com/pbs-assess/gfdata"
+  )
+)
