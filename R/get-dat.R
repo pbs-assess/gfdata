@@ -274,7 +274,7 @@ get_survey_sets <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36),
       paste(missing_species, collapse = ", ")
     )
   }
-  as_tibble(.d)
+  add_version(as_tibble(.d))
 }
 
 #' @export
@@ -294,7 +294,7 @@ get_ll_hook_data <- function(species = NULL, ssid = NULL){
   # .d$species_common_name <- tolower(.d$species_common_name)
   # .d$species_science_name <- tolower(.d$species_science_name)
 
-  as_tibble(.d)
+  add_version(as_tibble(.d))
 }
 
 #' @export
@@ -389,7 +389,7 @@ get_survey_samples <- function(species, ssid = NULL, remove_bad_data = TRUE,
       .d$species_common_name == "pacific flatnose"), ]
   }
 
-  as_tibble(.d)
+  add_version(as_tibble(.d))
 }
 
 #' @export
@@ -463,7 +463,7 @@ get_commercial_samples <- function(species, unsorted_only = TRUE, major = NULL,
       )
     )
 
-  as_tibble(.d)
+  add_version(as_tibble(.d))
 }
 
 #' @export
@@ -485,7 +485,7 @@ get_catch <- function(species, major = NULL) {
   .d$species_common_name <- tolower(.d$species_common_name)
   .d$species_scientific_name <- tolower(.d$species_scientific_name)
   .d$year <- lubridate::year(.d$best_date)
-  as_tibble(.d)
+  add_version(as_tibble(.d))
 }
 
 # #' For a given species, extracts all species co-caught with the given species
@@ -586,7 +586,7 @@ get_cpue_historical <- function(species = NULL, major = NULL,
     area_regex = c("3C", "3D", "5A", "5B", "5C", "5D", "5E")
   )
 
-  as_tibble(.d)
+  add_version(as_tibble(.d))
 }
 
 #' @export
@@ -609,7 +609,7 @@ get_cpue_historical_hake <- function(end_year = NULL) {
     .d <- .d %>% filter(year <= end_year)
   }
 
-  as_tibble(.d)
+  add_version(as_tibble(.d))
 }
 
 #' @export
@@ -630,7 +630,7 @@ get_cpue_historical_hl <- function(species = NULL, major = NULL,
   # .d$SPECIES_COMMON_NAME[.d$SPECIES_COMMON_NAME == "SPINY DOGFISH"] <-
   #  toupper("north pacific spiny dogfish") # to match GFBioSQL
   names(.d) <- tolower(names(.d))
-  as_tibble(.d)
+  add_version(as_tibble(.d))
 }
 
 #' @export
@@ -649,7 +649,7 @@ get_cpue_spatial <- function(species, major = NULL) {
   names(.d) <- tolower(names(.d))
   .d$species_common_name <- tolower(.d$species_common_name)
   .d$species_scientific_name <- tolower(.d$species_scientific_name)
-  as_tibble(.d)
+  add_version(as_tibble(.d))
 }
 
 #' @export
@@ -668,7 +668,7 @@ get_catch_spatial <- function(species, major = NULL) {
   names(.d) <- tolower(names(.d))
   .d$species_common_name <- tolower(.d$species_common_name)
   .d$species_scientific_name <- tolower(.d$species_scientific_name)
-  as_tibble(.d)
+  add_version(as_tibble(.d))
 }
 
 #' @export
@@ -689,7 +689,7 @@ get_cpue_spatial_ll <- function(species, major = NULL) {
   .d$gear <- tolower(.d$gear)
   .d$fishery_sector <- tolower(.d$fishery_sector)
   .d$species_scientific_name <- tolower(.d$species_scientific_name)
-  as_tibble(.d)
+  add_version(as_tibble(.d))
 }
 
 #' @param gear The gear type(s) to include for CPUE. Will be converted to
@@ -713,7 +713,7 @@ get_cpue_index <- function(gear = "bottom trawl", min_cpue_year = 1996,
   }
   .d <- run_sql("GFFOS", .q)
   names(.d) <- tolower(names(.d))
-  as_tibble(.d)
+  add_version(as_tibble(.d))
 }
 
 #' @export
@@ -731,7 +731,7 @@ get_cpue_index_hl <- function(min_cpue_year = 1980, major = NULL) {
   }
   .d <- run_sql("GFFOS", .q)
   names(.d) <- tolower(names(.d))
-  as_tibble(.d)
+  add_version(as_tibble(.d))
 }
 
 get_commercial_hooks_per_fe <- function(min_cpue_year = 2008) {
@@ -742,7 +742,7 @@ get_commercial_hooks_per_fe <- function(min_cpue_year = 2008) {
   )
   .d <- run_sql("GFFOS", .q)
   names(.d) <- tolower(names(.d))
-  as_tibble(.d)
+  add_version(as_tibble(.d))
 }
 
 #' @export
@@ -762,7 +762,7 @@ get_age_precision <- function(species, major = NULL) {
   names(.d) <- tolower(names(.d))
   .d$species_common_name <- tolower(.d$species_common_name)
   .d <- .d %>% select(-.data$major_stat_area_code)
-  as_tibble(.d)
+  add_version(as_tibble(.d))
 }
 
 #' @export
@@ -779,7 +779,7 @@ get_survey_index <- function(species, ssid = NULL) {
   names(.d) <- tolower(names(.d))
   .d$species_common_name <- tolower(.d$species_common_name)
   .d$species_science_name <- tolower(.d$species_science_name)
-  as_tibble(.d)
+  add_version(as_tibble(.d))
 }
 
 
@@ -789,7 +789,7 @@ get_sable_landings <- function(species, ssid = NULL) {
   .q <- read_sql("get-sablefish-landings.sql")
   .d <- run_sql("Sablefish", .q)
   names(.d) <- tolower(names(.d))
-  as_tibble(.d)
+  add_version(as_tibble(.d))
 }
 
 
@@ -809,7 +809,7 @@ get_survey_blocks <- function(ssid = NULL) {
   names(.d) <- tolower(names(.d))
   .d <- dplyr::distinct(.d)
   .d$block_designation <- as.numeric(.d$block_designation)
-  as_tibble(.d)
+  add_version(as_tibble(.d))
 }
 
 
@@ -819,7 +819,7 @@ get_eulachon_specimens <- function() {
   .q <- read_sql("get-eulachon-specimens.sql")
   .d <- run_sql("GFBioSQL", .q)
   names(.d) <- tolower(names(.d))
-  as_tibble(.d)
+  add_version(as_tibble(.d))
 }
 
 #' @export
@@ -833,7 +833,7 @@ get_gear_types <- function() {
   )
   names(.d) <- tolower(names(.d))
   .d$gear <- tolower(.d$gear)
-  as_tibble(.d)
+  add_version(as_tibble(.d))
 }
 
 #' @param species_group Species group code(s) to include (see lookup table
@@ -878,7 +878,7 @@ get_management <- function(species = NULL, species_group = NULL, fishery = NULL,
   names(.d) <- tolower(names(.d))
   .d$species_common_name <- tolower(.d$species_common_name)
   as_tibble(.d)
-  .d %>% arrange(dplyr::desc(action_start_date))
+  .d %>% arrange(dplyr::desc(action_start_date)) %>% add_version()
 }
 
 #' @param file_name Optional filename(s) for the cached file. Defaults to the
