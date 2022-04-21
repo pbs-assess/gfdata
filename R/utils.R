@@ -193,5 +193,6 @@ get_spp_sample_length_type <- function(species) {
 
 add_version <- function(x) {
   attr(x, "version") <- utils::packageVersion("gfdata")
+  attr(x, "date") <- Sys.time()
   x
 }
