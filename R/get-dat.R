@@ -310,6 +310,8 @@ get_ll_hook_data <- function(species = NULL, ssid = NULL){
 #'  get_major_areas() to lookup area codes with descriptions.
 #' @param remove_bad_data Remove known bad data, such as unrealistic
 #'  length or weight values.
+#' @param return_all_lengths Include all length types, rather than just
+#'  with most common measurement. Default = FALSE.
 #' @param usability A vector of usability codes to include. Defaults to all.
 #'   IPHC codes may be different to other surveys.
 get_survey_samples <- function(species, ssid = NULL,
@@ -333,7 +335,7 @@ get_survey_samples <- function(species, ssid = NULL,
   message(paste0("All or majority of length measurements are ", length_type))
   search_flag <- "-- insert length type here"
   i <- grep(search_flag, .q)
-  if (all_lengths){
+  if (return_all_lengths){
     .q[i] <- paste0("CAST(ROUND(Fork_Length/ 10, 1) AS DECIMAL(8,1)) AS Fork_Length,
                     CAST(ROUND(Standard_Length/ 10, 1) AS DECIMAL(8,1)) AS Standard_Length,
                     CAST(ROUND(Total_Length/ 10, 1) AS DECIMAL(8,1)) AS Total_Length,
@@ -353,6 +355,10 @@ get_survey_samples <- function(species, ssid = NULL,
 
   if (!is.null(usability)) {
     .d <- filter(.d, usability_code %in% usability)
+  }
+
+  if (!return_all_lengths){
+    .d <- .d %>% mutate(length_type = length_type)
   }
 
   if (length(.d$specimen_id) > length(unique(.d$specimen_id))) {
@@ -410,8 +416,12 @@ get_survey_samples <- function(species, ssid = NULL,
 #' @export
 #' @param unsorted_only Remove sorted biological data ('keepers' and 'discards'
 #'  and unknown). Default = TRUE.
+#' @param return_all_lengths Include all length types, rather than just
+#'  with most common measurement. Default = FALSE.
 #' @rdname get_data
-get_commercial_samples <- function(species, unsorted_only = TRUE, major = NULL,
+get_commercial_samples <- function(species, unsorted_only = TRUE,
+                                   return_all_lengths = FALSE,
+                                   major = NULL,
                                    usability = NULL) {
   .q <- read_sql("get-comm-samples.sql")
   .q <- inject_filter("AND SM.SPECIES_CODE IN", species, sql_code = .q)
@@ -420,7 +430,17 @@ get_commercial_samples <- function(species, unsorted_only = TRUE, major = NULL,
   message(paste0("All or majority of length measurements are ", length_type))
   search_flag <- "-- insert length type here"
   i <- grep(search_flag, .q)
-  .q[i] <- paste0("CAST(ROUND(", length_type, "/ 10, 1) AS DECIMAL(8,1)) AS LENGTH,")
+
+  if (return_all_lengths){
+    .q[i] <- paste0("CAST(ROUND(Fork_Length/ 10, 1) AS DECIMAL(8,1)) AS Fork_Length,
+                    CAST(ROUND(Standard_Length/ 10, 1) AS DECIMAL(8,1)) AS Standard_Length,
+                    CAST(ROUND(Total_Length/ 10, 1) AS DECIMAL(8,1)) AS Total_Length,
+                    CAST(ROUND(Second_Dorsal_Length/ 10, 1) AS DECIMAL(8,1)) AS Second_Dorsal_Length,
+                    ")
+  } else {
+    .q[i] <- paste0("CAST(ROUND(", length_type, "/ 10, 1) AS DECIMAL(8,1)) AS LENGTH,")
+  }
+
   if (!is.null(major)) {
     .q <- inject_filter("AND SM.MAJOR_STAT_AREA_CODE =", major, .q,
       search_flag = "-- insert major here", conversion_func = I
@@ -447,6 +467,10 @@ get_commercial_samples <- function(species, unsorted_only = TRUE, major = NULL,
 
   if (!is.null(usability)) {
     .d <- filter(.d, usability_code %in% usability)
+  }
+
+  if (!return_all_lengths){
+    .d <- .d %>% mutate(length_type = length_type)
   }
 
   # remove ages from unaccepted ageing methods:

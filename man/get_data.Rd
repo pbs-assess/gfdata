@@ -42,6 +42,7 @@ get_survey_samples(
   ssid = NULL,
   remove_bad_data = TRUE,
   unsorted_only = TRUE,
+  return_all_lengths = FALSE,
   usability = NULL,
   major = NULL
 )
@@ -49,6 +50,7 @@ get_survey_samples(
 get_commercial_samples(
   species,
   unsorted_only = TRUE,
+  return_all_lengths = FALSE,
   major = NULL,
   usability = NULL
 )
@@ -147,6 +149,9 @@ length or weight values.}
 
 \item{unsorted_only}{Remove sorted biological data ('keepers' and 'discards'
 and unknown). Default = TRUE.}
+
+\item{return_all_lengths}{Include all length types, rather than just
+with most common measurement. Default = FALSE.}
 
 \item{usability}{A vector of usability codes to include. Defaults to all.
 IPHC codes may be different to other surveys.}
