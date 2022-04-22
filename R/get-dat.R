@@ -312,8 +312,10 @@ get_ll_hook_data <- function(species = NULL, ssid = NULL){
 #'  length or weight values.
 #' @param usability A vector of usability codes to include. Defaults to all.
 #'   IPHC codes may be different to other surveys.
-get_survey_samples <- function(species, ssid = NULL, remove_bad_data = TRUE,
-                               unsorted_only = TRUE, usability = NULL, major = NULL) {
+get_survey_samples <- function(species, ssid = NULL,
+                               remove_bad_data = TRUE, unsorted_only = TRUE,
+                               return_all_lengths = FALSE,
+                               usability = NULL, major = NULL) {
   .q <- read_sql("get-survey-samples.sql")
   .q <- inject_filter("AND SP.SPECIES_CODE IN", species, sql_code = .q)
   if (!is.null(ssid)) {
@@ -331,8 +333,15 @@ get_survey_samples <- function(species, ssid = NULL, remove_bad_data = TRUE,
   message(paste0("All or majority of length measurements are ", length_type))
   search_flag <- "-- insert length type here"
   i <- grep(search_flag, .q)
+  if (all_lengths){
+    .q[i] <- paste0("CAST(ROUND(Fork_Length/ 10, 1) AS DECIMAL(8,1)) AS Fork_Length,
+                    CAST(ROUND(Standard_Length/ 10, 1) AS DECIMAL(8,1)) AS Standard_Length,
+                    CAST(ROUND(Total_Length/ 10, 1) AS DECIMAL(8,1)) AS Total_Length,
+                    CAST(ROUND(Second_Dorsal_Length/ 10, 1) AS DECIMAL(8,1)) AS Second_Dorsal_Length,
+                    ")
+  } else {
   .q[i] <- paste0("CAST(ROUND(", length_type, "/ 10, 1) AS DECIMAL(8,1)) AS LENGTH,")
-
+  }
   .d <- run_sql("GFBioSQL", .q)
   names(.d) <- tolower(names(.d))
   .d$species_common_name <- tolower(.d$species_common_name)
