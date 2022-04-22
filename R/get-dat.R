@@ -451,8 +451,20 @@ get_commercial_samples <- function(species, unsorted_only = TRUE,
   .d$species_common_name <- tolower(.d$species_common_name)
   .d$species_science_name <- tolower(.d$species_science_name)
   .d <- mutate(.d, year = lubridate::year(trip_start_date))
-  duplicate_specimen_ids <- sum(duplicated(.d$specimen_id))
 
+  if (!return_all_lengths){
+    .d <- .d %>% mutate(length_type = length_type)
+  } else {
+    .d <- .d %>%
+      tidyr::pivot_longer(
+        cols = tidyr::ends_with("_length"),
+        names_to = "length_type",
+        values_to = "length",
+        values_drop_na = TRUE
+      )
+  }
+
+  duplicate_specimen_ids <- sum(duplicated(.d$specimen_id))
   if (duplicate_specimen_ids > 0) {
     warning(
       duplicate_specimen_ids, " duplicate specimen IDs detected for",
@@ -461,18 +473,6 @@ get_commercial_samples <- function(species, unsorted_only = TRUE,
     .d <- .d[!duplicated(.d$specimen_id), , drop = FALSE]
   }
   # assertthat::assert_that(sum(duplicated(.d$specimen_id)) == 0)
-
-  if (!return_all_lengths){
-    .d <- .d %>% mutate(length_type = length_type)
-  } else {
-    .d <- .d %>%
-      pivot_longer(
-        cols = ends_with("_length"),
-        names_to = "length_type",
-        values_to = "length",
-        values_drop_na = TRUE
-      )
-  }
 
   if (unsorted_only) {
     .d <- filter(.d, sampling_desc == "UNSORTED")
