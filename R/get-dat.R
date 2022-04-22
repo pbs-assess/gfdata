@@ -456,7 +456,7 @@ get_commercial_samples <- function(species, unsorted_only = TRUE,
   if (!return_all_lengths){
     .d <- .d %>% mutate(length_type = length_type)
   } else {
-    .n <- .d %>% select(-Fork_Length,-Standard_Length,-Total_Length, -Second_Dorsal_Length)
+    .n <- .d %>% select(-fork_length,-standard_length,-total_length, -second_dorsal_length)
     .n <- names(.n)
     .d <- .d %>% select(-length) %>%
       tidyr::pivot_longer(
