@@ -1,0 +1,31 @@
+citHeader("To cite gfdata in publications use:")
+
+citEntry(
+  entry    = "manual",
+  title    = "{gfdata}: Data Extraction for {DFO} {PBS} Groundfish Stocks",
+  year     = "2022",
+  note     = "R package version 0.0.0.9000",
+  author = "Keppel, E. A. and Anderson, S.C. and Edwards, A. M. and Grandin, C.",
+  url      = "https://github.com/pbs-assess/gfdata",
+  textVersion = paste(
+  "Keppel, E.A., S.C. Anderson, A.M. Edwards, and C. Grandin. 2022.
+  gfdata: Data Extraction for DFO PBS Groundfish Stocks. R package version
+  0.0.0.9000. https://github.com/pbs-assess/gfdata"
+  )
+)
+
+
+citEntry(
+  entry    = "article",
+  title    = "A Reproducible Data Synopsis for over 100 Species of {British Columbia} Groundfish",
+  author = "Anderson, S.C. and Keppel, E. A. and Edwards, A. M.",
+  year     = "2019",
+  volume = "2019/041",
+  pages = "vii + 321 p",
+  journal = "DFO Can. Sci. Advis. Sec. Res. Doc.",
+  textVersion = paste(
+  "Anderson, S.C., E.A. Keppel, A.M. Edwards. 2019. A reproducible data synopsis for over 100 species of British Columbia groundfish. DFO Can. Sci. Advis. Sec. Res. Doc. 2019/041. vii + 321 p."
+  )
+)
+
+

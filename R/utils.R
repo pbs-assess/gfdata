@@ -190,3 +190,9 @@ get_spp_sample_length_type <- function(species) {
   .d <- .d %>% filter(count == max(count))
   .d$length_type
 }
+
+add_version <- function(x) {
+  attr(x, "version") <- utils::packageVersion("gfdata")
+  attr(x, "date") <- Sys.time()
+  x
+}
