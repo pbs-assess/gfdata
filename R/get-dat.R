@@ -432,7 +432,8 @@ get_commercial_samples <- function(species, unsorted_only = TRUE,
   i <- grep(search_flag, .q)
 
   if (return_all_lengths){
-    .q[i] <- paste0("CAST(ROUND(Fork_Length/ 10, 1) AS DECIMAL(8,1)) AS Fork_Length,
+    .q[i] <- paste0("CAST(ROUND(", length_type, "/ 10, 1) AS DECIMAL(8,1)) AS LENGTH,
+                    CAST(ROUND(Fork_Length/ 10, 1) AS DECIMAL(8,1)) AS Fork_Length,
                     CAST(ROUND(Standard_Length/ 10, 1) AS DECIMAL(8,1)) AS Standard_Length,
                     CAST(ROUND(Total_Length/ 10, 1) AS DECIMAL(8,1)) AS Total_Length,
                     CAST(ROUND(Second_Dorsal_Length/ 10, 1) AS DECIMAL(8,1)) AS Second_Dorsal_Length,
@@ -455,13 +456,15 @@ get_commercial_samples <- function(species, unsorted_only = TRUE,
   if (!return_all_lengths){
     .d <- .d %>% mutate(length_type = length_type)
   } else {
-    .d <- .d %>%
+    .n <- .d %>% select(-Fork_Length,-Standard_Length,-Total_Length, -Second_Dorsal_Length)
+    .n <- names(.n)
+    .d <- .d %>% select(-length) %>%
       tidyr::pivot_longer(
         cols = tidyr::ends_with("_length"),
         names_to = "length_type",
         values_to = "length",
         values_drop_na = TRUE
-      )
+      ) %>% dplyr::relocate(tidyr::all_of(.n))
   }
 
   duplicate_specimen_ids <- sum(duplicated(.d$specimen_id))
