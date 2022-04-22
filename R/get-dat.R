@@ -310,8 +310,6 @@ get_ll_hook_data <- function(species = NULL, ssid = NULL){
 #'  get_major_areas() to lookup area codes with descriptions.
 #' @param remove_bad_data Remove known bad data, such as unrealistic
 #'  length or weight values.
-#' @param return_all_lengths Include all length types, rather than just
-#'  with most common measurement. Default = FALSE.
 #' @param usability A vector of usability codes to include. Defaults to all.
 #'   IPHC codes may be different to other surveys.
 get_survey_samples <- function(species, ssid = NULL,
