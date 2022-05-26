@@ -114,7 +114,8 @@ cache_pbs_data(
   unsorted_only = TRUE,
   historical_cpue = FALSE,
   survey_sets = FALSE,
-  verbose = TRUE
+  verbose = TRUE,
+  return_all_lengths = FALSE
 )
 
 get_hake_survey_samples()
