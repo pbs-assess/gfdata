@@ -742,10 +742,12 @@ get_cpue_index <- function(gear = "bottom trawl", min_cpue_year = 1996,
   major = NULL) {
   .q <- read_sql("get-cpue-index.sql")
   i <- grep("-- insert filters here", .q)
+  if (!is.null(gear)) {
   .q[i] <- paste0(
     "WHERE GEAR IN(", collapse_filters(toupper(gear)),
     ") AND YEAR(BEST_DATE) >= ", min_cpue_year
   )
+  }
   if (!is.null(major)) {
     .q <- inject_filter("AND MAJOR_STAT_AREA_CODE =", major, .q,
       search_flag = "-- insert major here", conversion_func = I
