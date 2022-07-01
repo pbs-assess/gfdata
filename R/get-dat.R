@@ -955,7 +955,7 @@ get_management <- function(species = NULL, species_group = NULL, fishery = NULL,
 #' @rdname get_data
 cache_pbs_data <- function(species, major = NULL, file_name = NULL, path = ".",
                            compress = FALSE, unsorted_only = TRUE, historical_cpue = FALSE,
-                           survey_sets = FALSE, verbose = TRUE) {
+                           survey_sets = FALSE, verbose = TRUE, return_all_lengths = FALSE) {
   dir.create(path, showWarnings = FALSE)
   for (sp_i in seq_along(species)) {
     this_sp <- species[[sp_i]]
@@ -978,7 +978,7 @@ cache_pbs_data <- function(species, major = NULL, file_name = NULL, path = ".",
     }
     out$survey_samples <- get_survey_samples(this_sp)
     out$commercial_samples <- get_commercial_samples(this_sp,
-      unsorted_only = unsorted_only
+      unsorted_only = unsorted_only, return_all_lengths = return_all_lengths
     )
     out$catch <- get_catch(this_sp)
     out$cpue_spatial <- get_cpue_spatial(this_sp)
