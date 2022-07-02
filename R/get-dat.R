@@ -275,13 +275,18 @@ get_survey_sets <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36),
   )
 
   # calculate area_swept for trawl exactly as it has been done for the density values in this dataframe
-  # note: is NA if doorspread_m is missing and employs full duration in water (not just bottom time) when tow_length_m is missing
+  # note: is NA if doorspread_m is missing and duration_min may be time in water (not just bottom time)
   .d$area_swept1 <- .d$doorspread_m * (.d$speed_mpm * .d$duration_min)
   .d$area_swept2 <- .d$tow_length_m * .d$doorspread_m
   .d$area_swept <- ifelse(!is.na(.d$area_swept2), .d$area_swept2, .d$area_swept1)
-  .d <- dplyr::filter(.d, !is.na(area_swept))
 
-  # note: area_km is stratum area not an area_swept, should it be renamed, or is it already in use somewhere?
+  # can't do this here because ll called by this function too
+  # also, there may be ways of using mean(.d$doorspread_m) to fill in some NAs?
+  # .d <- dplyr::filter(.d, !is.na(area_swept))
+  # instead use this to make sure false 0 aren't included
+  .d$density_kgpm2 <- ifelse(!is.na(area_swept), .d$density_kgpm2, NA)
+
+  # note: area_km is stratum area not an area_swept, could it be renamed, or is it already in use somewhere?
   # .d <- rename(.d, stratum_area_km = area_km)
 
   .d <- mutate(.d,
