@@ -225,7 +225,7 @@ synopsis report production.
 \details{
 \itemize{
 \item \code{get_survey_sets()} extracts survey catch data and spatial data for
-plotting survey catchs on a map of British Columbia
+plotting survey catches on a map of British Columbia
 \item \code{get_survey_samples()} extracts all biological sample specimen records
 from research surveys for given species and survey series IDs from GFBio
 \item \code{get_hake_survey_samples()} extracts all biological sample specimen records
@@ -284,6 +284,16 @@ username and password, see the details section in \code{\link[=run_sql]{run_sql(
 ## Import survey catch density and location data by tow or set for plotting
 ## Specify single or multiple species by common name or species code and
 ## single or multiple survey series id(s).
+## Notes:
+## `area_km` is the stratum area used in design-based index calculation.
+## `area_swept` is used to calculate density for trawl surveys and based on
+## `area_swept1` (`doorspread` x `duration_min` x `speed_mpm`) when
+## `tow_length_m` is missing, and otherwise we use `area_swept2`
+## (`doorspread` x `tow_length_m`).
+## `duration_min` is derived in the SQL procedure "proc_catmat_2011" and
+## differs slightly from the difference between `time_deployed` and
+## `time_retrieved`.
+
 get_survey_sets(species = "lingcod", ssid = 1)
 
 ## Import survey or commercial biological data for various plots

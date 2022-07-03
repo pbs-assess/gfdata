@@ -65,7 +65,16 @@
 #' ## Import survey catch density and location data by tow or set for plotting
 #' ## Specify single or multiple species by common name or species code and
 #' ## single or multiple survey series id(s).
-#' ## Note: area_km is stratum area, while area_swept is used to calculate density.
+#' ## Notes:
+#' ## `area_km` is the stratum area used in design-based index calculation.
+#' ## `area_swept` is used to calculate density for trawl surveys and based on
+#' ## `area_swept1` (`doorspread` x `duration_min` x `speed_mpm`) when
+#' ## `tow_length_m` is missing, and otherwise we use `area_swept2`
+#' ## (`doorspread` x `tow_length_m`).
+#' ## `duration_min` is derived in the SQL procedure "proc_catmat_2011" and
+#' ## differs slightly from the difference between `time_deployed` and
+#' ## `time_retrieved`.
+#'
 #' get_survey_sets(species = "lingcod", ssid = 1)
 #'
 #' ## Import survey or commercial biological data for various plots
@@ -281,7 +290,7 @@ get_survey_sets <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36),
   # calculate area_swept for trawl exactly as it has been done for the density values in this dataframe
   # note: is NA if doorspread_m is missing and duration_min may be time in water (not just bottom time)
   .d$area_swept1 <- .d$doorspread_m * (.d$speed_mpm * .d$duration_min)
-  .d$area_swept2 <- .d$tow_length_m * .d$doorspread_m
+  .d$area_swept2 <- .d$doorspread_m * .d$tow_length_m
   .d$area_swept <- ifelse(!is.na(.d$area_swept2), .d$area_swept2, .d$area_swept1)
 
   # can't do this here because ll called by this function too
@@ -289,9 +298,6 @@ get_survey_sets <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36),
   # .d <- dplyr::filter(.d, !is.na(area_swept))
   # instead use this to make sure false 0 aren't included
   .d$density_kgpm2 <- ifelse(!is.na(.d$area_swept), .d$density_kgpm2, NA)
-
-  # note: area_km is stratum area not an area_swept, could it be renamed, or is it already in use somewhere?
-  # .d <- rename(.d, stratum_area_km = area_km)
 
   .d <- mutate(.d,
                species_science_name = tolower(species_science_name),
