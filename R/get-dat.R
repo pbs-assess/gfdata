@@ -68,9 +68,9 @@
 #' ## Notes:
 #' ## `area_km` is the stratum area used in design-based index calculation.
 #' ## `area_swept` is used to calculate density for trawl surveys and based on
-#' ## `area_swept1` (`doorspread` x `duration_min` x `speed_mpm`) when
-#' ## `tow_length_m` is missing, and otherwise we use `area_swept2`
-#' ## (`doorspread` x `tow_length_m`).
+#' ## `area_swept1` (`doorspread` x `tow_length_m`) except when
+#' ## `tow_length_m` is missing, and then we use `area_swept2`
+#' ## (`doorspread` x `duration_min` x `speed_mpm`).
 #' ## `duration_min` is derived in the SQL procedure "proc_catmat_2011" and
 #' ## differs slightly from the difference between `time_deployed` and
 #' ## `time_retrieved`.
@@ -289,9 +289,9 @@ get_survey_sets <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36),
 
   # calculate area_swept for trawl exactly as it has been done for the density values in this dataframe
   # note: is NA if doorspread_m is missing and duration_min may be time in water (not just bottom time)
-  .d$area_swept1 <- .d$doorspread_m * (.d$speed_mpm * .d$duration_min)
-  .d$area_swept2 <- .d$doorspread_m * .d$tow_length_m
-  .d$area_swept <- ifelse(!is.na(.d$area_swept2), .d$area_swept2, .d$area_swept1)
+  .d$area_swept1 <- .d$doorspread_m * .d$tow_length_m
+  .d$area_swept2 <- .d$doorspread_m * (.d$speed_mpm * .d$duration_min)
+  .d$area_swept <- ifelse(!is.na(.d$area_swept1), .d$area_swept1, .d$area_swept2)
 
   # can't do this here because ll called by this function too
   # also, there may be ways of using mean(.d$doorspread_m) to fill in some NAs?
