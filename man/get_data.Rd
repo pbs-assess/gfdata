@@ -287,9 +287,9 @@ username and password, see the details section in \code{\link[=run_sql]{run_sql(
 ## Notes:
 ## `area_km` is the stratum area used in design-based index calculation.
 ## `area_swept` is used to calculate density for trawl surveys and based on
-## `area_swept1` (`doorspread` x `duration_min` x `speed_mpm`) when
-## `tow_length_m` is missing, and otherwise we use `area_swept2`
-## (`doorspread` x `tow_length_m`).
+## `area_swept1` (`doorspread` x `tow_length_m`) except when
+## `tow_length_m` is missing, and then we use `area_swept2`
+## (`doorspread` x `duration_min` x `speed_mpm`).
 ## `duration_min` is derived in the SQL procedure "proc_catmat_2011" and
 ## differs slightly from the difference between `time_deployed` and
 ## `time_retrieved`.
