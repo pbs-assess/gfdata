@@ -287,17 +287,18 @@ get_survey_sets <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36),
     species_common_name = tolower(species_common_name)
   )
 
+  if(any(ssid %in% trawl)) {
   # calculate area_swept for trawl exactly as it has been done for the density values in this dataframe
   # note: is NA if doorspread_m is missing and duration_min may be time in water (not just bottom time)
   .d$area_swept1 <- .d$doorspread_m * .d$tow_length_m
   .d$area_swept2 <- .d$doorspread_m * (.d$speed_mpm * .d$duration_min)
   .d$area_swept <- ifelse(!is.na(.d$area_swept1), .d$area_swept1, .d$area_swept2)
 
-  # can't do this here because ll called by this function too
-  # also, there may be ways of using mean(.d$doorspread_m) to fill in some NAs?
+  # won't do this here because there may be ways of using mean(.d$doorspread_m) to fill in some NAs
   # .d <- dplyr::filter(.d, !is.na(area_swept))
   # instead use this to make sure false 0 aren't included
   .d$density_kgpm2 <- ifelse(!is.na(.d$area_swept), .d$density_kgpm2, NA)
+  }
 
   .d <- mutate(.d,
                species_science_name = tolower(species_science_name),
