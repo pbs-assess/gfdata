@@ -122,11 +122,15 @@ NULL
 #'   different survey stratifications.
 #' @param verbose If `TRUE` then extra messages were reprinted during data
 #'   extraction. Useful to monitor progress.
+#' @param remove_false_zeros If `TRUE` will make sure weights > 0 don't have
+#'   associated counts of 0 and vice versa. Only applies to trawl data where
+#'   counts are only taken for small catches.
 #' @param sleep System sleep in seconds between each survey-year
 #'   to be kind to the server.
 #' @rdname get_data
 get_survey_sets <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36),
                             join_sample_ids = FALSE, verbose = FALSE,
+                            remove_false_zeros = FALSE,
                             sleep = 0.05) {
   # Just to pull out up to date list of ssids associated with trawl/ll gear type.
   trawl <- run_sql("GFBioSQL", "SELECT
@@ -294,10 +298,24 @@ get_survey_sets <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36),
   .d$area_swept2 <- .d$doorspread_m * (.d$speed_mpm * .d$duration_min)
   .d$area_swept <- ifelse(!is.na(.d$area_swept1), .d$area_swept1, .d$area_swept2)
 
-  # won't do this here because there may be ways of using mean(.d$doorspread_m) to fill in some NAs
+    # won't do this here because there may be ways of using mean(.d$doorspread_m) to fill in some NAs
   # .d <- dplyr::filter(.d, !is.na(area_swept))
   # instead use this to make sure false 0 aren't included
   .d$density_kgpm2 <- ifelse(!is.na(.d$area_swept), .d$density_kgpm2, NA)
+  }
+
+  # in trawl data, catch_count is only recorded for small catches
+  # so 0 in the catch_count column when catch_weight > 0 seems misleading
+  # note: there are also a few occasions for trawl where count > 0 and catch_weight is 0/NA
+  # these lines replace false 0s with NA, but additional checks might be needed
+  if(remove_false_zeros){
+    .d$catch_count <- ifelse(.d$catch_weight > 0 & .d$catch_count == 0, NA, .d$catch_count)
+    .d$catch_weight <- ifelse(.d$catch_count > 0 & .d$catch_weight == 0, NA, .d$catch_weight)
+
+    if(any(ssid%in%trawl)){
+    .d$density_pcpm2 <- ifelse(.d$catch_weight > 0 & .d$density_pcpm2 == 0, NA, .d$density_pcpm2)
+    .d$density_kgpm2 <- ifelse(.d$catch_count > 0 & .d$density_kgpm2 == 0, NA, .d$density_kgpm2)
+    }
   }
 
   .d <- mutate(.d,
@@ -362,6 +380,7 @@ get_survey_samples <- function(species, ssid = NULL,
     )
   }
   length_type <- get_spp_sample_length_type(species)
+
   message(paste0("All or majority of length measurements are ", length_type))
   search_flag <- "-- insert length type here"
   i <- grep(search_flag, .q)
