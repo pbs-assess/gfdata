@@ -999,3 +999,52 @@ cache_pbs_data <- function(species, major = NULL, file_name = NULL, path = ".",
   }
   message("All data extracted and saved in the folder `", path, "`.")
 }
+
+cache_pbs_data_test <- function(species, major = NULL, file_name = NULL, path = ".",
+                           compress = FALSE, unsorted_only = TRUE, historical_cpue = FALSE,
+                           survey_sets = FALSE, verbose = TRUE, return_all_lengths = FALSE) {
+  dir.create(path, showWarnings = FALSE)
+  for (sp_i in seq_along(species)) {
+    this_sp <- species[[sp_i]]
+
+    if (is.null(file_name)) {
+      this_sp_clean <- gsub("/", "-", gsub(" ", "-", this_sp))
+    } else {
+      this_sp_clean <- gsub("/", "-", gsub(" ", "-", file_name[[sp_i]]))
+    }
+    message("Extracting data for ", codes2common(this_sp))
+    out <- list()
+    if (survey_sets) {
+      out$survey_sets <- get_survey_sets(this_sp,
+                                         join_sample_ids = TRUE,
+                                         verbose = verbose
+      )
+    }
+    if (historical_cpue) {
+      out$cpue_historical <- get_cpue_historical(this_sp)
+    }
+    out$survey_samples <- get_survey_samples(this_sp)
+    out$commercial_samples <- get_commercial_samples(this_sp,
+                                                     unsorted_only = unsorted_only, return_all_lengths = return_all_lengths
+    )
+    out$catch <- get_catch(this_sp)
+    out$cpue_spatial <- get_cpue_spatial(this_sp)
+    out$cpue_spatial_ll <- get_cpue_spatial_ll(this_sp)
+    out$catch_spatial <- get_catch_spatial(this_sp)
+    out$survey_index <- get_survey_index(this_sp)
+    # out$management         <- get_management(this_sp)
+    out$age_precision <- get_age_precision(this_sp)
+    if(is.null(major)) {
+      saveRDS(out,
+              file = paste0(file.path(path, this_sp_clean), ".rds"),
+              compress = compress
+      )
+    } else {
+      saveRDS(out,
+              file = paste0(file.path(path, paste0(this_sp_clean, "_", major)), ".rds"),
+              compress = compress
+      )
+    }
+  }
+  message("All data extracted and saved in the folder `", path, "`.")
+}
