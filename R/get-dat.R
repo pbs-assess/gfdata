@@ -313,8 +313,8 @@ get_survey_sets <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36),
     .d$catch_weight <- ifelse(.d$catch_count > 0 & .d$catch_weight == 0, NA, .d$catch_weight)
 
     if(any(ssid%in%trawl)){
-    .d$density_pcpm2 <- ifelse(.d$catch_weight > 0 & .d$density_pcpm2 == 0, NA, .d$density_pcpm2)
-    .d$density_kgpm2 <- ifelse(.d$catch_count > 0 & .d$density_kgpm2 == 0, NA, .d$density_kgpm2)
+      .d$density_pcpm2 <- ifelse(.d$catch_count > 0 & .d$density_pcpm2 == 0, NA, .d$density_pcpm2)
+      .d$density_kgpm2 <- ifelse(.d$catch_weight > 0 & .d$density_kgpm2 == 0, NA, .d$density_kgpm2)
     }
   }
 
