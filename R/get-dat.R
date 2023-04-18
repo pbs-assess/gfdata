@@ -966,6 +966,7 @@ cache_pbs_data <- function(species, major = NULL, file_name = NULL, path = ".",
     message("Extracting data for ", codes2common(this_sp))
     out <- list()
     if (survey_sets) {
+      message("Extracting survey sets")
       out$survey_sets <- get_survey_sets(this_sp,
         join_sample_ids = TRUE,
         verbose = verbose
@@ -974,16 +975,24 @@ cache_pbs_data <- function(species, major = NULL, file_name = NULL, path = ".",
     if (historical_cpue) {
       out$cpue_historical <- get_cpue_historical(this_sp)
     }
+    message("Extracting survey samples")
     out$survey_samples <- get_survey_samples(this_sp)
+    message("Extracting commercial samples")
     out$commercial_samples <- get_commercial_samples(this_sp,
       unsorted_only = unsorted_only, return_all_lengths = return_all_lengths
     )
+    message("Extracting catch")
     out$catch <- get_catch(this_sp)
+    message("Extracting spatial CPUE")
     out$cpue_spatial <- get_cpue_spatial(this_sp)
+    message("Extracting spatial LL CPUE")
     out$cpue_spatial_ll <- get_cpue_spatial_ll(this_sp)
+    message("Extracting spatial catch")
     out$catch_spatial <- get_catch_spatial(this_sp)
+    message("Extracting survey indexes")
     out$survey_index <- get_survey_index(this_sp)
     # out$management         <- get_management(this_sp)
+    message("Extracting aging precision")
     out$age_precision <- get_age_precision(this_sp)
     if(is.null(major)) {
     saveRDS(out,
