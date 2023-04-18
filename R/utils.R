@@ -187,7 +187,8 @@ get_spp_sample_length_type <- function(species) {
       key = "length_type",
       value = "count"
     )
-  .d <- .d %>% filter(count == max(count))
+  .d <- .d %>% dplyr::filter(count == max(count))
+  if (nrow(.d) > 1L) .d <- .d[1L, ,drop = FALSE] # happens if all 0! pick any
   .d$length_type
 }
 
