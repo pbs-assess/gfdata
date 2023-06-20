@@ -1059,8 +1059,8 @@ cache_pbs_data_test <- function(species, major = NULL, file_name = NULL, path = 
     }
     if ("survey_sets" %in% data_to_get) {
       out$survey_sets <- get_survey_sets(this_sp,
-                                         join_sample_ids = TRUE,
-                                         verbose = verbose
+        join_sample_ids = TRUE,
+        verbose = verbose
       )
     }
     if ("cpue_historical" %in% data_to_get) {
@@ -1070,15 +1070,15 @@ cache_pbs_data_test <- function(species, major = NULL, file_name = NULL, path = 
     #   out$cpue_historical <- get_cpue_historical(this_sp)
     # }
 
-    if(is.null(major)) {
+    if (is.null(major)) {
       saveRDS(out,
-              file = paste0(file.path(path, this_sp_clean), ".rds"),
-              compress = compress
+        file = paste0(file.path(path, this_sp_clean), ".rds"),
+        compress = compress
       )
     } else {
       saveRDS(out,
-              file = paste0(file.path(path, paste0(this_sp_clean, "_", major)), ".rds"),
-              compress = compress
+        file = paste0(file.path(path, paste0(this_sp_clean, "_", major)), ".rds"),
+        compress = compress
       )
     }
   }
