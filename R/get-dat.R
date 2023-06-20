@@ -1001,8 +1001,15 @@ cache_pbs_data <- function(species, major = NULL, file_name = NULL, path = ".",
 }
 
 cache_pbs_data_test <- function(species, major = NULL, file_name = NULL, path = ".",
-                           compress = FALSE, unsorted_only = TRUE, historical_cpue = FALSE,
-                           survey_sets = FALSE, verbose = TRUE, return_all_lengths = FALSE) {
+                                compress = FALSE, unsorted_only = TRUE,
+                                include = c(
+                                  "survey_samples", "commercial_samples",
+                                  "catch", "cpue_spatial", "cpue_spatial_ll",
+                                  "catch_spatial", "survey_index", "age_precision",
+                                  "survey_sets", "cpue_historical"
+                                ),
+                                historical_cpue = lifecycle::deprecate_stop(),
+                                survey_sets = lifecycle::deprecate_stop(), verbose = TRUE, return_all_lengths = FALSE) {
   dir.create(path, showWarnings = FALSE)
   for (sp_i in seq_along(species)) {
     this_sp <- species[[sp_i]]
@@ -1014,26 +1021,55 @@ cache_pbs_data_test <- function(species, major = NULL, file_name = NULL, path = 
     }
     message("Extracting data for ", codes2common(this_sp))
     out <- list()
-    if (survey_sets) {
+
+    data_to_get <- match.arg(include,
+      choices = c(
+        "survey_samples", "commercial_samples", "catch", "cpue_spatial",
+        "cpue_spatial_ll", "catch_spatial", "survey_index", "age_precision",
+        "survey_sets", "cpue_historical"
+      ),
+      several.ok = TRUE
+    )
+
+    if ("survey_samples" %in% data_to_get) {
+      out$survey_samples <- get_survey_samples(this_sp)
+    }
+    if ("commercial_samples" %in% data_to_get) {
+      out$commercial_samples <- get_commercial_samples(this_sp,
+        unsorted_only = unsorted_only, return_all_lengths = return_all_lengths
+      )
+    }
+    if ("catch" %in% data_to_get) {
+      out$catch <- get_catch(this_sp)
+    }
+    if ("cpue_spatial" %in% data_to_get) {
+      out$cpue_spatial <- get_cpue_spatial(this_sp)
+    }
+    if ("cpue_spatial_ll" %in% data_to_get) {
+      out$cpue_spatial_ll <- get_cpue_spatial_ll(this_sp)
+    }
+    if ("catch_spatial" %in% data_to_get) {
+      out$catch_spatial <- get_catch_spatial(this_sp)
+    }
+    if ("survey_index" %in% data_to_get) {
+      out$survey_index <- get_survey_index(this_sp)
+    }
+    if ("age_precision" %in% data_to_get) {
+      out$age_precision <- get_age_precision(this_sp)
+    }
+    if ("survey_sets" %in% data_to_get) {
       out$survey_sets <- get_survey_sets(this_sp,
                                          join_sample_ids = TRUE,
                                          verbose = verbose
       )
     }
-    if (historical_cpue) {
+    if ("cpue_historical" %in% data_to_get) {
       out$cpue_historical <- get_cpue_historical(this_sp)
     }
-    out$survey_samples <- get_survey_samples(this_sp)
-    out$commercial_samples <- get_commercial_samples(this_sp,
-                                                     unsorted_only = unsorted_only, return_all_lengths = return_all_lengths
-    )
-    out$catch <- get_catch(this_sp)
-    out$cpue_spatial <- get_cpue_spatial(this_sp)
-    out$cpue_spatial_ll <- get_cpue_spatial_ll(this_sp)
-    out$catch_spatial <- get_catch_spatial(this_sp)
-    out$survey_index <- get_survey_index(this_sp)
-    # out$management         <- get_management(this_sp)
-    out$age_precision <- get_age_precision(this_sp)
+    # if ("management" %in% data_to_get) {
+    #   out$cpue_historical <- get_cpue_historical(this_sp)
+    # }
+
     if(is.null(major)) {
       saveRDS(out,
               file = paste0(file.path(path, this_sp_clean), ".rds"),
