@@ -5,6 +5,9 @@
 #'   different survey stratifications.
 #' @param verbose If `TRUE` then extra messages were reprinted during data
 #'   extraction. Useful to monitor progress.
+#' @param remove_false_zeros If `TRUE` will make sure weights > 0 don't have
+#'   associated counts of 0 and vice versa. Only applies to trawl data where
+#'   counts are only taken for small catches.
 #' @param sleep System sleep in seconds between each survey-year
 #'   to be kind to the server.
 #' @export
@@ -26,6 +29,7 @@
 #'
 get_survey_sets2 <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36, 39, 40),
                             join_sample_ids = FALSE, verbose = FALSE,
+                            remove_false_zeros = FALSE,
                             sleep = 0.05) {
   # Just to pull out up to date list of ssids associated with trawl/ll gear type.
   trawl <- run_sql("GFBioSQL", "SELECT
@@ -82,10 +86,12 @@ get_survey_sets2 <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36, 39, 4
 
   fe <- run_sql("GFBioSQL", "SELECT
     FISHING_EVENT_ID,
+    T.VESSEL_ID AS VESSEL_ID,
+    T.CAPTAIN_ID AS CAPTAIN_ID,
     MONTH(COALESCE (FE_BEGIN_BOTTOM_CONTACT_TIME, FE_END_BOTTOM_CONTACT_TIME, FE_END_DEPLOYMENT_TIME, FE_BEGIN_RETRIEVAL_TIME, FE_BEGIN_DEPLOYMENT_TIME, FE_END_RETRIEVAL_TIME)) AS MONTH,
     DAY(COALESCE (FE_BEGIN_BOTTOM_CONTACT_TIME, FE_END_BOTTOM_CONTACT_TIME, FE_END_DEPLOYMENT_TIME, FE_BEGIN_RETRIEVAL_TIME, FE_BEGIN_DEPLOYMENT_TIME, FE_END_RETRIEVAL_TIME)) AS DAY,
-    FE_END_DEPLOYMENT_TIME AS TIME_DEPLOYED,
-    FE_BEGIN_RETRIEVAL_TIME AS TIME_RETRIEVED,
+    ISNULL(FE_BEGIN_BOTTOM_CONTACT_TIME, FE_END_DEPLOYMENT_TIME) AS TIME_DEPLOYED,
+    ISNULL(FE_END_BOTTOM_CONTACT_TIME, FE_BEGIN_RETRIEVAL_TIME) AS TIME_RETRIEVED,
     FE_START_LATTITUDE_DEGREE + FE_START_LATTITUDE_MINUTE / 60 AS LATITUDE,
     -(FE_START_LONGITUDE_DEGREE + FE_START_LONGITUDE_MINUTE / 60) AS
       LONGITUDE,
@@ -151,7 +157,9 @@ get_survey_sets2 <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36, 39, 4
                      TIME_DEPLOYED,
                      TIME_RETRIEVED,
                      LATITUDE_END,
-                     LONGITUDE_END
+                     LONGITUDE_END,
+                     VESSEL_ID,
+                     CAPTAIN_ID
                    )),
                    by = "FISHING_EVENT_ID"
   )
@@ -182,6 +190,39 @@ get_survey_sets2 <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36, 39, 4
                species_common_name = tolower(species_common_name)
   )
 
+  if(any(ssid %in% trawl)) {
+    # calculate area_swept for trawl exactly as it has been done for the density values in this dataframe
+    # note: is NA if doorspread_m is missing and duration_min may be time in water (not just bottom time)
+    .d$area_swept1 <- .d$doorspread_m * .d$tow_length_m
+    .d$area_swept2 <- .d$doorspread_m * (.d$speed_mpm * .d$duration_min)
+    .d$area_swept <- ifelse(!is.na(.d$area_swept1), .d$area_swept1, .d$area_swept2)
+
+    # won't do this here because there may be ways of using mean(.d$doorspread_m) to fill in some NAs
+    # .d <- dplyr::filter(.d, !is.na(area_swept))
+    # instead use this to make sure false 0 aren't included
+    .d$density_kgpm2 <- ifelse(!is.na(.d$area_swept), .d$density_kgpm2, NA)
+  }
+
+  # in trawl data, catch_count is only recorded for small catches
+  # so 0 in the catch_count column when catch_weight > 0 seems misleading
+  # note: there are also a few occasions for trawl where count > 0 and catch_weight is 0/NA
+  # these lines replace false 0s with NA, but additional checks might be needed
+  if(remove_false_zeros){
+    .d$catch_count <- ifelse(.d$catch_weight > 0 & .d$catch_count == 0, NA, .d$catch_count)
+    .d$catch_weight <- ifelse(.d$catch_count > 0 & .d$catch_weight == 0, NA, .d$catch_weight)
+
+    if(any(ssid%in%trawl)){
+      .d$density_pcpm2 <- ifelse(.d$catch_count > 0 & .d$density_pcpm2 == 0, NA, .d$density_pcpm2)
+      .d$density_kgpm2 <- ifelse(.d$catch_weight > 0 & .d$density_kgpm2 == 0, NA, .d$density_kgpm2)
+    }
+  }
+
+  .d <- mutate(.d,
+               species_science_name = tolower(species_science_name),
+               species_desc = tolower(species_desc),
+               species_common_name = tolower(species_common_name)
+  )
+
   missing_species <- setdiff(species_codes, .d$species_code)
   if (length(missing_species) > 0) {
     warning(
@@ -191,24 +232,3 @@ get_survey_sets2 <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36, 39, 4
   }
   add_version(as_tibble(.d))
 }
-
-#' @export
-#'
-#' @rdname get_data
-get_ll_hook_data <- function(species = NULL, ssid = NULL){
-  .q <- read_sql("get-ll-hook-data.sql")
-  .q <- inject_filter("", species, sql_code = .q)
-  if (!is.null(ssid)) {
-    .q <- inject_filter(" ", ssid,
-                        sql_code = .q,
-                        search_flag = "-- insert ssid here", conversion_func = I
-    )
-  }
-  .d <- run_sql("GFBioSQL", .q)
-  names(.d) <- tolower(names(.d))
-  # .d$species_common_name <- tolower(.d$species_common_name)
-  # .d$species_science_name <- tolower(.d$species_science_name)
-
-  add_version(as_tibble(.d))
-}
-
