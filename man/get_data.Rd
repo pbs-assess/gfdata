@@ -137,25 +137,14 @@ get_survey_samples2(
   major = NULL
 )
 
-get_commercial_samples(
-  species,
-  unsorted_only = TRUE,
-  return_all_lengths = FALSE,
-  major = NULL,
-  usability = NULL
-)
-
-get_catch(species, major = NULL)
-
 get_survey_sets2(
   species,
   ssid = c(1, 3, 4, 16, 2, 14, 22, 36, 39, 40),
   join_sample_ids = FALSE,
   verbose = FALSE,
+  remove_false_zeros = FALSE,
   sleep = 0.05
 )
-
-get_ll_hook_data(species = NULL, ssid = NULL)
 }
 \arguments{
 \item{species}{One or more species common names (e.g. \code{"pacific ocean perch"}) or one or more species codes (e.g. \code{396}). Species codes can be
