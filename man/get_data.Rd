@@ -30,7 +30,7 @@
 \usage{
 get_survey_sets(
   species,
-  ssid = c(1, 3, 4, 16, 2, 14, 22, 36),
+  ssid = c(1, 3, 4, 16, 2, 14, 22, 36, 39, 40),
   join_sample_ids = FALSE,
   verbose = FALSE,
   sleep = 0.05
