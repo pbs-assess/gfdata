@@ -13,7 +13,7 @@
 get_survey_samples2 <- function(species, ssid = NULL,
                                remove_bad_data = TRUE, unsorted_only = TRUE,
                                usability = NULL, major = NULL) {
-  .q <- read_sql("get-survey-samples.sql")
+  .q <- read_sql("get-survey-samples2.sql")
   .q <- inject_filter("AND SP.SPECIES_CODE IN", species, sql_code = .q)
   if (!is.null(ssid)) {
     .q <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid,
@@ -97,6 +97,54 @@ get_survey_samples2 <- function(species, ssid = NULL,
     .d <- .d[!(.d$length < 10 & .d$weight / 1000 > 1.0 &
                  .d$species_common_name == "pacific flatnose"), ]
   }
+
+
+  species_df <- run_sql("GFBioSQL", "SELECT * FROM SPECIES")
+  .d <- inner_join(.d,
+                   unique(select(
+                     species_df,
+                     SPECIES_CODE,
+                     SPECIES_COMMON_NAME,
+                     SPECIES_SCIENCE_NAME,
+                     SPECIES_DESC
+                   )),
+                   by = "SPECIES_CODE"
+  )
+
+  surveys <- get_ssids()
+  .d <- inner_join(.d,
+                   unique(select(
+                     surveys,
+                     SURVEY_SERIES_ID,
+                     SURVEY_SERIES_DESC,
+                     SURVEY_ABBREV
+                   )),
+                   by = "SURVEY_SERIES_ID"
+  )
+
+  .fe <- read_sql("get-event-data.sql")
+  fe <- run_sql("GFBioSQL", .fe)
+
+  .d <- inner_join(.d,
+                   unique(select(
+                     fe,
+                     FISHING_EVENT_ID,
+                     MONTH,
+                     DAY,
+                     TIME_DEPLOYED,
+                     TIME_RETRIEVED,
+                     LATITUDE_END,
+                     LONGITUDE_END,
+                     DEPTH_M,
+                     VESSEL_ID,
+                     CAPTAIN_ID
+                   )),
+                   by = "FISHING_EVENT_ID"
+  )
+
+
+
+
 
   add_version(as_tibble(.d))
 }
