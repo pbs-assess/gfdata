@@ -35,15 +35,8 @@ get_survey_sets2 <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36, 39, 4
 
 
   species_df <- run_sql("GFBioSQL", "SELECT * FROM SPECIES")
-  sample_trip_ids <- get_sample_trips()
-  areas <- get_strata_areas()
-  survey_ids <- get_survey_ids(ssid)
+
   surveys <- get_ssids()
-
-  .fe <- read_sql("get-event-data.sql")
-  fe <- run_sql("GFBioSQL", .fe)
-
-
 
   .q <- read_sql("get-survey-sets.sql")
 
@@ -52,6 +45,8 @@ get_survey_sets2 <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36, 39, 4
   }
 
   if (!is.null(ssid)) {
+
+    survey_ids <- get_survey_ids(ssid)
     .q <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid,
                         sql_code = .q,
                         search_flag = "-- insert ssid here", conversion_func = I
@@ -59,6 +54,8 @@ get_survey_sets2 <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36, 39, 4
   }
 
   # if (!is.null(major)) {
+
+  # areas <- get_strata_areas()
   #   .q <- inject_filter("AND SM.MAJOR_STAT_AREA_CODE =", major, .q,
   #                       search_flag = "-- insert major here", conversion_func = I
   #   )
@@ -135,6 +132,8 @@ get_survey_sets2 <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36, 39, 4
 
   if (join_sample_ids) {
     # give us each sample_id associated with each fishing_event_id and species:
+
+    sample_trip_ids <- get_sample_trips()
     .d <- left_join(.d, sample_trip_ids,
                     by = c("SPECIES_CODE", "FISHING_EVENT_ID")
     ) %>%
@@ -149,9 +148,6 @@ get_survey_sets2 <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36, 39, 4
   names(.d) <- tolower(names(.d))
 
 
-  if (!is.null(usability)) {
-    .d <- filter(.d, usability_code %in% usability)
-  }
 
   # in trawl data, catch_count is only recorded for small catches
   # so 0 in the catch_count column when catch_weight > 0 seems misleading
@@ -167,6 +163,9 @@ get_survey_sets2 <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36, 39, 4
     # }
   }
 
+
+  .fe <- read_sql("get-event-data.sql")
+  fe <- run_sql("GFBioSQL", .fe)
 
 
 
@@ -256,6 +255,10 @@ get_survey_sets2 <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36, 39, 4
     }
 
 
+
+  if (!is.null(usability)) {
+    .d <- filter(.d, usability_code %in% usability)
+  }
 
   if(any(ssid %in% trawl)) {
     # calculate area_swept for trawl exactly as it has been done for the density values in this dataframe

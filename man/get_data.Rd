@@ -143,6 +143,7 @@ get_survey_sets2(
   join_sample_ids = FALSE,
   verbose = FALSE,
   remove_false_zeros = FALSE,
+  usability = c(0, 1, 2, 6),
   sleep = 0.05
 )
 }
