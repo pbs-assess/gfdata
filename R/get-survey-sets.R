@@ -1,5 +1,6 @@
 #' Get survey set data faster and more comprehensively
 #'
+#' @param years If NULL, returns all years.
 #' @param join_sample_ids If `TRUE` then the sample IDs will be joined in. This
 #'   may result in repeated rows of data if the same sample ID is part of
 #'   different survey stratifications.
@@ -27,11 +28,13 @@
 #' ## differs slightly from the difference between `time_deployed` and
 #' ## `time_retrieved`.
 #'
-get_survey_sets2 <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36, 39, 40),
+get_survey_sets2 <- function(species,
+                             ssid = c(1, 3, 4, 16, 2, 14, 22, 35, 36, 39, 40),
+                             years = NULL,
                             join_sample_ids = FALSE, verbose = FALSE,
                             remove_false_zeros = FALSE,
-                            usability = c(0,1,2,6),
-                            sleep = 0.05) {
+                            usability = c(0,1,2,6)
+                            ) {
 
 
   species_df <- run_sql("GFBioSQL", "SELECT * FROM SPECIES")
@@ -148,31 +151,33 @@ get_survey_sets2 <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36, 39, 4
   names(.d) <- tolower(names(.d))
 
 
+  # get all fishing event info
+  .fe <- read_sql("get-event-data.sql")
 
-  # in trawl data, catch_count is only recorded for small catches
-  # so 0 in the catch_count column when catch_weight > 0 seems misleading
-  # note: there are also a few occasions for trawl where count > 0 and catch_weight is 0/NA
-  # these lines replace false 0s with NA, but additional checks might be needed
-  if(remove_false_zeros){
-    .d$catch_count <- ifelse(.d$catch_weight > 0 & .d$catch_count == 0, NA, .d$catch_count)
-    .d$catch_weight <- ifelse(.d$catch_count > 0 & .d$catch_weight == 0, NA, .d$catch_weight)
+  if (!is.null(ssid)) {
 
-    # if(any(ssid%in%trawl)){
-    #   .d$density_pcpm2 <- ifelse(.d$catch_count > 0 & .d$density_pcpm2 == 0, NA, .d$density_pcpm2)
-    #   .d$density_kgpm2 <- ifelse(.d$catch_weight > 0 & .d$density_kgpm2 == 0, NA, .d$density_kgpm2)
-    # }
+    #survey_ids <- get_survey_ids(ssid)
+    .fe <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid,
+                        sql_code = .fe,
+                        search_flag = "-- insert ssid here", conversion_func = I
+    )
   }
 
-
-  .fe <- read_sql("get-event-data.sql")
   fe <- run_sql("GFBioSQL", .fe)
+
+  if (is.null(ssid)) {
+    fe <- filter(fe, SURVEY_SERIES_ID > 0)
+  }
+
+  fe
+
 
 
 
   if(all(ssid %in% trawl)) {
 
     names(fe) <- tolower(names(fe))
-    .d <- inner_join(.d,
+    .d <- full_join(.d,
                      unique(select(
                        fe,
                        -survey_id,
@@ -230,7 +235,7 @@ get_survey_sets2 <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36, 39, 4
     names(fe2) <- tolower(names(fe2))
 
     if(!all(ssid %in% trawl)) {
-    .d <- inner_join(.d,
+    .d <- full_join(.d,
                      unique(select(
                        fe2,
                        -survey_id,
@@ -244,7 +249,7 @@ get_survey_sets2 <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36, 39, 4
     )
     } else {
 
-      .d <- inner_join(.d,
+      .d <- full_join(.d,
                        unique(select(
                          fe2,
                          -survey_id,
@@ -254,6 +259,23 @@ get_survey_sets2 <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36, 39, 4
       }
     }
 
+  # creat zeros
+    .d$catch_count <- ifelse(is.na(.d$catch_count), 0, .d$catch_count)
+    .d$catch_weight <- ifelse(is.na(.d$catch_weight), 0, .d$catch_weight)
+
+  # in trawl data, catch_count is only recorded for small catches
+  # so 0 in the catch_count column when catch_weight > 0 seems misleading
+  # note: there are also a few occasions for trawl where count > 0 and catch_weight is 0/NA
+  # these lines replace false 0s with NA, but additional checks might be needed
+  if(remove_false_zeros){
+    .d$catch_count <- ifelse(.d$catch_weight > 0 & .d$catch_count == 0, NA, .d$catch_count)
+    .d$catch_weight <- ifelse(.d$catch_count > 0 & .d$catch_weight == 0, NA, .d$catch_weight)
+
+    # if(any(ssid%in%trawl)){
+    #   .d$density_pcpm2 <- ifelse(.d$catch_count > 0 & .d$density_pcpm2 == 0, NA, .d$density_pcpm2)
+    #   .d$density_kgpm2 <- ifelse(.d$catch_weight > 0 & .d$density_kgpm2 == 0, NA, .d$density_kgpm2)
+    # }
+  }
 
 
   if (!is.null(usability)) {
