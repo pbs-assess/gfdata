@@ -27,6 +27,7 @@
 #' ## `duration_min` is derived in the SQL procedure "proc_catmat_2011" and
 #' ## differs slightly from the difference between `time_deployed` and
 #' ## `time_retrieved`.
+#' }
 #'
 get_survey_sets2 <- function(species,
                              ssid = c(1, 3, 4, 16, 2, 14, 22, 35, 36, 39, 40),

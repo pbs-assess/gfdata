@@ -139,12 +139,12 @@ get_survey_samples2(
 
 get_survey_sets2(
   species,
-  ssid = c(1, 3, 4, 16, 2, 14, 22, 36, 39, 40),
+  ssid = c(1, 3, 4, 16, 2, 14, 22, 35, 36, 39, 40),
+  years = NULL,
   join_sample_ids = FALSE,
   verbose = FALSE,
   remove_false_zeros = FALSE,
-  usability = c(0, 1, 2, 6),
-  sleep = 0.05
+  usability = c(0, 1, 2, 6)
 )
 }
 \arguments{
@@ -232,6 +232,8 @@ extracted. You might set this to \code{FALSE} if you don't need these data and
 you want to substantially speed up data extraction.}
 
 \item{end_date}{A string representing the date. Must be of the format dd/mm/yyyy}
+
+\item{years}{If NULL, returns all years.}
 }
 \value{
 The \verb{get_*} functions return a data frame. The \code{\link[=cache_pbs_data]{cache_pbs_data()}}
@@ -345,6 +347,21 @@ get_cpue_index(gear = "bottom trawl", min_cpue_year = 2012)
 ## Import survey bootstrapped biomass estimates for plotting relative biomass
 ## indices by specified survey series.
 get_survey_index("pacific cod", ssid = c(1, 3, 4, 16))
+}
+
+\dontrun{
+## Import survey catch density and location data by tow or set for plotting
+## Specify single or multiple species by common name or species code and
+## single or multiple survey series id(s).
+## Notes:
+## `area_km` is the stratum area used in design-based index calculation.
+## `area_swept` is in m^2 and is used to calculate density for trawl surveys
+## It is based on `area_swept1` (`doorspread_m` x `tow_length_m`) except
+## when `tow_length_m` is missing, and then we use `area_swept2`
+## (`doorspread` x `duration_min` x `speed_mpm`).
+## `duration_min` is derived in the SQL procedure "proc_catmat_2011" and
+## differs slightly from the difference between `time_deployed` and
+## `time_retrieved`.
 }
 
 }
