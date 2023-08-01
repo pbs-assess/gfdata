@@ -19,9 +19,9 @@
 #' ## single or multiple survey series id(s).
 #' ## Notes:
 #' ## `area_km` is the stratum area used in design-based index calculation.
-#' ## `area_swept` is used to calculate density for trawl surveys and based on
-#' ## `area_swept1` (`doorspread_m` x `tow_length_m`) except when
-#' ## `tow_length_m` is missing, and then we use `area_swept2`
+#' ## `area_swept` is in m^2 and is used to calculate density for trawl surveys
+#' ## It is based on `area_swept1` (`doorspread_m` x `tow_length_m`) except
+#' ## when `tow_length_m` is missing, and then we use `area_swept2`
 #' ## (`doorspread` x `duration_min` x `speed_mpm`).
 #' ## `duration_min` is derived in the SQL procedure "proc_catmat_2011" and
 #' ## differs slightly from the difference between `time_deployed` and
@@ -30,7 +30,50 @@
 get_survey_sets2 <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36, 39, 40),
                             join_sample_ids = FALSE, verbose = FALSE,
                             remove_false_zeros = FALSE,
+                            usability = c(0,1,2,6),
                             sleep = 0.05) {
+
+
+  species_df <- run_sql("GFBioSQL", "SELECT * FROM SPECIES")
+  sample_trip_ids <- get_sample_trips()
+  areas <- get_strata_areas()
+  survey_ids <- get_survey_ids(ssid)
+  surveys <- get_ssids()
+
+  .fe <- read_sql("get-event-data.sql")
+  fe <- run_sql("GFBioSQL", .fe)
+
+
+
+  .q <- read_sql("get-survey-sets.sql")
+
+  if (!is.null(species)) {
+  .q <- inject_filter("AND SP.SPECIES_CODE IN", species, sql_code = .q)
+  }
+
+  if (!is.null(ssid)) {
+    .q <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid,
+                        sql_code = .q,
+                        search_flag = "-- insert ssid here", conversion_func = I
+    )
+  }
+
+  # if (!is.null(major)) {
+  #   .q <- inject_filter("AND SM.MAJOR_STAT_AREA_CODE =", major, .q,
+  #                       search_flag = "-- insert major here", conversion_func = I
+  #   )
+  # }
+
+
+  .d <- run_sql("GFBioSQL", .q)
+
+  if (!is.null(years)) {
+    .d <- filter(.d, YEAR %in% years)
+    }
+
+
+
+
   # Just to pull out up to date list of ssids associated with trawl/ll gear type.
   trawl <- run_sql("GFBioSQL", "SELECT
     S.SURVEY_SERIES_ID
@@ -62,77 +105,7 @@ get_survey_sets2 <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36, 39, 4
     ORDER BY S.SURVEY_SERIES_ID")
   ll <- unique(ll$SURVEY_SERIES_ID)
 
-  missing <- setdiff(ssid, c(trawl, ll))
-  if (length(missing) > 0) {
-    stop("ssid(s) ", missing, " is/are not supported. Must be one of ",
-         paste(sort(c(trawl, ll)), collapse = ", "), ". ",
-         "See the function `get_ssids()` for help identifying ",
-         "survey series IDs.",
-         call. = FALSE
-    )
-  }
 
-  species_codes <- common2codes(species)
-
-  species_df <- run_sql("GFBioSQL", "SELECT * FROM SPECIES")
-  sample_trip_ids <- get_sample_trips()
-  areas <- get_strata_areas()
-  survey_ids <- get_survey_ids(ssid)
-  surveys <- get_ssids()
-
-  ## STILL NEED TO ADD
-  # CAPTAIN_ID,
-  # VESSEL_ID,
-
-  fe <- run_sql("GFBioSQL", "SELECT
-    FISHING_EVENT_ID,
-    T.VESSEL_ID AS VESSEL_ID,
-    T.CAPTAIN_ID AS CAPTAIN_ID,
-    MONTH(COALESCE (FE_BEGIN_BOTTOM_CONTACT_TIME, FE_END_BOTTOM_CONTACT_TIME, FE_END_DEPLOYMENT_TIME, FE_BEGIN_RETRIEVAL_TIME, FE_BEGIN_DEPLOYMENT_TIME, FE_END_RETRIEVAL_TIME)) AS MONTH,
-    DAY(COALESCE (FE_BEGIN_BOTTOM_CONTACT_TIME, FE_END_BOTTOM_CONTACT_TIME, FE_END_DEPLOYMENT_TIME, FE_BEGIN_RETRIEVAL_TIME, FE_BEGIN_DEPLOYMENT_TIME, FE_END_RETRIEVAL_TIME)) AS DAY,
-    ISNULL(FE_BEGIN_BOTTOM_CONTACT_TIME, FE_END_DEPLOYMENT_TIME) AS TIME_DEPLOYED,
-    ISNULL(FE_END_BOTTOM_CONTACT_TIME, FE_BEGIN_RETRIEVAL_TIME) AS TIME_RETRIEVED,
-    FE_START_LATTITUDE_DEGREE + FE_START_LATTITUDE_MINUTE / 60 AS LATITUDE,
-    -(FE_START_LONGITUDE_DEGREE + FE_START_LONGITUDE_MINUTE / 60) AS
-      LONGITUDE,
-    FE_END_LATTITUDE_DEGREE + FE_END_LATTITUDE_MINUTE / 60 AS LATITUDE_END,
-    -(FE_END_LONGITUDE_DEGREE + FE_END_LONGITUDE_MINUTE / 60) AS
-      LONGITUDE_END,
-      FE_BEGINNING_BOTTOM_DEPTH AS DEPTH_M
-    FROM FISHING_EVENT FE
-    INNER JOIN TRIP T ON T.TRIP_ID = FE.TRIP_ID")
-
-  Sys.sleep(sleep)
-
-  d_survs <- list()
-  k <- 0
-  for (i in seq_along(species_codes)) {
-    for (j in seq_along(survey_ids$SURVEY_ID)) {
-      if (survey_ids$SURVEY_SERIES_ID[j] %in% trawl) {
-        sql_proc <- "proc_catmat_2011"
-      }
-      if (survey_ids$SURVEY_SERIES_ID[j] %in% ll) {
-        sql_proc <- "proc_catmat_ll_2013"
-      }
-
-      k <- k + 1
-      if (verbose) {
-        message(
-          "extracting data for survey ID ", survey_ids$SURVEY_ID[j],
-          " and species code ", species_codes[i]
-        )
-      }
-      d_survs[[k]] <- run_sql(
-        "GFBioSQL",
-        paste0(
-          "EXEC ", sql_proc, " ", survey_ids$SURVEY_ID[j], ", '",
-          species_codes[i], "'"
-        )
-      )
-      Sys.sleep(sleep)
-    }
-  }
-  .d <- bind_rows(d_survs)
 
   if (nrow(.d) < 1) {
     stop("No survey set data for selected species.")
@@ -148,21 +121,6 @@ get_survey_sets2 <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36, 39, 4
                    by = "SURVEY_SERIES_ID"
   )
 
-  .d <- inner_join(.d,
-                   unique(select(
-                     fe,
-                     FISHING_EVENT_ID,
-                     MONTH,
-                     DAY,
-                     TIME_DEPLOYED,
-                     TIME_RETRIEVED,
-                     LATITUDE_END,
-                     LONGITUDE_END,
-                     VESSEL_ID,
-                     CAPTAIN_ID
-                   )),
-                   by = "FISHING_EVENT_ID"
-  )
 
   .d <- inner_join(.d,
                    unique(select(
@@ -181,26 +139,18 @@ get_survey_sets2 <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36, 39, 4
                     by = c("SPECIES_CODE", "FISHING_EVENT_ID")
     ) %>%
       left_join(areas, by = c("SURVEY_ID", "GROUPING_CODE"))
+
+    warning(
+      "Adding sample_id will duplicate some fishing events.",
+      "This occurs when the same species was assigned two distinct sample ids."
+    )
   }
 
   names(.d) <- tolower(names(.d))
-  .d <- mutate(.d,
-               species_science_name = tolower(species_science_name),
-               species_desc = tolower(species_desc),
-               species_common_name = tolower(species_common_name)
-  )
 
-  if(any(ssid %in% trawl)) {
-    # calculate area_swept for trawl exactly as it has been done for the density values in this dataframe
-    # note: is NA if doorspread_m is missing and duration_min may be time in water (not just bottom time)
-    .d$area_swept1 <- .d$doorspread_m * .d$tow_length_m
-    .d$area_swept2 <- .d$doorspread_m * (.d$speed_mpm * .d$duration_min)
-    .d$area_swept <- ifelse(!is.na(.d$area_swept1), .d$area_swept1, .d$area_swept2)
 
-    # won't do this here because there may be ways of using mean(.d$doorspread_m) to fill in some NAs
-    # .d <- dplyr::filter(.d, !is.na(area_swept))
-    # instead use this to make sure false 0 aren't included
-    .d$density_kgpm2 <- ifelse(!is.na(.d$area_swept), .d$density_kgpm2, NA)
+  if (!is.null(usability)) {
+    .d <- filter(.d, usability_code %in% usability)
   }
 
   # in trawl data, catch_count is only recorded for small catches
@@ -211,10 +161,121 @@ get_survey_sets2 <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36, 39, 4
     .d$catch_count <- ifelse(.d$catch_weight > 0 & .d$catch_count == 0, NA, .d$catch_count)
     .d$catch_weight <- ifelse(.d$catch_count > 0 & .d$catch_weight == 0, NA, .d$catch_weight)
 
-    if(any(ssid%in%trawl)){
-      .d$density_pcpm2 <- ifelse(.d$catch_count > 0 & .d$density_pcpm2 == 0, NA, .d$density_pcpm2)
-      .d$density_kgpm2 <- ifelse(.d$catch_weight > 0 & .d$density_kgpm2 == 0, NA, .d$density_kgpm2)
+    # if(any(ssid%in%trawl)){
+    #   .d$density_pcpm2 <- ifelse(.d$catch_count > 0 & .d$density_pcpm2 == 0, NA, .d$density_pcpm2)
+    #   .d$density_kgpm2 <- ifelse(.d$catch_weight > 0 & .d$density_kgpm2 == 0, NA, .d$density_kgpm2)
+    # }
+  }
+
+
+
+
+  if(all(ssid %in% trawl)) {
+
+    names(fe) <- tolower(names(fe))
+    .d <- inner_join(.d,
+                     unique(select(
+                       fe,
+                       -survey_id,
+                       -survey_series_id,
+                       -hook_code,
+                       -lglsp_hook_count
+                     ))
+    )
+
+  } else {
+
+    fe_A_no_parent <- filter(fe, is.na(FE_PARENT_EVENT_ID)) # just actual events
+
+    fe_B_no_minor <- filter(fe, !is.na(FE_PARENT_EVENT_ID), is.na(FE_MINOR_LEVEL_ID)) %>%
+      group_by(FE_PARENT_EVENT_ID, SURVEY_ID, SURVEY_SERIES_ID) %>%
+      mutate(SKATE_COUNT = n()) %>% select(FE_PARENT_EVENT_ID, FISHING_EVENT_ID, SURVEY_ID, SURVEY_SERIES_ID, SKATE_COUNT) %>% distinct() %>%
+      rename(skate_id = FISHING_EVENT_ID, fishing_event_id = FE_PARENT_EVENT_ID) %>% ungroup()
+
+    # fe_C <- filter(fe_w_parent_events, !is.na(FE_MINOR_LEVEL_ID))
+    fe_C_w_minor <- filter(fe, !is.na(FE_PARENT_EVENT_ID), !is.na(FE_MINOR_LEVEL_ID)) %>%
+      group_by(FE_PARENT_EVENT_ID, SURVEY_ID, SURVEY_SERIES_ID) %>%
+      mutate(MINOR_ID_COUNT = n(),
+             MINOR_ID_MAX = max(FE_MINOR_LEVEL_ID, na.rm = TRUE)) %>%
+      select(FE_PARENT_EVENT_ID, SURVEY_ID, SURVEY_SERIES_ID, MINOR_ID_COUNT, MINOR_ID_MAX) %>% distinct() %>%
+      rename(skate_id = FE_PARENT_EVENT_ID) %>% ungroup()
+
+    sub_event_counts <- full_join(
+      fe_B_no_minor,
+      fe_C_w_minor
+    )
+
+    missing_event_ids <- filter(sub_event_counts, is.na(fishing_event_id)) %>% mutate(fishing_event_id = skate_id)
+
+    sub_event_counts2 <- full_join(filter(sub_event_counts, !is.na(fishing_event_id)), missing_event_ids)
+
+    sub_event_counts3 <- sub_event_counts2 %>%
+      group_by(fishing_event_id, SURVEY_ID, SURVEY_SERIES_ID) %>%
+      reframe(
+        skate_count = mean(SKATE_COUNT, na.rm = T),
+        mean_per_skate = mean(MINOR_ID_COUNT, na.rm = T),
+        minor_id_count = sum(MINOR_ID_COUNT, na.rm = T),
+        minor_id_max = max(MINOR_ID_MAX, na.rm = T)
+      ) %>% distinct() %>%
+      mutate(diff = ifelse(minor_id_max > 0, minor_id_max-minor_id_count, NA)) %>%
+      select(-SURVEY_ID, -SURVEY_SERIES_ID) %>% distinct()
+
+    check_for_duplicates <- sub_event_counts3[duplicated(sub_event_counts3$fishing_event_id), ] # none :)
+
+
+    # all_top_events <- select(fe_A_no_parent, FISHING_EVENT_ID, SURVEY_ID, SURVEY_SERIES_ID) %>% distinct() %>%
+
+
+    fe2 <- fe %>% rename(fishing_event_id = FISHING_EVENT_ID) %>% left_join(sub_event_counts3)
+
+    names(fe2) <- tolower(names(fe2))
+
+    if(!all(ssid %in% trawl)) {
+    .d <- inner_join(.d,
+                     unique(select(
+                       fe2,
+                       -survey_id,
+                       -survey_series_id,
+                       -tow_length_m,
+                       -Mouth_width_m,
+                       -doorspread_m,
+                       -speed_mpm,
+                       -grouping_code_trawl
+                     ))
+    )
+    } else {
+
+      .d <- inner_join(.d,
+                       unique(select(
+                         fe2,
+                         -survey_id,
+                         -survey_series_id
+                       ))
+      )
+      }
     }
+
+
+
+  if(any(ssid %in% trawl)) {
+    # calculate area_swept for trawl exactly as it has been done for the density values in this dataframe
+    # note: is NA if doorspread_m is missing and duration_min may be time in water (not just bottom time)
+    .d$area_swept1 <- .d$doorspread_m * .d$tow_length_m
+    .d$area_swept2 <- .d$doorspread_m * (.d$speed_mpm * .d$duration_min)
+    .d$area_swept <- ifelse(!is.na(.d$area_swept1), .d$area_swept1, .d$area_swept2)
+    .d$area_swept_km2 <- .d$area_swept/1000000
+    # won't do this here because there may be ways of using mean(.d$doorspread_m) to fill in some NAs
+    # .d <- dplyr::filter(.d, !is.na(area_swept))
+    # instead use this to make sure false 0 aren't included
+    .d$density_kgpm2 <- .d$catch_weight/.d$area_swept
+    .d$density_kgpm2 <- ifelse(!is.na(.d$area_swept), .d$density_kgpm2, NA)
+  }
+
+  if(any(ssid %in% ll)) {
+    .d$hook_area_swept_km2 <- ifelse(.d$survey_series_id == 14,
+                                     0.0054864 * 0.009144 * .d$minor_id_count,
+                                     0.0024384 * 0.009144 * .d$minor_id_count)
+    .d$density_pppm2 <- .d$catch_count/(.d$hook_area_swept_km2*1000000)
   }
 
   .d <- mutate(.d,
