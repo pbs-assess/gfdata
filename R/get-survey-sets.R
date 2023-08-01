@@ -38,9 +38,7 @@ get_survey_sets2 <- function(species,
                             ) {
 
 
-  species_df <- run_sql("GFBioSQL", "SELECT * FROM SPECIES")
 
-  surveys <- get_ssids()
 
   .q <- read_sql("get-survey-sets.sql")
 
@@ -59,7 +57,6 @@ get_survey_sets2 <- function(species,
 
   # if (!is.null(major)) {
 
-  # areas <- get_strata_areas()
   #   .q <- inject_filter("AND SM.MAJOR_STAT_AREA_CODE =", major, .q,
   #                       search_flag = "-- insert major here", conversion_func = I
   #   )
@@ -73,6 +70,22 @@ get_survey_sets2 <- function(species,
     }
 
 
+  if (join_sample_ids) {
+    # give us each sample_id associated with each fishing_event_id and species:
+
+    sample_trip_ids <- get_sample_trips()
+    areas <- get_strata_areas()
+
+    .d <- left_join(.d, sample_trip_ids,
+                    by = c("SPECIES_CODE", "FISHING_EVENT_ID")
+    ) %>%
+      left_join(areas, by = c("SURVEY_ID", "GROUPING_CODE"))
+
+    warning(
+      "Adding sample_id will duplicate some fishing events.",
+      "This occurs when the same species was assigned two distinct sample ids."
+    )
+  }
 
 
   # Just to pull out up to date list of ssids associated with trawl/ll gear type.
@@ -107,47 +120,10 @@ get_survey_sets2 <- function(species,
   ll <- unique(ll$SURVEY_SERIES_ID)
 
 
-
   if (nrow(.d) < 1) {
     stop("No survey set data for selected species.")
   }
 
-  .d <- inner_join(.d,
-                   unique(select(
-                     surveys,
-                     SURVEY_SERIES_ID,
-                     SURVEY_SERIES_DESC,
-                     SURVEY_ABBREV
-                   )),
-                   by = "SURVEY_SERIES_ID"
-  )
-
-
-  .d <- inner_join(.d,
-                   unique(select(
-                     species_df,
-                     SPECIES_CODE,
-                     SPECIES_COMMON_NAME,
-                     SPECIES_SCIENCE_NAME,
-                     SPECIES_DESC
-                   )),
-                   by = "SPECIES_CODE"
-  )
-
-  if (join_sample_ids) {
-    # give us each sample_id associated with each fishing_event_id and species:
-
-    sample_trip_ids <- get_sample_trips()
-    .d <- left_join(.d, sample_trip_ids,
-                    by = c("SPECIES_CODE", "FISHING_EVENT_ID")
-    ) %>%
-      left_join(areas, by = c("SURVEY_ID", "GROUPING_CODE"))
-
-    warning(
-      "Adding sample_id will duplicate some fishing events.",
-      "This occurs when the same species was assigned two distinct sample ids."
-    )
-  }
 
   names(.d) <- tolower(names(.d))
 
@@ -166,27 +142,30 @@ get_survey_sets2 <- function(species,
 
   fe <- run_sql("GFBioSQL", .fe)
 
+
   if (is.null(ssid)) {
     fe <- filter(fe, SURVEY_SERIES_ID > 0)
+    # TODO: something to address replicated events across different survey series
   }
-
-  fe
-
-
-
+# browser()
 
   if(all(ssid %in% trawl)) {
 
     names(fe) <- tolower(names(fe))
-    .d <- full_join(.d,
+
+    exdat <- expand.grid(fishing_event_id = unique(fe$fishing_event_id), species_code = unique(.d$species_code))
+
+    .d <- left_join(exdat,
                      unique(select(
                        fe,
-                       -survey_id,
-                       -survey_series_id,
+                       #-survey_id,
+                       #-survey_series_id,
+                       -fe_parent_event_id,
+                       -fe_minor_level_id,
                        -hook_code,
                        -lglsp_hook_count
                      ))
-    )
+    ) %>% left_join(.d)
 
   } else {
 
@@ -236,31 +215,68 @@ get_survey_sets2 <- function(species,
     names(fe2) <- tolower(names(fe2))
 
     if(!all(ssid %in% trawl)) {
-    .d <- full_join(.d,
+
+
+      exdat <- expand.grid(fishing_event_id = unique(fe2$fishing_event_id), species_code = unique(.d$species_code))
+
+      .d <- left_join(exdat,
                      unique(select(
                        fe2,
-                       -survey_id,
-                       -survey_series_id,
+                       #-survey_id,
+                       #-survey_series_id,
+                       -fe_parent_event_id,
+                       -fe_minor_level_id,
                        -tow_length_m,
                        -Mouth_width_m,
                        -doorspread_m,
                        -speed_mpm,
                        -grouping_code_trawl
                      ))
-    )
+    ) %>% left_join(.d)
     } else {
+      exdat <- expand.grid(fishing_event_id = unique(fe2$fishing_event_id), species_code = unique(.d$species_code))
+      .d <- left_join(exdat,
 
-      .d <- full_join(.d,
                        unique(select(
-                         fe2,
-                         -survey_id,
-                         -survey_series_id
+                          fe2,
+                       #  -survey_id,
+                       #  -survey_series_id,
+                          -fe_parent_event_id,
+                          -fe_minor_level_id
                        ))
-      )
+      ) %>% left_join(.d)
       }
-    }
+  }
 
-  # creat zeros
+
+  surveys <- get_ssids()
+  names(surveys) <- tolower(names(surveys))
+  .d <- inner_join(.d,
+                   unique(select(
+                     surveys,
+                     survey_series_id,
+                     survey_series_desc,
+                     survey_abbrev
+                   )),
+                   by = "survey_series_id"
+  )
+
+  species_df <- run_sql("GFBioSQL", "SELECT * FROM SPECIES") %>%
+    select(
+    SPECIES_CODE,
+    SPECIES_COMMON_NAME,
+    SPECIES_SCIENCE_NAME,
+    SPECIES_DESC
+  )
+  names(species_df) <- tolower(names(species_df))
+
+  .d <- inner_join(.d,
+                   unique(species_df),
+                   by = "species_code"
+  )
+
+
+  # create zeros
     .d$catch_count <- ifelse(is.na(.d$catch_count), 0, .d$catch_count)
     .d$catch_weight <- ifelse(is.na(.d$catch_weight), 0, .d$catch_weight)
 
@@ -281,6 +297,19 @@ get_survey_sets2 <- function(species,
 
   if (!is.null(usability)) {
     .d <- filter(.d, usability_code %in% usability)
+  } else {
+
+    u <- get_table("usability")
+
+    names(u) <- tolower(names(u))
+    .d <- left_join(.d,
+                    unique(select(
+                      u,
+                      usability_code,
+                      usability_desc
+                    ))
+    )
+
   }
 
   if(any(ssid %in% trawl)) {
@@ -309,7 +338,8 @@ get_survey_sets2 <- function(species,
                species_desc = tolower(species_desc),
                species_common_name = tolower(species_common_name)
   )
-
+  #.d <- unique(.d)
+  species_codes <- common2codes(species)
   missing_species <- setdiff(species_codes, .d$species_code)
   if (length(missing_species) > 0) {
     warning(
