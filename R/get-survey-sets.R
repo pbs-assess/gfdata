@@ -173,7 +173,7 @@ get_survey_sets2 <- function(species,
 
     fe_B_no_minor <- filter(fe, !is.na(FE_PARENT_EVENT_ID), is.na(FE_MINOR_LEVEL_ID)) %>%
       group_by(FE_PARENT_EVENT_ID, SURVEY_ID, SURVEY_SERIES_ID) %>%
-      mutate(SKATE_COUNT = n()) %>% select(FE_PARENT_EVENT_ID, FISHING_EVENT_ID, SURVEY_ID, SURVEY_SERIES_ID, SKATE_COUNT) %>% distinct() %>%
+      mutate(SKATE_COUNT = n()) %>% select(FE_PARENT_EVENT_ID, FISHING_EVENT_ID, SURVEY_ID, SURVEY_SERIES_ID, SKATE_COUNT) %>% dplyr::distinct() %>%
       rename(skate_id = FISHING_EVENT_ID, fishing_event_id = FE_PARENT_EVENT_ID) %>% ungroup()
 
     # fe_C <- filter(fe_w_parent_events, !is.na(FE_MINOR_LEVEL_ID))
@@ -181,7 +181,8 @@ get_survey_sets2 <- function(species,
       group_by(FE_PARENT_EVENT_ID, SURVEY_ID, SURVEY_SERIES_ID) %>%
       mutate(MINOR_ID_COUNT = n(),
              MINOR_ID_MAX = max(FE_MINOR_LEVEL_ID, na.rm = TRUE)) %>%
-      select(FE_PARENT_EVENT_ID, SURVEY_ID, SURVEY_SERIES_ID, MINOR_ID_COUNT, MINOR_ID_MAX) %>% distinct() %>%
+      select(FE_PARENT_EVENT_ID, SURVEY_ID, SURVEY_SERIES_ID, MINOR_ID_COUNT, MINOR_ID_MAX) %>%
+      dplyr::distinct() %>%
       rename(skate_id = FE_PARENT_EVENT_ID) %>% ungroup()
 
     sub_event_counts <- full_join(
@@ -195,22 +196,20 @@ get_survey_sets2 <- function(species,
 
     sub_event_counts3 <- sub_event_counts2 %>%
       group_by(fishing_event_id, SURVEY_ID, SURVEY_SERIES_ID) %>%
-      reframe(
+      dplyr::summarise(
         skate_count = mean(SKATE_COUNT, na.rm = T),
         mean_per_skate = mean(MINOR_ID_COUNT, na.rm = T),
         minor_id_count = sum(MINOR_ID_COUNT, na.rm = T),
         minor_id_max = max(MINOR_ID_MAX, na.rm = T)
-      ) %>% distinct() %>%
+      ) %>% dplyr::distinct() %>%
       mutate(diff = ifelse(minor_id_max > 0, minor_id_max-minor_id_count, NA)) %>%
-      select(-SURVEY_ID, -SURVEY_SERIES_ID) %>% distinct()
+      select(-SURVEY_ID, -SURVEY_SERIES_ID) %>% dplyr::distinct()
 
-    check_for_duplicates <- sub_event_counts3[duplicated(sub_event_counts3$fishing_event_id), ] # none :)
-
-
+    #sub_event_counts3 <- unique(sub_event_counts3)
+    #check_for_duplicates <- sub_event_counts3[duplicated(sub_event_counts3$fishing_event_id), ] # none :)
     # all_top_events <- select(fe_A_no_parent, FISHING_EVENT_ID, SURVEY_ID, SURVEY_SERIES_ID) %>% distinct() %>%
 
-
-    fe2 <- fe %>% rename(fishing_event_id = FISHING_EVENT_ID) %>% left_join(sub_event_counts3)
+    fe2 <- fe_A_no_parent %>% rename(fishing_event_id = FISHING_EVENT_ID) %>% left_join(sub_event_counts3)
 
     names(fe2) <- tolower(names(fe2))
 
@@ -227,10 +226,9 @@ get_survey_sets2 <- function(species,
                        -fe_parent_event_id,
                        -fe_minor_level_id,
                        -tow_length_m,
-                       -Mouth_width_m,
+                       -mouth_width_m,
                        -doorspread_m,
-                       -speed_mpm,
-                       -grouping_code_trawl
+                       -speed_mpm
                      ))
     ) %>% left_join(.d)
     } else {
@@ -247,7 +245,6 @@ get_survey_sets2 <- function(species,
       ) %>% left_join(.d)
       }
   }
-
 
   surveys <- get_ssids()
   names(surveys) <- tolower(names(surveys))
@@ -287,11 +284,6 @@ get_survey_sets2 <- function(species,
   if(remove_false_zeros){
     .d$catch_count <- ifelse(.d$catch_weight > 0 & .d$catch_count == 0, NA, .d$catch_count)
     .d$catch_weight <- ifelse(.d$catch_count > 0 & .d$catch_weight == 0, NA, .d$catch_weight)
-
-    # if(any(ssid%in%trawl)){
-    #   .d$density_pcpm2 <- ifelse(.d$catch_count > 0 & .d$density_pcpm2 == 0, NA, .d$density_pcpm2)
-    #   .d$density_kgpm2 <- ifelse(.d$catch_weight > 0 & .d$density_kgpm2 == 0, NA, .d$density_kgpm2)
-    # }
   }
 
 
@@ -323,14 +315,18 @@ get_survey_sets2 <- function(species,
     # .d <- dplyr::filter(.d, !is.na(area_swept))
     # instead use this to make sure false 0 aren't included
     .d$density_kgpm2 <- .d$catch_weight/.d$area_swept
-    .d$density_kgpm2 <- ifelse(!is.na(.d$area_swept), .d$density_kgpm2, NA)
+    .d$density_kgpm2 <- ifelse(!is.na(.d$area_swept), .d$density_kgpm2, NA) # don't think this is doing anything
+    .d$density_pcpm2 <- .d$catch_count/.d$area_swept2 # using area_swept2 is how it's done in "poc_catmat_2011"
+    .d$density_pcpm2 <- ifelse(!is.na(.d$area_swept2), .d$density_pcpm2, NA) # don't think this is doing anything
   }
 
   if(any(ssid %in% ll)) {
     .d$hook_area_swept_km2 <- ifelse(.d$survey_series_id == 14,
                                      0.0054864 * 0.009144 * .d$minor_id_count,
                                      0.0024384 * 0.009144 * .d$minor_id_count)
-    .d$density_pppm2 <- .d$catch_count/(.d$hook_area_swept_km2*1000000)
+
+    .d$density_ppkm2 <- .d$catch_count/(.d$hook_area_swept_km2)
+    #.d$density_pppm2 <- .d$catch_count/(.d$hook_area_swept_km2*1000000)
   }
 
   .d <- mutate(.d,
