@@ -1,14 +1,12 @@
 -- Adapted from query written by Norm Olsen for Marie-Pierre Etienne (Yelloweye Rockfish outside hbll and iphc surveys)
-   SELECT S.SURVEY_DESC AS Survey,
-   SURVEY_SERIES_ID AS ssid,
-   FISHING_EVENT_ID,
-      YEAR(TRIP_START_DATE) AS Year,
+   SELECT FE.FISHING_EVENT_ID,
+    FE.FE_MAJOR_LEVEL_ID,
+    T.TRIP_ID,
+    S.SURVEY_ID,
+    S.SURVEY_SERIES_ID,
+    YEAR(T.TRIP_START_DATE) AS TRIP_YEAR,
       CAST(MAJOR_STAT_AREA_CODE AS SMALLINT) AS major,
-      ISNULL(ISNULL(ISNULL(ISNULL(FE_MODAL_BOTTOM_DEPTH, FE_BEGINNING_BOTTOM_DEPTH),
-         FE_END_BOTTOM_DEPTH), FE_MIN_BOTTOM_DEPTH), FE_MAX_BOTTOM_DEPTH) AS Depth,
-      DATEDIFF(minute, FE_END_DEPLOYMENT_TIME, FE_BEGIN_RETRIEVAL_TIME) AS soaktime,
-      NT count_target_species,
-      NNT count_non_target_species,
+      Nall count_all_species,
       Nb count_bait_only,
       Ne count_empty_hooks,
       Nbr count_bent_broken,
@@ -36,12 +34,7 @@
                   T.VESSEL_ID,
                   FE.FE_MAJOR_LEVEL_ID,
                   FE.FISHING_EVENT_ID,
-                  SUM(CASE SPECIES_CODE WHEN
-				 -- insert species here
-				   THEN 1 ELSE 0 END) AS NT,
-                  SUM(CASE WHEN SPECIES_CODE IS NOT NULL AND SPECIES_CODE <>
-				 -- insert species here
-				   THEN 1 ELSE 0 END) AS NNT,
+                  SUM(CASE SPECIES_CODE IS NOT NULL THEN 1 ELSE 0 END) AS Nall, -- all species recorded
                   SUM(CASE HOOK_YIELD_CODE WHEN 1 THEN 1 ELSE 0 END) AS Ne,
                   SUM(CASE HOOK_YIELD_CODE WHEN 2 THEN 1 WHEN 6 THEN 1 ELSE 0 END) AS Nb, -- bait only and bait skin
                   SUM(CASE WHEN HOOK_CONDITION_CODE IN (1,2,3,7) THEN 1 ELSE 0 END) AS Nbr
@@ -61,15 +54,12 @@
                   FE.FISHING_EVENT_ID = HS.FISHING_EVENT_ID
                   LEFT JOIN LONGLINE_SPECS LS
                   ON FE.FISHING_EVENT_ID = LS.FISHING_EVENT_ID
-               WHERE SURVEY_SERIES_ID IN
-			   -- insert ssid here
-			   AND FE_PARENT_EVENT_ID IS NOT NULL AND
+               WHERE FE_PARENT_EVENT_ID IS NOT NULL AND
                   FE_MINOR_LEVEL_ID IS NOT NULL AND
+                  -- insert ssid here
                   ISNULL(LS.USABILITY_CODE,0) IN (0,1,2,6)
                GROUP BY T.TRIP_ID, T.VESSEL_ID, FE.FE_MAJOR_LEVEL_ID, FE.FISHING_EVENT_ID) T
             GROUP BY TRIP_ID, VESSEL_ID, FE_MAJOR_LEVEL_ID) C ON
       T.TRIP_ID = C.TRIP_ID AND T.VESSEL_ID = C.VESSEL_ID AND FE.FE_MAJOR_LEVEL_ID = C.FE_MAJOR_LEVEL_ID
-   WHERE SURVEY_SERIES_ID IN
-   -- insert ssid here
-    AND FE_PARENT_EVENT_ID IS NULL
-
+   WHERE FE_PARENT_EVENT_ID IS NULL
+      -- insert ssid here

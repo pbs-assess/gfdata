@@ -158,10 +158,10 @@ get_survey_sets2 <- function(species,
     fe <- filter(fe, YEAR %in% years)
   }
 
-  if (is.null(ssid)) {
-    fe <- filter(fe, SURVEY_SERIES_ID > 0)
+  # if (is.null(ssid)) {
+  #   fe <- filter(fe, SURVEY_SERIES_ID > 0)
+  # }
 
-  }
 # browser()
 
   if(all(ssid %in% trawl)) {
@@ -189,8 +189,20 @@ get_survey_sets2 <- function(species,
 
     fe2 <- get_sub_level_counts(fe)
     names(fe2) <- tolower(names(fe2))
+    browser()
+    .h <- read_sql("get-ll-hook-data2.sql")
 
-    if(!all(ssid %in% trawl)) {
+      .h <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid,
+                          sql_code = .h,
+                          search_flag = "-- insert ssid here", conversion_func = I
+      )
+
+    .hd <- run_sql("GFBioSQL", .h)
+    names(.hd) <- tolower(names(.hd))
+
+    fe2 <- left_join(fe2, unique(.hd))
+
+    if(!any(ssid %in% trawl)) {
 
       exdat <- expand.grid(fishing_event_id = unique(fe2$fishing_event_id), species_code = unique(.d$species_code))
 
@@ -281,6 +293,7 @@ get_survey_sets2 <- function(species,
   if(any(ssid %in% trawl)) {
     # calculate area_swept for trawl exactly as it has been done for the density values in this dataframe
     # note: is NA if doorspread_m is missing and duration_min may be time in water (not just bottom time)
+
     .d$area_swept1 <- .d$doorspread_m * .d$tow_length_m
     .d$area_swept2 <- .d$doorspread_m * (.d$speed_mpm * .d$duration_min)
     .d$area_swept <- ifelse(!is.na(.d$area_swept1), .d$area_swept1, .d$area_swept2)
