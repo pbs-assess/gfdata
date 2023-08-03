@@ -23,5 +23,6 @@
       AND S.SURVEY_SERIES_ID <> 0
       -- insert species here
       -- insert ssid here
+      -- insert fe vector here
    GROUP BY S.SURVEY_SERIES_ID, S.SURVEY_ID, T.TRIP_ID, FE.FISHING_EVENT_ID,
       FE.FE_MAJOR_LEVEL_ID, T.TRIP_START_DATE, C.SPECIES_CODE

@@ -7,14 +7,19 @@
 #'  length or weight values.
 #' @param usability A vector of usability codes to include. Defaults to all.
 #'   IPHC codes may be different to other surveys.
+#' @param include_event_info Logical for whether to append all relevant fishing event info
+#'   (location, timing, effort, catch, etc.). Defaults to false.
 #'
 #' @export
 #' @rdname get_data
 get_survey_samples2 <- function(species, ssid = NULL,
                                remove_bad_data = TRUE, unsorted_only = TRUE,
-                               usability = NULL, major = NULL) {
+                               usability = NULL,
+                               include_event_info = FALSE,
+                               major = NULL) {
   .q <- read_sql("get-survey-samples2.sql")
   .q <- inject_filter("AND SP.SPECIES_CODE IN", species, sql_code = .q)
+
   if (!is.null(ssid)) {
     .q <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid,
                         sql_code = .q,
@@ -122,29 +127,53 @@ get_survey_samples2 <- function(species, ssid = NULL,
                    by = "SURVEY_SERIES_ID"
   )
 
-  .fe <- read_sql("get-event-data.sql")
-  fe <- run_sql("GFBioSQL", .fe)
+  if(include_event_info){
+  fe_vector <- unique(.d$FISHING_EVENT_ID)
 
+  .q2 <- read_sql("get-survey-sets.sql")
+  .q2 <- inject_filter("AND SP.SPECIES_CODE IN", species, sql_code = .q2)
+  .q2 <- inject_filter("AND FE.FISHING_EVENT_ID IN", fe_vector,
+                        sql_code = .q,
+                        search_flag = "-- insert fe vector here", conversion_func = I
+    )
+
+  .c <- run_sql("GFBioSQL", .q2)
   .d <- inner_join(.d,
                    unique(select(
-                     fe,
+                     .c,
                      FISHING_EVENT_ID,
-                     MONTH,
-                     DAY,
-                     TIME_DEPLOYED,
-                     TIME_RETRIEVED,
-                     LATITUDE_END,
-                     LONGITUDE_END,
-                     DEPTH_M,
-                     VESSEL_ID,
-                     CAPTAIN_ID
-                   )),
-                   by = "FISHING_EVENT_ID"
+                     SPECIES_CODE,
+                     CATCH_WEIGHT,
+                     CATCH_COUNT
+                   ))
   )
 
+  # get all fishing event info
+  .fe <- read_sql("get-event-data.sql")
 
+  ssid <- unique(.d$SURVEY_SERIES_ID)
+  .fe <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid,
+                       sql_code = .fe,
+                       search_flag = "-- insert ssid here", conversion_func = I
+  )
 
+  fe <- run_sql("GFBioSQL", .fe) %>% select(-USABILITY_CODE, -GROUPING_CODE) # avoid classing with values for samples
 
+  fe2 <- get_sub_level_counts(fe)
+  names(fe2) <- tolower(names(fe2))
+  names(.d) <- tolower(names(.d))
+
+  .d <- inner_join(.d, fe2)
+
+  .d$area_swept1 <- .d$doorspread_m * .d$tow_length_m
+  .d$area_swept2 <- .d$doorspread_m * (.d$speed_mpm * .d$duration_min)
+  .d$area_swept <- ifelse(!is.na(.d$area_swept1), .d$area_swept1, .d$area_swept2)
+  .d$area_swept_km2 <- .d$area_swept/1000000
+  .d$hook_area_swept_km2 <- ifelse(.d$survey_series_id == 14,
+                                   0.0054864 * 0.009144 * .d$minor_id_count,
+                                   0.0024384 * 0.009144 * .d$minor_id_count)
+  }
 
   add_version(as_tibble(.d))
+
 }
