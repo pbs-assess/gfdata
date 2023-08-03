@@ -40,6 +40,20 @@ get_survey_samples2 <- function(species, ssid = NULL,
   .q[i] <- paste0("CAST(ROUND(", length_type, "/ 10, 1) AS DECIMAL(8,1)) AS LENGTH,")
 
   .d <- run_sql("GFBioSQL", .q)
+
+
+  surveys <- get_ssids()
+  .d <- inner_join(.d,
+                   unique(select(
+                     surveys,
+                     SURVEY_SERIES_ID,
+                     SURVEY_SERIES_DESC,
+                     SURVEY_ABBREV
+                   )),
+                   by = "SURVEY_SERIES_ID"
+  )
+
+
   names(.d) <- tolower(names(.d))
   .d$species_common_name <- tolower(.d$species_common_name)
   .d$species_science_name <- tolower(.d$species_science_name)
@@ -104,54 +118,36 @@ get_survey_samples2 <- function(species, ssid = NULL,
   }
 
 
-  species_df <- run_sql("GFBioSQL", "SELECT * FROM SPECIES")
-  .d <- inner_join(.d,
-                   unique(select(
-                     species_df,
-                     SPECIES_CODE,
-                     SPECIES_COMMON_NAME,
-                     SPECIES_SCIENCE_NAME,
-                     SPECIES_DESC
-                   )),
-                   by = "SPECIES_CODE"
-  )
-
-  surveys <- get_ssids()
-  .d <- inner_join(.d,
-                   unique(select(
-                     surveys,
-                     SURVEY_SERIES_ID,
-                     SURVEY_SERIES_DESC,
-                     SURVEY_ABBREV
-                   )),
-                   by = "SURVEY_SERIES_ID"
-  )
 
   if(include_event_info){
-  fe_vector <- unique(.d$FISHING_EVENT_ID)
+
+  fe_vector <- unique(.d$fishing_event_id)
 
   .q2 <- read_sql("get-survey-sets.sql")
   .q2 <- inject_filter("AND SP.SPECIES_CODE IN", species, sql_code = .q2)
   .q2 <- inject_filter("AND FE.FISHING_EVENT_ID IN", fe_vector,
-                        sql_code = .q,
+                        sql_code = .q2,
                         search_flag = "-- insert fe vector here", conversion_func = I
     )
 
   .c <- run_sql("GFBioSQL", .q2)
-  .d <- inner_join(.d,
+
+
+  names(.c) <- tolower(names(.c))
+  .d <- left_join(.d,
                    unique(select(
                      .c,
-                     FISHING_EVENT_ID,
-                     SPECIES_CODE,
-                     CATCH_WEIGHT,
-                     CATCH_COUNT
+                     fishing_event_id,
+                     species_code,
+                     catch_weight,
+                     catch_count
                    ))
   )
 
   # get all fishing event info
   .fe <- read_sql("get-event-data.sql")
 
-  ssid <- unique(.d$SURVEY_SERIES_ID)
+  ssid <- unique(.d$survey_series_id)
   .fe <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid,
                        sql_code = .fe,
                        search_flag = "-- insert ssid here", conversion_func = I
@@ -161,9 +157,8 @@ get_survey_samples2 <- function(species, ssid = NULL,
 
   fe2 <- get_sub_level_counts(fe)
   names(fe2) <- tolower(names(fe2))
-  names(.d) <- tolower(names(.d))
 
-  .d <- inner_join(.d, fe2)
+  .d <- left_join(.d, fe2)
 
   .d$area_swept1 <- .d$doorspread_m * .d$tow_length_m
   .d$area_swept2 <- .d$doorspread_m * (.d$speed_mpm * .d$duration_min)
@@ -172,7 +167,10 @@ get_survey_samples2 <- function(species, ssid = NULL,
   .d$hook_area_swept_km2 <- ifelse(.d$survey_series_id == 14,
                                    0.0054864 * 0.009144 * .d$minor_id_count,
                                    0.0024384 * 0.009144 * .d$minor_id_count)
+
+  .d <- unique(.d)
   }
+
 
   add_version(as_tibble(.d))
 
