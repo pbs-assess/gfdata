@@ -106,14 +106,13 @@ get_commercial_samples2 <- function(species, unsorted_only = TRUE,
 
     fe_vector <- unique(.d$fishing_event_id)
 
-    .q2 <- read_sql("get-survey-sets.sql")
-    .q2 <- inject_filter("AND SP.SPECIES_CODE IN", species, sql_code = .q2)
-    .q2 <- inject_filter("AND FE.FISHING_EVENT_ID IN", fe_vector,
-                         sql_code = .q2,
-                         search_flag = "-- insert fe vector here", conversion_func = I
-    )
-
     ## already included in original sql
+    # .q2 <- read_sql("get-survey-sets.sql")
+    # .q2 <- inject_filter("AND SP.SPECIES_CODE IN", species, sql_code = .q2)
+    # .q2 <- inject_filter("AND FE.FISHING_EVENT_ID IN", fe_vector,
+    #                      sql_code = .q2,
+    #                      search_flag = "-- insert fe vector here", conversion_func = I
+    # )
     # .c <- run_sql("GFBioSQL", .q2)
     #
     # names(.c) <- tolower(names(.c))
@@ -129,19 +128,17 @@ get_commercial_samples2 <- function(species, unsorted_only = TRUE,
 
     # get all fishing event info
     .fe <- read_sql("get-event-data.sql")
-
-    ssid <- unique(.d$survey_series_id)
-    .fe <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid,
-                         sql_code = .fe,
-                         search_flag = "-- insert ssid here", conversion_func = I
-    )
-
     fe <- run_sql("GFBioSQL", .fe) %>% select(-USABILITY_CODE, -GROUPING_CODE) # avoid classing with values for samples
 
     fe2 <- get_sub_level_counts(fe)
     names(fe2) <- tolower(names(fe2))
-
-    .d <- left_join(.d, fe2)
+    .d <- left_join(.d, unique(select(fe2,
+                                      -time_deployed, -time_retrieved,
+                          -latitude,
+                          -longitude,
+                          -major_stat_area_code,
+                          -minor_stat_area_code,
+                          -vessel_id)))
 
     .d$area_swept1 <- .d$doorspread_m * .d$tow_length_m
     .d$area_swept2 <- .d$doorspread_m * (.d$speed_mpm * .d$duration_min)
