@@ -113,19 +113,19 @@ get_commercial_samples2 <- function(species, unsorted_only = TRUE,
                          search_flag = "-- insert fe vector here", conversion_func = I
     )
 
-    .c <- run_sql("GFBioSQL", .q2)
-
-
-    names(.c) <- tolower(names(.c))
-    .d <- left_join(.d,
-                    unique(select(
-                      .c,
-                      fishing_event_id,
-                      species_code,
-                      catch_weight,
-                      catch_count
-                    ))
-    )
+    ## already included in original sql
+    # .c <- run_sql("GFBioSQL", .q2)
+    #
+    # names(.c) <- tolower(names(.c))
+    # .d <- left_join(.d,
+    #                 unique(select(
+    #                   .c,
+    #                   fishing_event_id,
+    #                   species_code,
+    #                   catch_weight,
+    #                   catch_count
+    #                 ))
+    # )
 
     # get all fishing event info
     .fe <- read_sql("get-event-data.sql")
