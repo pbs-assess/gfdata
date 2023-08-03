@@ -189,7 +189,7 @@ get_survey_sets2 <- function(species,
 
     fe2 <- get_sub_level_counts(fe)
     names(fe2) <- tolower(names(fe2))
-    browser()
+
     .h <- read_sql("get-ll-hook-data2.sql")
 
       .h <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid,
