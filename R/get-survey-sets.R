@@ -138,19 +138,35 @@ get_survey_sets2 <- function(species,
                         sql_code = .fe,
                         search_flag = "-- insert ssid here", conversion_func = I
     )
+  } else {
+    #if ssid is NULL, get only events from surveys that have recorded any of the species selected
+    ssid <- unique(.d$survey_series_id)
+    .fe <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid,
+                         sql_code = .fe,
+                         search_flag = "-- insert ssid here", conversion_func = I
+    )
+    # TODO: something to address replicated events across different survey series
+    warning("Returning all survey series that contain any of the species saught.",
+            "Probably advisable to call either just one species, or just one survey type at a time.",
+            "If not using default ssids, note that some survey series are nested within eachother.",
+            "This can result in the duplication of fishing events in the dataframe.")
   }
 
   fe <- run_sql("GFBioSQL", .fe)
 
+  if (!is.null(years)) {
+    fe <- filter(fe, YEAR %in% years)
+  }
 
   if (is.null(ssid)) {
     fe <- filter(fe, SURVEY_SERIES_ID > 0)
-    # TODO: something to address replicated events across different survey series
+
   }
 # browser()
 
   if(all(ssid %in% trawl)) {
 
+    # uses raw fe dataframe to save time because sub event counts not need for trawl
     names(fe) <- tolower(names(fe))
 
     exdat <- expand.grid(fishing_event_id = unique(fe$fishing_event_id), species_code = unique(.d$species_code))
@@ -161,7 +177,9 @@ get_survey_sets2 <- function(species,
                        #-survey_id,
                        #-survey_series_id,
                        -fe_parent_event_id,
+                       -fe_major_level_id,
                        -fe_minor_level_id,
+                       -fe_sub_level_id,
                        -hook_code,
                        -lglsp_hook_count
                      ))
@@ -169,52 +187,10 @@ get_survey_sets2 <- function(species,
 
   } else {
 
-    fe_A_no_parent <- filter(fe, is.na(FE_PARENT_EVENT_ID)) # just actual events
-
-    fe_B_no_minor <- filter(fe, !is.na(FE_PARENT_EVENT_ID), is.na(FE_MINOR_LEVEL_ID)) %>%
-      group_by(FE_PARENT_EVENT_ID, SURVEY_ID, SURVEY_SERIES_ID) %>%
-      mutate(SKATE_COUNT = n()) %>% select(FE_PARENT_EVENT_ID, FISHING_EVENT_ID, SURVEY_ID, SURVEY_SERIES_ID, SKATE_COUNT) %>% dplyr::distinct() %>%
-      rename(skate_id = FISHING_EVENT_ID, fishing_event_id = FE_PARENT_EVENT_ID) %>% ungroup()
-
-    # fe_C <- filter(fe_w_parent_events, !is.na(FE_MINOR_LEVEL_ID))
-    fe_C_w_minor <- filter(fe, !is.na(FE_PARENT_EVENT_ID), !is.na(FE_MINOR_LEVEL_ID)) %>%
-      group_by(FE_PARENT_EVENT_ID, SURVEY_ID, SURVEY_SERIES_ID) %>%
-      mutate(MINOR_ID_COUNT = n(),
-             MINOR_ID_MAX = max(FE_MINOR_LEVEL_ID, na.rm = TRUE)) %>%
-      select(FE_PARENT_EVENT_ID, SURVEY_ID, SURVEY_SERIES_ID, MINOR_ID_COUNT, MINOR_ID_MAX) %>%
-      dplyr::distinct() %>%
-      rename(skate_id = FE_PARENT_EVENT_ID) %>% ungroup()
-
-    sub_event_counts <- full_join(
-      fe_B_no_minor,
-      fe_C_w_minor
-    )
-
-    missing_event_ids <- filter(sub_event_counts, is.na(fishing_event_id)) %>% mutate(fishing_event_id = skate_id)
-
-    sub_event_counts2 <- full_join(filter(sub_event_counts, !is.na(fishing_event_id)), missing_event_ids)
-
-    sub_event_counts3 <- sub_event_counts2 %>%
-      group_by(fishing_event_id, SURVEY_ID, SURVEY_SERIES_ID) %>%
-      dplyr::summarise(
-        skate_count = mean(SKATE_COUNT, na.rm = T),
-        mean_per_skate = mean(MINOR_ID_COUNT, na.rm = T),
-        minor_id_count = sum(MINOR_ID_COUNT, na.rm = T),
-        minor_id_max = max(MINOR_ID_MAX, na.rm = T)
-      ) %>% dplyr::distinct() %>%
-      mutate(diff = ifelse(minor_id_max > 0, minor_id_max-minor_id_count, NA)) %>%
-      select(-SURVEY_ID, -SURVEY_SERIES_ID) %>% dplyr::distinct()
-
-    #sub_event_counts3 <- unique(sub_event_counts3)
-    #check_for_duplicates <- sub_event_counts3[duplicated(sub_event_counts3$fishing_event_id), ] # none :)
-    # all_top_events <- select(fe_A_no_parent, FISHING_EVENT_ID, SURVEY_ID, SURVEY_SERIES_ID) %>% distinct() %>%
-
-    fe2 <- fe_A_no_parent %>% rename(fishing_event_id = FISHING_EVENT_ID) %>% left_join(sub_event_counts3)
-
+    fe2 <- get_sub_level_counts(fe)
     names(fe2) <- tolower(names(fe2))
 
     if(!all(ssid %in% trawl)) {
-
 
       exdat <- expand.grid(fishing_event_id = unique(fe2$fishing_event_id), species_code = unique(.d$species_code))
 
@@ -223,8 +199,6 @@ get_survey_sets2 <- function(species,
                        fe2,
                        #-survey_id,
                        #-survey_series_id,
-                       -fe_parent_event_id,
-                       -fe_minor_level_id,
                        -tow_length_m,
                        -mouth_width_m,
                        -doorspread_m,
@@ -234,14 +208,14 @@ get_survey_sets2 <- function(species,
     } else {
       exdat <- expand.grid(fishing_event_id = unique(fe2$fishing_event_id), species_code = unique(.d$species_code))
       .d <- left_join(exdat,
-
-                       unique(select(
-                          fe2,
-                       #  -survey_id,
-                       #  -survey_series_id,
-                          -fe_parent_event_id,
-                          -fe_minor_level_id
-                       ))
+                      fe2
+                       # unique(select(
+                       #    fe2,
+                       # #  -survey_id,
+                       # #  -survey_series_id,
+                       #    -fe_parent_event_id,
+                       #    -fe_minor_level_id
+                       # ))
       ) %>% left_join(.d)
       }
   }
