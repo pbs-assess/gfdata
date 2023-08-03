@@ -134,6 +134,7 @@ get_survey_samples2(
   remove_bad_data = TRUE,
   unsorted_only = TRUE,
   usability = NULL,
+  include_event_info = FALSE,
   major = NULL
 )
 
@@ -232,6 +233,9 @@ extracted. You might set this to \code{FALSE} if you don't need these data and
 you want to substantially speed up data extraction.}
 
 \item{end_date}{A string representing the date. Must be of the format dd/mm/yyyy}
+
+\item{include_event_info}{Logical for whether to append all relevant fishing event info
+(location, timing, effort, catch, etc.). Defaults to false.}
 
 \item{years}{If NULL, returns all years.}
 }
