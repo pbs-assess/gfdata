@@ -13,23 +13,23 @@
 #' @export
 #' @rdname get_data
 get_survey_samples2 <- function(species, ssid = NULL,
-                               remove_bad_data = TRUE,
-                               unsorted_only = TRUE,
-                               usability = NULL,
-                               include_event_info = FALSE,
-                               major = NULL) {
+                                remove_bad_data = TRUE,
+                                unsorted_only = TRUE,
+                                usability = NULL,
+                                include_event_info = FALSE,
+                                major = NULL) {
   .q <- read_sql("get-survey-samples2.sql")
   .q <- inject_filter("AND SP.SPECIES_CODE IN", species, sql_code = .q)
 
   if (!is.null(ssid)) {
     .q <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid,
-                        sql_code = .q,
-                        search_flag = "-- insert ssid here", conversion_func = I
+      sql_code = .q,
+      search_flag = "-- insert ssid here", conversion_func = I
     )
   }
   if (!is.null(major)) {
     .q <- inject_filter("AND SM.MAJOR_STAT_AREA_CODE =", major, .q,
-                        search_flag = "-- insert major here", conversion_func = I
+      search_flag = "-- insert major here", conversion_func = I
     )
   }
 
@@ -46,13 +46,13 @@ get_survey_samples2 <- function(species, ssid = NULL,
 
   surveys <- get_ssids()
   .d <- inner_join(.d,
-                   unique(select(
-                     surveys,
-                     SURVEY_SERIES_ID,
-                     SURVEY_SERIES_DESC,
-                     SURVEY_ABBREV
-                   )),
-                   by = "SURVEY_SERIES_ID"
+    unique(select(
+      surveys,
+      SURVEY_SERIES_ID,
+      SURVEY_SERIES_DESC,
+      SURVEY_ABBREV
+    )),
+    by = "SURVEY_SERIES_ID"
   )
 
 
@@ -84,14 +84,14 @@ get_survey_samples2 <- function(species, ssid = NULL,
   file <- system.file("extdata", "ageing_methods.csv", package = "gfdata")
 
   ageing_methods <- readr::read_csv(file,
-                                    col_types = readr::cols(
-                                      species_code = readr::col_character()
-                                    )
+    col_types = readr::cols(
+      species_code = readr::col_character()
+    )
   )
 
   .d <- left_join(.d,
-                  select(ageing_methods, species_code, species_ageing_group),
-                  by = "species_code"
+    select(ageing_methods, species_code, species_ageing_group),
+    by = "species_code"
   )
 
   .d <- .d %>%
@@ -109,83 +109,83 @@ get_survey_samples2 <- function(species, ssid = NULL,
 
   if (remove_bad_data) {
     .d <- .d[!(.d$length > 600 &
-                 .d$species_common_name == "north pacific spiny dogfish"), ]
+      .d$species_common_name == "north pacific spiny dogfish"), ]
     .d <- .d[!(.d$length > 600 & .d$species_common_name == "big skate"), ]
     .d <- .d[!(.d$length > 600 & .d$species_common_name == "longnose skate"), ]
     .d <- .d[!(.d$length > 60 & .d$species_common_name == "pacific tomcod"), ]
     .d <- .d[!(.d$length > 50 &
-                 .d$species_common_name == "quillback-rockfish"), ]
+      .d$species_common_name == "quillback-rockfish"), ]
     .d <- .d[!(.d$length < 10 & .d$weight / 1000 > 1.0 &
-                 .d$species_common_name == "pacific flatnose"), ]
+      .d$species_common_name == "pacific flatnose"), ]
   }
 
   # dogfish were producing a whole bunch of NAs for some reason
   .d <- .d %>% filter(!is.na(specimen_id))
 
 
-  if(include_event_info){
+  if (include_event_info) {
+    .f <- .d %>% filter(!is.na(fishing_event_id))
+    fe_vector <- unique(.f$fishing_event_id)
 
-  .f <- .d %>% filter(!is.na(fishing_event_id))
-  fe_vector <- unique(.f$fishing_event_id)
-
-  .q2 <- read_sql("get-survey-sets.sql")
-  .q2 <- inject_filter("AND SP.SPECIES_CODE IN", species, sql_code = .q2)
-  .q2 <- inject_filter("AND FE.FISHING_EVENT_ID IN", fe_vector,
-                        sql_code = .q2,
-                        search_flag = "-- insert fe vector here", conversion_func = I
+    .q2 <- read_sql("get-survey-sets.sql")
+    .q2 <- inject_filter("AND SP.SPECIES_CODE IN", species, sql_code = .q2)
+    .q2 <- inject_filter("AND FE.FISHING_EVENT_ID IN", fe_vector,
+      sql_code = .q2,
+      search_flag = "-- insert fe vector here", conversion_func = I
     )
 
-  .c <- run_sql("GFBioSQL", .q2)
+    .c <- run_sql("GFBioSQL", .q2)
 
 
-  names(.c) <- tolower(names(.c))
-  .d <- left_join(.d,
-                   unique(select(
-                     .c,
-                     fishing_event_id,
-                     species_code,
-                     catch_weight,
-                     catch_count
-                   ))
-  )
+    names(.c) <- tolower(names(.c))
+    .d <- left_join(
+      .d,
+      unique(select(
+        .c,
+        fishing_event_id,
+        species_code,
+        catch_weight,
+        catch_count
+      ))
+    )
 
-  # get all fishing event info
-  .fe <- read_sql("get-event-data.sql")
+    # get all fishing event info
+    .fe <- read_sql("get-event-data.sql")
 
-  ssid <- unique(.d$survey_series_id)
-  .fe <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid,
-                       sql_code = .fe,
-                       search_flag = "-- insert ssid here", conversion_func = I
-  )
+    ssid <- unique(.d$survey_series_id)
+    .fe <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid,
+      sql_code = .fe,
+      search_flag = "-- insert ssid here", conversion_func = I
+    )
 
-  fe <- run_sql("GFBioSQL", .fe) %>% select(-USABILITY_CODE, -GROUPING_CODE) # avoid classing with values for samples
+    fe <- run_sql("GFBioSQL", .fe) %>% select(-USABILITY_CODE, -GROUPING_CODE) # avoid classing with values for samples
 
-  fe2 <- get_sub_level_counts(fe)
-  names(fe2) <- tolower(names(fe2))
+    fe2 <- get_sub_level_counts(fe)
+    names(fe2) <- tolower(names(fe2))
 
-  .d <- left_join(.d, fe2)
+    .d <- left_join(.d, fe2)
 
-  # in trawl data, catch_count is only recorded for small catches
-  # so 0 in the catch_count column when catch_weight > 0 seems misleading
-  # note: there are also a few occasions for trawl where count > 0 and catch_weight is 0/NA
-  # these lines replace false 0s with NA, but additional checks might be needed
+    # in trawl data, catch_count is only recorded for small catches
+    # so 0 in the catch_count column when catch_weight > 0 seems misleading
+    # note: there are also a few occasions for trawl where count > 0 and catch_weight is 0/NA
+    # these lines replace false 0s with NA, but additional checks might be needed
 
-  .d$catch_count <- ifelse(.d$catch_weight > 0 & .d$catch_count == 0, NA, .d$catch_count)
-  .d$catch_weight <- ifelse(.d$catch_count > 0 & .d$catch_weight == 0, NA, .d$catch_weight)
+    .d$catch_count <- ifelse(.d$catch_weight > 0 & .d$catch_count == 0, NA, .d$catch_count)
+    .d$catch_weight <- ifelse(.d$catch_count > 0 & .d$catch_weight == 0, NA, .d$catch_weight)
 
 
-  .d$area_swept1 <- .d$doorspread_m * .d$tow_length_m
-  .d$area_swept2 <- .d$doorspread_m * (.d$speed_mpm * .d$duration_min)
-  .d$area_swept <- ifelse(!is.na(.d$area_swept1), .d$area_swept1, .d$area_swept2)
-  .d$area_swept_km2 <- .d$area_swept/1000000
-  .d$hook_area_swept_km2 <- ifelse(.d$survey_series_id == 14,
-                                   0.0054864 * 0.009144 * .d$minor_id_count,
-                                   0.0024384 * 0.009144 * .d$minor_id_count)
+    .d$area_swept1 <- .d$doorspread_m * .d$tow_length_m
+    .d$area_swept2 <- .d$doorspread_m * (.d$speed_mpm * .d$duration_min)
+    .d$area_swept <- ifelse(!is.na(.d$area_swept1), .d$area_swept1, .d$area_swept2)
+    .d$area_swept_km2 <- .d$area_swept / 1000000
+    .d$hook_area_swept_km2 <- ifelse(.d$survey_series_id == 14,
+      0.0054864 * 0.009144 * .d$minor_id_count,
+      0.0024384 * 0.009144 * .d$minor_id_count
+    )
 
-  .d <- unique(.d)
+    .d <- unique(.d)
   }
 
 
   add_version(as_tibble(.d))
-
 }

@@ -32,26 +32,20 @@
 get_survey_sets2 <- function(species,
                              ssid = c(1, 3, 4, 16, 2, 14, 22, 35, 36, 39, 40),
                              years = NULL,
-                            join_sample_ids = FALSE, verbose = FALSE,
-                            remove_false_zeros = FALSE,
-                            usability = c(0,1,2,6)
-                            ) {
-
-
-
-
+                             join_sample_ids = FALSE, verbose = FALSE,
+                             remove_false_zeros = FALSE,
+                             usability = c(0, 1, 2, 6)) {
   .q <- read_sql("get-survey-sets.sql")
 
   if (!is.null(species)) {
-  .q <- inject_filter("AND SP.SPECIES_CODE IN", species, sql_code = .q)
+    .q <- inject_filter("AND SP.SPECIES_CODE IN", species, sql_code = .q)
   }
 
   if (!is.null(ssid)) {
-
     survey_ids <- get_survey_ids(ssid)
     .q <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid,
-                        sql_code = .q,
-                        search_flag = "-- insert ssid here", conversion_func = I
+      sql_code = .q,
+      search_flag = "-- insert ssid here", conversion_func = I
     )
   }
 
@@ -67,7 +61,7 @@ get_survey_sets2 <- function(species,
 
   if (!is.null(years)) {
     .d <- filter(.d, YEAR %in% years)
-    }
+  }
 
 
   if (join_sample_ids) {
@@ -77,7 +71,7 @@ get_survey_sets2 <- function(species,
     areas <- get_strata_areas()
 
     .d <- left_join(.d, sample_trip_ids,
-                    by = c("SPECIES_CODE", "FISHING_EVENT_ID")
+      by = c("SPECIES_CODE", "FISHING_EVENT_ID")
     ) %>%
       left_join(areas, by = c("SURVEY_ID", "GROUPING_CODE"))
 
@@ -133,23 +127,25 @@ get_survey_sets2 <- function(species,
 
   if (!is.null(ssid)) {
 
-    #survey_ids <- get_survey_ids(ssid)
+    # survey_ids <- get_survey_ids(ssid)
     .fe <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid,
-                        sql_code = .fe,
-                        search_flag = "-- insert ssid here", conversion_func = I
+      sql_code = .fe,
+      search_flag = "-- insert ssid here", conversion_func = I
     )
   } else {
-    #if ssid is NULL, get only events from surveys that have recorded any of the species selected
+    # if ssid is NULL, get only events from surveys that have recorded any of the species selected
     ssid <- unique(.d$survey_series_id)
     .fe <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid,
-                         sql_code = .fe,
-                         search_flag = "-- insert ssid here", conversion_func = I
+      sql_code = .fe,
+      search_flag = "-- insert ssid here", conversion_func = I
     )
     # TODO: something to address replicated events across different survey series
-    warning("Returning all survey series that contain any of the species saught.",
-            "Probably advisable to call either just one species, or just one survey type at a time.",
-            "If not using default ssids, note that some survey series are nested within eachother.",
-            "This can result in the duplication of fishing events in the dataframe.")
+    warning(
+      "Returning all survey series that contain any of the species saught.",
+      "Probably advisable to call either just one species, or just one survey type at a time.",
+      "If not using default ssids, note that some survey series are nested within eachother.",
+      "This can result in the duplication of fishing events in the dataframe."
+    )
   }
 
   fe <- run_sql("GFBioSQL", .fe)
@@ -162,112 +158,112 @@ get_survey_sets2 <- function(species,
   #   fe <- filter(fe, SURVEY_SERIES_ID > 0)
   # }
 
-# browser()
+  # browser()
 
-  if(all(ssid %in% trawl)) {
+  if (all(ssid %in% trawl)) {
 
     # uses raw fe dataframe to save time because sub event counts not need for trawl
     names(fe) <- tolower(names(fe))
 
     exdat <- expand.grid(fishing_event_id = unique(fe$fishing_event_id), species_code = unique(.d$species_code))
 
-    .d <- left_join(exdat,
-                     unique(select(
-                       fe,
-                       #-survey_id,
-                       #-survey_series_id,
-                       -fe_parent_event_id,
-                       -fe_major_level_id,
-                       -fe_minor_level_id,
-                       -fe_sub_level_id,
-                       -hook_code,
-                       -lglsp_hook_count
-                     ))
+    .d <- left_join(
+      exdat,
+      unique(select(
+        fe,
+        #-survey_id,
+        #-survey_series_id,
+        -fe_parent_event_id,
+        -fe_major_level_id,
+        -fe_minor_level_id,
+        -fe_sub_level_id,
+        -hook_code,
+        -lglsp_hook_count
+      ))
     ) %>% left_join(.d)
-
   } else {
-
     fe2 <- get_sub_level_counts(fe)
     names(fe2) <- tolower(names(fe2))
 
     .h <- read_sql("get-ll-hook-data2.sql")
 
-      .h <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid,
-                          sql_code = .h,
-                          search_flag = "-- insert ssid here", conversion_func = I
-      )
+    .h <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid,
+      sql_code = .h,
+      search_flag = "-- insert ssid here", conversion_func = I
+    )
 
     .hd <- run_sql("GFBioSQL", .h)
     names(.hd) <- tolower(names(.hd))
 
     fe2 <- left_join(fe2, unique(.hd))
 
-    if(!any(ssid %in% trawl)) {
-
+    if (!any(ssid %in% trawl)) {
       exdat <- expand.grid(fishing_event_id = unique(fe2$fishing_event_id), species_code = unique(.d$species_code))
 
-      .d <- left_join(exdat,
-                     unique(select(
-                       fe2,
-                       #-survey_id,
-                       #-survey_series_id,
-                       -tow_length_m,
-                       -mouth_width_m,
-                       -doorspread_m,
-                       -speed_mpm
-                     ))
-    ) %>% left_join(.d)
+      .d <- left_join(
+        exdat,
+        unique(select(
+          fe2,
+          #-survey_id,
+          #-survey_series_id,
+          -tow_length_m,
+          -mouth_width_m,
+          -doorspread_m,
+          -speed_mpm
+        ))
+      ) %>% left_join(.d)
     } else {
       exdat <- expand.grid(fishing_event_id = unique(fe2$fishing_event_id), species_code = unique(.d$species_code))
-      .d <- left_join(exdat,
-                      fe2
-                       # unique(select(
-                       #    fe2,
-                       # #  -survey_id,
-                       # #  -survey_series_id,
-                       #    -fe_parent_event_id,
-                       #    -fe_minor_level_id
-                       # ))
+      .d <- left_join(
+        exdat,
+        fe2
+        # unique(select(
+        #    fe2,
+        # #  -survey_id,
+        # #  -survey_series_id,
+        #    -fe_parent_event_id,
+        #    -fe_minor_level_id
+        # ))
       ) %>% left_join(.d)
-      }
+    }
   }
 
   surveys <- get_ssids()
   names(surveys) <- tolower(names(surveys))
   .d <- inner_join(.d,
-                   unique(select(
-                     surveys,
-                     survey_series_id,
-                     survey_series_desc,
-                     survey_abbrev
-                   )),
-                   by = "survey_series_id"
+    unique(select(
+      surveys,
+      survey_series_id,
+      survey_series_desc,
+      survey_abbrev
+    )),
+    by = "survey_series_id"
   )
 
   species_df <- run_sql("GFBioSQL", "SELECT * FROM SPECIES") %>%
     select(
-    SPECIES_CODE,
-    SPECIES_COMMON_NAME,
-    SPECIES_SCIENCE_NAME,
-    SPECIES_DESC
-  )
+      SPECIES_CODE,
+      SPECIES_COMMON_NAME,
+      SPECIES_SCIENCE_NAME,
+      SPECIES_DESC
+    )
   names(species_df) <- tolower(names(species_df))
 
   .d <- inner_join(.d,
-                   unique(species_df),
-                   by = "species_code"
+    unique(species_df),
+    by = "species_code"
   )
 
 
   # create zeros
-    .d$catch_count <- ifelse(is.na(.d$catch_count), 0, .d$catch_count)
-    .d$catch_weight <- ifelse(is.na(.d$catch_weight), 0, .d$catch_weight)
+  .d$catch_count <- ifelse(is.na(.d$catch_count), 0, .d$catch_count)
+  .d$catch_weight <- ifelse(is.na(.d$catch_weight), 0, .d$catch_weight)
 
   # in trawl data, catch_count is only recorded for small catches
   # so 0 in the catch_count column when catch_weight > 0 seems misleading
   # note: there are also a few occasions for trawl where count > 0 and catch_weight is 0/NA
   # these lines replace false 0s with NA, but additional checks might be needed
-  if(remove_false_zeros){
+  if (remove_false_zeros) {
     .d$catch_count <- ifelse(.d$catch_weight > 0 & .d$catch_count == 0, NA, .d$catch_count)
     .d$catch_weight <- ifelse(.d$catch_count > 0 & .d$catch_weight == 0, NA, .d$catch_weight)
   }
@@ -276,52 +272,52 @@ get_survey_sets2 <- function(species,
   if (!is.null(usability)) {
     .d <- filter(.d, usability_code %in% usability)
   } else {
-
     u <- get_table("usability")
 
     names(u) <- tolower(names(u))
-    .d <- left_join(.d,
-                    unique(select(
-                      u,
-                      usability_code,
-                      usability_desc
-                    ))
+    .d <- left_join(
+      .d,
+      unique(select(
+        u,
+        usability_code,
+        usability_desc
+      ))
     )
-
   }
 
-  if(any(ssid %in% trawl)) {
+  if (any(ssid %in% trawl)) {
     # calculate area_swept for trawl exactly as it has been done for the density values in this dataframe
     # note: is NA if doorspread_m is missing and duration_min may be time in water (not just bottom time)
 
     .d$area_swept1 <- .d$doorspread_m * .d$tow_length_m
     .d$area_swept2 <- .d$doorspread_m * (.d$speed_mpm * .d$duration_min)
     .d$area_swept <- ifelse(!is.na(.d$area_swept1), .d$area_swept1, .d$area_swept2)
-    .d$area_swept_km2 <- .d$area_swept/1000000
+    .d$area_swept_km2 <- .d$area_swept / 1000000
     # won't do this here because there may be ways of using mean(.d$doorspread_m) to fill in some NAs
     # .d <- dplyr::filter(.d, !is.na(area_swept))
     # instead use this to make sure false 0 aren't included
-    .d$density_kgpm2 <- .d$catch_weight/.d$area_swept
+    .d$density_kgpm2 <- .d$catch_weight / .d$area_swept
     .d$density_kgpm2 <- ifelse(!is.na(.d$area_swept), .d$density_kgpm2, NA) # don't think this is doing anything
-    .d$density_pcpm2 <- .d$catch_count/.d$area_swept2 # using area_swept2 is how it's done in "poc_catmat_2011"
+    .d$density_pcpm2 <- .d$catch_count / .d$area_swept2 # using area_swept2 is how it's done in "poc_catmat_2011"
     .d$density_pcpm2 <- ifelse(!is.na(.d$area_swept2), .d$density_pcpm2, NA) # don't think this is doing anything
   }
 
-  if(any(ssid %in% ll)) {
+  if (any(ssid %in% ll)) {
     .d$hook_area_swept_km2 <- ifelse(.d$survey_series_id == 14,
-                                     0.0054864 * 0.009144 * .d$minor_id_count,
-                                     0.0024384 * 0.009144 * .d$minor_id_count)
+      0.0054864 * 0.009144 * .d$minor_id_count,
+      0.0024384 * 0.009144 * .d$minor_id_count
+    )
 
-    .d$density_ppkm2 <- .d$catch_count/(.d$hook_area_swept_km2)
-    #.d$density_pppm2 <- .d$catch_count/(.d$hook_area_swept_km2*1000000)
+    .d$density_ppkm2 <- .d$catch_count / (.d$hook_area_swept_km2)
+    # .d$density_pppm2 <- .d$catch_count/(.d$hook_area_swept_km2*1000000)
   }
 
   .d <- mutate(.d,
-               species_science_name = tolower(species_science_name),
-               species_desc = tolower(species_desc),
-               species_common_name = tolower(species_common_name)
+    species_science_name = tolower(species_science_name),
+    species_desc = tolower(species_desc),
+    species_common_name = tolower(species_common_name)
   )
-  #.d <- unique(.d)
+  # .d <- unique(.d)
   species_codes <- common2codes(species)
   missing_species <- setdiff(species_codes, .d$species_code)
   if (length(missing_species) > 0) {
