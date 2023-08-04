@@ -13,7 +13,8 @@
 #' @export
 #' @rdname get_data
 get_survey_samples2 <- function(species, ssid = NULL,
-                               remove_bad_data = TRUE, unsorted_only = TRUE,
+                               remove_bad_data = TRUE,
+                               unsorted_only = TRUE,
                                usability = NULL,
                                include_event_info = FALSE,
                                major = NULL) {
@@ -31,6 +32,7 @@ get_survey_samples2 <- function(species, ssid = NULL,
                         search_flag = "-- insert major here", conversion_func = I
     )
   }
+
   length_type <- get_spp_sample_length_type(species)
 
   message(paste0("All or majority of length measurements are ", length_type))
@@ -117,11 +119,14 @@ get_survey_samples2 <- function(species, ssid = NULL,
                  .d$species_common_name == "pacific flatnose"), ]
   }
 
+  # dogfish were producing a whole bunch of NAs for some reason
+  .d <- .d %>% filter(!is.na(specimen_id))
 
 
   if(include_event_info){
 
-  fe_vector <- unique(.d$fishing_event_id)
+  .f <- .d %>% filter(!is.na(fishing_event_id))
+  fe_vector <- unique(.f$fishing_event_id)
 
   .q2 <- read_sql("get-survey-sets.sql")
   .q2 <- inject_filter("AND SP.SPECIES_CODE IN", species, sql_code = .q2)
