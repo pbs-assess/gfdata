@@ -160,6 +160,15 @@ get_survey_samples2 <- function(species, ssid = NULL,
 
   .d <- left_join(.d, fe2)
 
+  # in trawl data, catch_count is only recorded for small catches
+  # so 0 in the catch_count column when catch_weight > 0 seems misleading
+  # note: there are also a few occasions for trawl where count > 0 and catch_weight is 0/NA
+  # these lines replace false 0s with NA, but additional checks might be needed
+
+  .d$catch_count <- ifelse(.d$catch_weight > 0 & .d$catch_count == 0, NA, .d$catch_count)
+  .d$catch_weight <- ifelse(.d$catch_count > 0 & .d$catch_weight == 0, NA, .d$catch_weight)
+
+
   .d$area_swept1 <- .d$doorspread_m * .d$tow_length_m
   .d$area_swept2 <- .d$doorspread_m * (.d$speed_mpm * .d$duration_min)
   .d$area_swept <- ifelse(!is.na(.d$area_swept1), .d$area_swept1, .d$area_swept2)
