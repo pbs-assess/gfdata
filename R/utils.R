@@ -262,8 +262,8 @@ sub_event_counts <- full_join(
 ## up to 220 skates, all sablefish 39, 41, or 43, are missing parent event ids
 missing_event_ids <- filter(sub_event_counts, is.na(fishing_event_id)) %>%
   select(-fishing_event_id) %>%
-  left_join(select(fe_A_no_parent, fishing_event_id = FISHING_EVENT_ID, FE_MAJOR_LEVEL_ID, YEAR, TRIP_ID, SURVEY_ID,
-                   SURVEY_SERIES_ID))
+  left_join(select(fe_A_no_parent, fishing_event_id = FISHING_EVENT_ID, FE_MAJOR_LEVEL_ID, TRIP_ID,
+                   YEAR, SURVEY_ID, SURVEY_SERIES_ID))
 
 ## exploring missing ids
 # fe_A_no_parent[fe_A_no_parent$FISHING_EVENT_ID == 502717,]
