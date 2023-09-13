@@ -33,18 +33,20 @@ get_survey_samples2 <- function(species, ssid = NULL,
     )
   }
 
-  length_type <- get_spp_sample_length_type(species)
-
-  message(paste0("All or majority of length measurements are ", length_type))
-  search_flag <- "-- insert length type here"
+  search_flag <- "-- insert lengths here"
   i <- grep(search_flag, .q)
 
-  .q[i] <- paste0("CAST(ROUND(", length_type, "/ 10, 1) AS DECIMAL(8,1)) AS LENGTH,")
+  .q[i] <- paste0("CAST(ROUND(Fork_Length/ 10, 1) AS DECIMAL(8,1)) AS Fork_Length,
+                  CAST(ROUND(Standard_Length/ 10, 1) AS DECIMAL(8,1)) AS Standard_Length,
+                  CAST(ROUND(Total_Length/ 10, 1) AS DECIMAL(8,1)) AS Total_Length,
+                  CAST(ROUND(Second_Dorsal_Length/ 10, 1) AS DECIMAL(8,1)) AS Second_Dorsal_Length,
+                  ")
 
   .d <- run_sql("GFBioSQL", .q)
 
 
   surveys <- get_ssids()
+
   .d <- inner_join(.d,
     unique(select(
       surveys,
@@ -55,12 +57,34 @@ get_survey_samples2 <- function(species, ssid = NULL,
     by = "SURVEY_SERIES_ID"
   )
 
-
   names(.d) <- tolower(names(.d))
+
   .d$species_common_name <- tolower(.d$species_common_name)
   .d$species_science_name <- tolower(.d$species_science_name)
 
-  .d <- .d %>% mutate(length_type = length_type)
+  ### needs testing ----
+  .d$length <- NA
+  .d$length_type <- NA
+
+  for (i in seq_along(species)) {
+    .lt <- .d %>% filter(species == species[i]) %>%
+      tidyr::gather("fork_length",
+                    "standard_length",
+                    "total_length",
+                    "second_dorsal_length",
+                    key = "length_type",
+                    value = "count"
+      )
+
+    .lt <- .lt %>% dplyr::filter(count == max(count))
+    if (nrow(.lt) > 1L) .lt <- .lt[1L, ,drop = FALSE] # happens if all 0! pick any
+    .lt$length_type
+    .d[.d$species == species[i], ]$length <- .d[.d$species == species[i], .lt$length_type]
+    .d[.d$species == species[i], ]$length_type <- .lt$length_type
+  }
+
+  # .d <- .d %>% mutate(length_type = length_type)
+  ### ----
 
   if (unsorted_only) {
     .d <- filter(.d, sampling_desc == "UNSORTED")
