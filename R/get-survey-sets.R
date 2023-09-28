@@ -169,7 +169,7 @@ get_survey_sets2 <- function(species,
 
     .d <- left_join(
       exdat,
-      unique(select(
+      dplyr::distinct(select(
         fe,
         #-survey_id,
         #-survey_series_id,
@@ -195,14 +195,14 @@ get_survey_sets2 <- function(species,
     .hd <- run_sql("GFBioSQL", .h)
     names(.hd) <- tolower(names(.hd))
 
-    fe2 <- left_join(fe2, unique(.hd))
+    fe2 <- left_join(fe2, dplyr::distinct(.hd))
 
     if (!any(ssid %in% trawl)) {
       exdat <- expand.grid(fishing_event_id = unique(fe2$fishing_event_id), species_code = unique(.d$species_code))
 
       .d <- left_join(
         exdat,
-        unique(select(
+        dplyr::distinct(select(
           fe2,
           #-survey_id,
           #-survey_series_id,
@@ -217,7 +217,7 @@ get_survey_sets2 <- function(species,
       .d <- left_join(
         exdat,
         fe2
-        # unique(select(
+        # dplyr::distinct(select(
         #    fe2,
         # #  -survey_id,
         # #  -survey_series_id,
@@ -231,7 +231,7 @@ get_survey_sets2 <- function(species,
   surveys <- get_ssids()
   names(surveys) <- tolower(names(surveys))
   .d <- inner_join(.d,
-    unique(select(
+    dplyr::distinct(select(
       surveys,
       survey_series_id,
       survey_series_desc,
@@ -250,7 +250,7 @@ get_survey_sets2 <- function(species,
   names(species_df) <- tolower(names(species_df))
 
   .d <- inner_join(.d,
-    unique(species_df),
+    dplyr::distinct(species_df),
     by = "species_code"
   )
 
@@ -277,7 +277,7 @@ get_survey_sets2 <- function(species,
     names(u) <- tolower(names(u))
     .d <- left_join(
       .d,
-      unique(select(
+      dplyr::distinct(select(
         u,
         usability_code,
         usability_desc
@@ -317,7 +317,10 @@ get_survey_sets2 <- function(species,
     species_desc = tolower(species_desc),
     species_common_name = tolower(species_common_name)
   )
-  # .d <- unique(.d)
+
+  # not sure where things are getting duplicated, but this will get rid of any complete duplication
+  .d <- dplyr::distinct(.d)
+
   species_codes <- common2codes(species)
   missing_species <- setdiff(species_codes, .d$species_code)
   if (length(missing_species) > 0) {
