@@ -179,6 +179,8 @@ get_spp_sample_length_type <- function(species) {
   .q <- read_sql("get-spp-sample-length-type.sql")
   .q <- inject_filter("WHERE SPECIES_CODE IN ", species, .q)
   .d <- run_sql("GFBioSQL", .q)
+
+  ## will need to split by species first somehow to make useable with multi species calls
   .d <- .d %>%
     tidyr::gather("Fork_Length",
       "Standard_Length",
