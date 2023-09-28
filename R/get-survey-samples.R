@@ -63,24 +63,19 @@ get_survey_samples2 <- function(species, ssid = NULL,
   .d$species_science_name <- tolower(.d$species_science_name)
 
   ### needs testing ----
+
+  #browser()
+
   .d$length <- NA
   .d$length_type <- NA
 
   for (i in seq_along(species)) {
-    .lt <- .d %>% filter(species == species[i]) %>%
-      tidyr::gather("fork_length",
-                    "standard_length",
-                    "total_length",
-                    "second_dorsal_length",
-                    key = "length_type",
-                    value = "count"
-      )
 
-    .lt <- .lt %>% dplyr::filter(count == max(count))
-    if (nrow(.lt) > 1L) .lt <- .lt[1L, ,drop = FALSE] # happens if all 0! pick any
-    .lt$length_type
-    .d[.d$species == species[i], ]$length <- .d[.d$species == species[i], .lt$length_type]
-    .d[.d$species == species[i], ]$length_type <- .lt$length_type
+    length_type <- get_spp_sample_length_type(species[i])
+    length_type <- tolower(length_type)
+
+    .d[.d$species_common_name == tolower(species[i]), ]$length <- .d[.d$species_common_name == tolower(species[i]), length_type]
+    .d[.d$species_common_name == tolower(species[i]), ]$length_type <- length_type
   }
 
   # .d <- .d %>% mutate(length_type = length_type)
