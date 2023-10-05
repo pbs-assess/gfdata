@@ -3,3 +3,4 @@
 ^scratch$
 ^NEWS\.md$
 ^\.github$
+^data-raw$
