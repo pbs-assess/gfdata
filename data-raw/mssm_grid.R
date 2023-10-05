@@ -39,18 +39,18 @@ last_year <- intersected |>
 full_grid$last_samp_year <- last_year
 
 mssm_grid_sf <- full_grid[id_intersect, ] |>
-  dplyr::mutate(survey_abbrev = "MSSM WCVI")
+  dplyr::mutate(survey = "MSSM WCVI")
 
 mssm_grid <- mssm_grid_sf |>
   sf::st_centroid() %>%
-  dplyr::mutate(survey_abbrev = "MSSM WCVI",
+  dplyr::mutate(survey = "MSSM WCVI",
                 #ssid = 7,
-                longitude = sf::st_coordinates(.)[,1],
-                latitude = sf::st_coordinates(.)[,2],
+                X = sf::st_coordinates(.)[,1],
+                Y = sf::st_coordinates(.)[,2],
                 area = grid_spacing * grid_spacing) |>
   sf::st_drop_geometry() |>
   dplyr::as_tibble() |>
-  dplyr::select(survey_abbrev, longitude, latitude, area, last_samp_year)
+  dplyr::select(survey, X, Y, area, last_samp_year)
 
 # Option to save an SF object
 #saveRDS(mssm_grid_sf, file.path('data-raw', 'mssm_grid_sf.rds'))
