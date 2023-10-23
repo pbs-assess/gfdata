@@ -64,3 +64,4 @@ mssm_grid <- mssm_grid_sf |>
 #   gfplot::theme_pbs()
 
 usethis::use_data(mssm_grid, overwrite = TRUE)
+usethis::use_data(mssm_grid_sf, overwrite = TRUE)
