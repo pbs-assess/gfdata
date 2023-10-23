@@ -3,6 +3,7 @@
 \docType{data}
 \name{mssm_grid}
 \alias{mssm_grid}
+\alias{mssm_grid_sf}
 \title{Multispecies Small-Mesh Bottom Trawl (MSSM) Survey Grid}
 \format{
 \subsection{\code{mssm_grid}}{
@@ -17,9 +18,18 @@ grid cells}
 this dataset was created (Oct 2023)}
 }
 }
+
+\subsection{\code{mssm_grid_sf}}{
+
+A simple features (\code{sf} object) version of \code{mssm_grid}
+}
+
+An object of class \code{sf} (inherits from \code{data.frame}) with 493 rows and 3 columns.
 }
 \usage{
 mssm_grid
+
+mssm_grid_sf
 }
 \description{
 A 2x2 km grid for the Multispecies Small-Mesh Bottom Trawl Survey (MSSM; formerly

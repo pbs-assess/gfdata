@@ -16,4 +16,11 @@
 #'   \item{last_samp_year}{The last year a grid cell was sampled as of the date
 #'     this dataset was created (Oct 2023)}
 #' }
+#'
+#' @format ## `mssm_grid_sf`
+#' A simple features (`sf` object) version of `mssm_grid`
+
 "mssm_grid"
+
+#' @rdname mssm_grid
+"mssm_grid_sf"
