@@ -4,9 +4,13 @@ library(magrittr)
 sf::sf_use_s2(FALSE)
 
 # Query GFBio - need DFO VPN access
-#pcod_dat <- gfdata::get_survey_sets(species = "pacific cod", ssid = 7)
+# pcod_dat <- gfdata::get_survey_sets(species = "pacific cod", ssid = 7)
+# pcod_dat <- pcod_dat |>
+#   filter(survey_abbrev == 'MSSM WCVI') |>
+#   filter(grepl('WCVI Shrimp Survey Area 124|125', grouping_desc))
+
 #saveRDS(pcod_dat, file.path('data-raw', 'pcod-mssm-survey-sets.rds'))
-pcod_dat <- readRDS(file.path('data-raw', 'pcod-mssm-survey-sets.rds'))
+pcod_dat <- readRDS(file.path('data-raw', 'pcod-mssm-survey-sets_2023.rds'))
 pcod_dat <- pcod_dat |>
   dplyr::filter(!is.na(longitude)) |>
   sdmTMB::add_utm_columns(c('longitude', 'latitude')) |>
@@ -15,13 +19,16 @@ pcod_dat <- pcod_dat |>
 # Use equal distance projection
 pcod_sf <-
   pcod_dat |>
-  dplyr::select(year, X, Y) |>
-  sf::st_as_sf(coords = c('X', 'Y'), crs = 32609)
+  dplyr::select(year, longitude, latitude) |>
+  sf::st_as_sf(coords = c('longitude', 'latitude'), crs = 'WGS84') |>
+  sf::st_transform(crs = 32609)
+  # dplyr::select(year, X, Y) |>
+  # sf::st_as_sf(coords = c('X', 'Y'), crs = 32609)
 
 pcod_years <- dplyr::select(pcod_dat, row_id, year)
 
 # Use 2x2 km grid size in units of our polygon shape file
-grid_spacing <- 2
+grid_spacing <- 2000
 
 # Create grid over the bounding box of the polygon
 full_grid <- pcod_sf |>
@@ -45,12 +52,15 @@ mssm_grid <- mssm_grid_sf |>
   sf::st_centroid() %>%
   dplyr::mutate(survey = "MSSM WCVI",
                 #ssid = 7,
-                X = sf::st_coordinates(.)[,1],
-                Y = sf::st_coordinates(.)[,2],
-                area = grid_spacing * grid_spacing) |>
+                X = sf::st_coordinates(.)[,1] / 1000, # match sdmTMB coordinate system
+                Y = sf::st_coordinates(.)[,2] / 1000, # match sdmTMB coordinate system
+                area = grid_spacing / 1000 * grid_spacing / 1000) |>
   sf::st_drop_geometry() |>
   dplyr::as_tibble() |>
   dplyr::select(survey, X, Y, area, last_samp_year)
+
+mssm_grid_sf <- mssm_grid_sf |>
+  sf::st_transform(crs = "WGS84")
 
 # Option to save an SF object
 #saveRDS(mssm_grid_sf, file.path('data-raw', 'mssm_grid_sf.rds'))
