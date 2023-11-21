@@ -1,25 +1,23 @@
 #' Multispecies Small-Mesh Bottom Trawl (MSSM) Survey Grid
 #'
-#' A 2x2 km grid for the Multispecies Small-Mesh Bottom Trawl Survey (MSSM; formerly
+#' A 3x3 km grid for the Multispecies Small-Mesh Bottom Trawl Survey (MSSM; formerly
 #' known as 'shrimp survey'). This grid covers WCVI Shrimp Survey Areas 124 and 125.
-#' The `last_samp_year is the last year a grid cell was sampled as of 2023, with
+#' The `year` is the last year a grid cell was sampled as of 2023, with
 #' the most consistent resampling (spatially) occurring in grid cells last sampled
-#' after 2008 (GFBioField used used starting in 2009).
+#' between 2009 and 2021.
 #'
 #' @format ## `mssm_grid`
-#' A data frame with 493 rows and 5 columns:
+#' A data frame with 3,735 rows and 5 columns:
 #' \describe{
 #'   \item{survey_abbrev}{Survey abbreviation}
-#'   \item{longitude, latitude}{Longitude and latitude of the centroid of 2x2 km
+#'   \item{longitude, latitude}{Longitude and latitude of the centroid of 3x3 km
 #'     grid cells}
 #'   \item{area}{Area of the grid cells, in km^2}
-#'   \item{last_samp_year}{The last year a grid cell was sampled as of the date
-#'     this dataset was created (Oct 2023)}
+#'   \item{year}{The year a grid cell was sampled. A grid cell can have multiple year values}
 #' }
 #'
 #' @format ## `mssm_grid_sf`
 #' A simple features (`sf` object) version of `mssm_grid`
-
 "mssm_grid"
 
 #' @rdname mssm_grid
