@@ -288,7 +288,8 @@ get_sub_level_counts <- function(fe) {
       skate_count = mean(SKATE_COUNT, na.rm = T),
       mean_per_skate = mean(MINOR_ID_COUNT, na.rm = T),
       minor_id_count = sum(MINOR_ID_COUNT, na.rm = T),
-      minor_id_max = max(MINOR_ID_MAX, na.rm = T)
+      # minor_id_max = max(MINOR_ID_MAX, na.rm = T)
+      minor_id_max = ifelse(all(is.na(FE_MINOR_LEVEL_ID)), NA, max(FE_MINOR_LEVEL_ID, na.rm = TRUE))
     ) %>%
     dplyr::distinct() %>%
     mutate(diff = ifelse(minor_id_max > 0, minor_id_max - minor_id_count, NA)) %>%
