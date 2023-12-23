@@ -234,7 +234,8 @@ get_sub_level_counts <- function(fe) {
     group_by(FE_PARENT_EVENT_ID, FE_MAJOR_LEVEL_ID, SURVEY_ID, SURVEY_SERIES_ID) %>%
     mutate(
       MINOR_ID_COUNT = n(),
-      MINOR_ID_MAX = max(FE_MINOR_LEVEL_ID, na.rm = TRUE)
+      #MINOR_ID_MAX = max(FE_MINOR_LEVEL_ID, na.rm = TRUE)
+      MINOR_ID_MAX = ifelse(all(is.na(FE_MINOR_LEVEL_ID)), NA, max(FE_MINOR_LEVEL_ID, na.rm = TRUE))
     ) %>%
     select(FE_PARENT_EVENT_ID, FE_MAJOR_LEVEL_ID, YEAR, TRIP_ID, SURVEY_ID, SURVEY_SERIES_ID, MINOR_ID_COUNT, MINOR_ID_MAX) %>%
     dplyr::distinct() %>%
