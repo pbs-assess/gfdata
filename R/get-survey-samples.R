@@ -64,18 +64,22 @@ get_survey_samples2 <- function(species, ssid = NULL,
 
   ### needs testing ----
 
-  #browser()
-
   .d$length <- NA
   .d$length_type <- NA
+
+  species_code <- list()
 
   for (i in seq_along(species)) {
 
     length_type <- get_spp_sample_length_type(species[i])
     length_type <- tolower(length_type)
 
-    .d[.d$species_common_name == tolower(species[i]), ]$length <- .d[.d$species_common_name == tolower(species[i]), length_type]
-    .d[.d$species_common_name == tolower(species[i]), ]$length_type <- length_type
+    #browser()
+
+    species_code[i] <- common2codes(tolower(species[i]))
+
+    .d[.d$species_code == tolower(species_code[i]), ]$length <- .d[.d$species_code == species_code[i], length_type]
+    .d[.d$species_code == tolower(species_code[i]), ]$length_type <- length_type
   }
 
   # .d <- .d %>% mutate(length_type = length_type)
