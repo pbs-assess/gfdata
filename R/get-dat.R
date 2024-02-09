@@ -555,6 +555,30 @@ get_commercial_samples <- function(species, unsorted_only = TRUE,
       )
     )
 
+  .scc <- get_table("species_category")
+  names(.scc) <- tolower(names(.scc))
+
+  .d <- left_join(.d,
+                  select(.scc, -row_version),
+                  by = "species_category_code"
+  )
+
+  .stc <- get_table("sample_type")
+  names(.stc) <- tolower(names(.stc))
+
+  .d <- left_join(.d,
+                  select(.stc, -row_version),
+                  by = "sample_type_code"
+  )
+
+  .ssc <- get_table("sample_source")
+  names(.ssc) <- tolower(names(.ssc))
+
+  .d <- left_join(.d,
+                  select(.ssc, -row_version),
+                  by = "sample_source_code"
+  )
+
   add_version(as_tibble(.d))
 }
 
