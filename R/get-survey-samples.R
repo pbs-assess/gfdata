@@ -96,7 +96,7 @@ get_survey_samples2 <- function(species, ssid = NULL,
   if (length(.d$specimen_id) > length(unique(.d$specimen_id))) {
     warning(
       "Duplicate specimen IDs are present because of overlapping survey ",
-      "stratifications. If working with the data yourelf, filter them after ",
+      "stratifications. If working with the data yourself, filter them after ",
       "selecting specific surveys. For example, ",
       "`dat <- dat[!duplicated(dat$specimen_id), ]`. ",
       "The tidying and plotting functions within gfplot will do this for you."
@@ -145,8 +145,10 @@ get_survey_samples2 <- function(species, ssid = NULL,
   # dogfish were producing a whole bunch of NAs for some reason
   .d <- .d %>% filter(!is.na(specimen_id))
 
-
   if (include_event_info) {
+    options(scipen=999)
+    # needed for big skate because of a MSA set with an id that was getting converted
+
     .f <- .d %>% filter(!is.na(fishing_event_id))
     fe_vector <- unique(.f$fishing_event_id)
 
