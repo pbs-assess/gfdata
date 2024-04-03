@@ -1,5 +1,6 @@
 #' Get survey sample data with basic set information included
 #'
+#' @param ssid Default is to return all survey samples.
 #' @param major Character string (or vector, though doesn't work yet with
 #'  `cache_pbs_data`) of major stat area code to include (characters). Use
 #'  get_major_areas() to lookup area codes with descriptions.
@@ -9,6 +10,9 @@
 #'   IPHC codes may be different to other surveys.
 #' @param include_event_info Logical for whether to append all relevant fishing event info
 #'   (location, timing, effort, catch, etc.). Defaults to false.
+#' @param unsorted_only  Defaults to TRUE.
+#' @param return_dna_info Should DNA container ids and sample type be returned?
+#'    This can create duplication of specimen ids for some species.  Defaults to FALSE.
 #'
 #' @export
 #' @rdname get_data
@@ -17,6 +21,7 @@ get_survey_samples2 <- function(species, ssid = NULL,
                                 unsorted_only = TRUE,
                                 usability = NULL,
                                 include_event_info = FALSE,
+                                return_dna_info = FALSE,
                                 major = NULL) {
   .q <- read_sql("get-survey-samples2.sql")
   .q <- inject_filter("AND SP.SPECIES_CODE IN", species, sql_code = .q)
@@ -93,12 +98,20 @@ get_survey_samples2 <- function(species, ssid = NULL,
     .d <- filter(.d, usability_code %in% usability)
   }
 
+  ## dna_container_id and dna_sample_type can cause duplication for some species with multiple samples collected per individual
+  ## Could do something about record duplication with multiple DNA samples like combining or not returning them?
+  if(!return_dna_info){
+    .d <- .d |>
+      select(-dna_container_id, -dna_sample_type) |>
+      distinct()
+  }
+
   if (length(.d$specimen_id) > length(unique(.d$specimen_id))) {
     warning(
       "Duplicate specimen IDs are present because of overlapping survey ",
-      "stratifications. If working with the data yourself, filter them after ",
-      "selecting specific surveys. For example, ",
-      "`dat <- dat[!duplicated(dat$specimen_id), ]`. ",
+      "stratifications, or multiple DNA samples from the same specimen. ",
+      "If working with the data yourself, filter them after selecting specific ",
+      "surveys. For example, `dat <- dat[!duplicated(dat$specimen_id), ]`. ",
       "The tidying and plotting functions within gfplot will do this for you."
     )
   }

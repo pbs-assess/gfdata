@@ -1,14 +1,22 @@
 #' @export
+#'
 #' @param unsorted_only Remove sorted biological data ('keepers' and 'discards'
 #'  and unknown). Default = TRUE.
 #' @param return_all_lengths Include all length types, rather than just
 #'  with most common measurement. Default = FALSE.
 #' @param include_event_info Logical for whether to append all relevant fishing event info
-#'   (location, timing, effort, catch, etc.). Defaults to false.
+#'  (location, timing, effort, catch, etc.). Default = FALSE.
+#' @param return_dna_info  Should DNA container ids and sample type be returned?
+#'  This can create duplication of specimen ids for some species. Default = FALSE.
+#' @param major
+#' @param usability A vector of usability codes to include. Defaults to all.
+#'  IPHC codes may be different to other surveys.
+#'
 #' @rdname get_data
 get_commercial_samples2 <- function(species, unsorted_only = TRUE,
                                    return_all_lengths = FALSE,
                                    include_event_info = FALSE,
+                                   return_dna_info = FALSE,
                                    major = NULL,
                                    usability = NULL) {
   .q <- read_sql("get-comm-samples.sql")
@@ -55,14 +63,34 @@ get_commercial_samples2 <- function(species, unsorted_only = TRUE,
       ) %>% dplyr::relocate(tidyr::all_of(.n))
   }
 
+  ## dna_container_id and dna_sample_type can cause duplication for some species with multiple samples collected per individual
+  ## Could do something about record duplication with multiple DNA samples like combining or not returning them?
+  if(!return_dna_info){
+    .d <- .d |>
+      select(-dna_container_id, -dna_sample_type) |>
+      distinct()
+  }
+
   duplicate_specimen_ids <- sum(duplicated(.d$specimen_id))
+  # if (duplicate_specimen_ids > 0) {
+  #   warning(
+  #     duplicate_specimen_ids, " duplicate specimen IDs detected for",
+  #     species, " . Removing them."
+  #   )
+  #   .d <- .d[!duplicated(.d$specimen_id), , drop = FALSE]
+  # }
+
   if (duplicate_specimen_ids > 0) {
     warning(
-      duplicate_specimen_ids, " duplicate specimen IDs detected for",
-      species, " . Removing them."
+      duplicate_specimen_ids, "duplicate specimen IDs are present for ", species, ". ",
+      "This may be because of multiple DNA samples from some specimens. ",
+      "If working with the data yourself, they can be filtered with ",
+      "`dat <- dat[!duplicated(dat$specimen_id), ]`. ",
+      "The tidying and plotting functions within gfplot may do this for you."
     )
-    .d <- .d[!duplicated(.d$specimen_id), , drop = FALSE]
   }
+
+
   # assertthat::assert_that(sum(duplicated(.d$specimen_id)) == 0)
 
   if (unsorted_only) {
