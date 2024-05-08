@@ -8,7 +8,7 @@
 #'
 #' @details
 #' * `get_survey_sets()` extracts survey catch data and spatial data for
-#'    plotting survey catchs on a map of British Columbia
+#'    plotting survey catches on a map of British Columbia
 #'
 #' * `get_survey_samples()` extracts all biological sample specimen records
 #'    from research surveys for given species and survey series IDs from GFBio
@@ -65,6 +65,16 @@
 #' ## Import survey catch density and location data by tow or set for plotting
 #' ## Specify single or multiple species by common name or species code and
 #' ## single or multiple survey series id(s).
+#' ## Notes:
+#' ## `area_km` is the stratum area used in design-based index calculation.
+#' ## `area_swept` is used to calculate density for trawl surveys and based on
+#' ## `area_swept1` (`doorspread_m` x `tow_length_m`) except when
+#' ## `tow_length_m` is missing, and then we use `area_swept2`
+#' ## (`doorspread` x `duration_min` x `speed_mpm`).
+#' ## `duration_min` is derived in the SQL procedure "proc_catmat_2011" and
+#' ## differs slightly from the difference between `time_deployed` and
+#' ## `time_retrieved`.
+#'
 #' get_survey_sets(species = "lingcod", ssid = 1)
 #'
 #' ## Import survey or commercial biological data for various plots
@@ -112,11 +122,15 @@ NULL
 #'   different survey stratifications.
 #' @param verbose If `TRUE` then extra messages were reprinted during data
 #'   extraction. Useful to monitor progress.
+#' @param remove_false_zeros If `TRUE` will make sure weights > 0 don't have
+#'   associated counts of 0 and vice versa. Only applies to trawl data where
+#'   counts are only taken for small catches.
 #' @param sleep System sleep in seconds between each survey-year
 #'   to be kind to the server.
 #' @rdname get_data
 get_survey_sets <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36, 39, 40),
                             join_sample_ids = FALSE, verbose = FALSE,
+                            remove_false_zeros = FALSE,
                             sleep = 0.05) {
   # Just to pull out up to date list of ssids associated with trawl/ll gear type.
   trawl <- run_sql("GFBioSQL", "SELECT
@@ -173,10 +187,12 @@ get_survey_sets <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36, 39, 40
 
   fe <- run_sql("GFBioSQL", "SELECT
     FISHING_EVENT_ID,
+    T.VESSEL_ID AS VESSEL_ID,
+    T.CAPTAIN_ID AS CAPTAIN_ID,
     MONTH(COALESCE (FE_BEGIN_BOTTOM_CONTACT_TIME, FE_END_BOTTOM_CONTACT_TIME, FE_END_DEPLOYMENT_TIME, FE_BEGIN_RETRIEVAL_TIME, FE_BEGIN_DEPLOYMENT_TIME, FE_END_RETRIEVAL_TIME)) AS MONTH,
     DAY(COALESCE (FE_BEGIN_BOTTOM_CONTACT_TIME, FE_END_BOTTOM_CONTACT_TIME, FE_END_DEPLOYMENT_TIME, FE_BEGIN_RETRIEVAL_TIME, FE_BEGIN_DEPLOYMENT_TIME, FE_END_RETRIEVAL_TIME)) AS DAY,
-    FE_END_DEPLOYMENT_TIME AS TIME_DEPLOYED,
-    FE_BEGIN_RETRIEVAL_TIME AS TIME_RETRIEVED,
+    ISNULL(FE_BEGIN_BOTTOM_CONTACT_TIME, FE_END_DEPLOYMENT_TIME) AS TIME_DEPLOYED,
+    ISNULL(FE_END_BOTTOM_CONTACT_TIME, FE_BEGIN_RETRIEVAL_TIME) AS TIME_RETRIEVED,
     FE_START_LATTITUDE_DEGREE + FE_START_LATTITUDE_MINUTE / 60 AS LATITUDE,
     -(FE_START_LONGITUDE_DEGREE + FE_START_LONGITUDE_MINUTE / 60) AS
       LONGITUDE,
@@ -242,7 +258,9 @@ get_survey_sets <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36, 39, 40
       TIME_DEPLOYED,
       TIME_RETRIEVED,
       LATITUDE_END,
-      LONGITUDE_END
+      LONGITUDE_END,
+      VESSEL_ID,
+      CAPTAIN_ID
     )),
     by = "FISHING_EVENT_ID"
   )
@@ -271,6 +289,39 @@ get_survey_sets <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36, 39, 40
     species_science_name = tolower(species_science_name),
     species_desc = tolower(species_desc),
     species_common_name = tolower(species_common_name)
+  )
+
+  if(any(ssid %in% trawl)) {
+  # calculate area_swept for trawl exactly as it has been done for the density values in this dataframe
+  # note: is NA if doorspread_m is missing and duration_min may be time in water (not just bottom time)
+  .d$area_swept1 <- .d$doorspread_m * .d$tow_length_m
+  .d$area_swept2 <- .d$doorspread_m * (.d$speed_mpm * .d$duration_min)
+  .d$area_swept <- ifelse(!is.na(.d$area_swept1), .d$area_swept1, .d$area_swept2)
+
+    # won't do this here because there may be ways of using mean(.d$doorspread_m) to fill in some NAs
+  # .d <- dplyr::filter(.d, !is.na(area_swept))
+  # instead use this to make sure false 0 aren't included
+  .d$density_kgpm2 <- ifelse(!is.na(.d$area_swept), .d$density_kgpm2, NA)
+  }
+
+  # in trawl data, catch_count is only recorded for small catches
+  # so 0 in the catch_count column when catch_weight > 0 seems misleading
+  # note: there are also a few occasions for trawl where count > 0 and catch_weight is 0/NA
+  # these lines replace false 0s with NA, but additional checks might be needed
+  if(remove_false_zeros){
+    .d$catch_count <- ifelse(.d$catch_weight > 0 & .d$catch_count == 0, NA, .d$catch_count)
+    .d$catch_weight <- ifelse(.d$catch_count > 0 & .d$catch_weight == 0, NA, .d$catch_weight)
+
+    if(any(ssid%in%trawl)){
+      .d$density_pcpm2 <- ifelse(.d$catch_count > 0 & .d$density_pcpm2 == 0, NA, .d$density_pcpm2)
+      .d$density_kgpm2 <- ifelse(.d$catch_weight > 0 & .d$density_kgpm2 == 0, NA, .d$density_kgpm2)
+    }
+  }
+
+  .d <- mutate(.d,
+               species_science_name = tolower(species_science_name),
+               species_desc = tolower(species_desc),
+               species_common_name = tolower(species_common_name)
   )
 
   missing_species <- setdiff(species_codes, .d$species_code)
@@ -329,6 +380,7 @@ get_survey_samples <- function(species, ssid = NULL,
     )
   }
   length_type <- get_spp_sample_length_type(species)
+
   message(paste0("All or majority of length measurements are ", length_type))
   search_flag <- "-- insert length type here"
   i <- grep(search_flag, .q)
@@ -502,6 +554,30 @@ get_commercial_samples <- function(species, unsorted_only = TRUE,
         is.na(species_ageing_group) ~ NA_real_
       )
     )
+
+  .scc <- get_table("species_category")
+  names(.scc) <- tolower(names(.scc))
+
+  .d <- left_join(.d,
+                  select(.scc, -row_version),
+                  by = "species_category_code"
+  )
+
+  .stc <- get_table("sample_type")
+  names(.stc) <- tolower(names(.stc))
+
+  .d <- left_join(.d,
+                  select(.stc, -row_version),
+                  by = "sample_type_code"
+  )
+
+  .ssc <- get_table("sample_source")
+  names(.ssc) <- tolower(names(.ssc))
+
+  .d <- left_join(.d,
+                  select(.ssc, -row_version),
+                  by = "sample_source_code"
+  )
 
   add_version(as_tibble(.d))
 }
@@ -742,10 +818,12 @@ get_cpue_index <- function(gear = "bottom trawl", min_cpue_year = 1996,
   major = NULL) {
   .q <- read_sql("get-cpue-index.sql")
   i <- grep("-- insert filters here", .q)
+  if (!is.null(gear)) {
   .q[i] <- paste0(
     "WHERE GEAR IN(", collapse_filters(toupper(gear)),
     ") AND YEAR(BEST_DATE) >= ", min_cpue_year
   )
+  }
   if (!is.null(major)) {
     .q <- inject_filter("AND MAJOR_STAT_AREA_CODE =", major, .q,
       search_flag = "-- insert major here", conversion_func = I
