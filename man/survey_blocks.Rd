@@ -5,7 +5,7 @@
 \alias{survey_blocks}
 \title{Active survey blocks}
 \format{
-An object of class \code{sf} (inherits from \code{data.frame}) with 22026 rows and 7 columns.
+An object of class \code{sf} (inherits from \code{data.frame}) with 22026 rows and 6 columns.
 }
 \usage{
 survey_blocks

@@ -66,7 +66,7 @@ df2 |> filter(active_block) |>
 
 df2 <- select(df2, survey_abbrev, survey_series_id, block_id, depth_m, active_block, geometry)
 
-df2 |> filter(!active_block) |>
+df2 |> filter(active_block) |>
   ggplot(aes(colour = survey_abbrev)) +
   geom_sf() +
   theme_minimal() +

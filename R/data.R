@@ -29,3 +29,13 @@
 #' Obtained via `gfdata::get_active_survey_blocks()` with some cleaning
 #' as documented in `data-raw/survey_blocks.R`.
 "survey_blocks"
+#'
+#' @examplesIf requireNamespace("sf", quietly = TRUE)
+#' library(sf)
+#' library(ggplot2)
+#' gfdata::survey_blocks |>
+#'   ggplot(aes(colour = survey_abbrev)) +
+#'   geom_sf() +
+#'   theme_minimal() +
+#'   scale_colour_brewer(palette = "Dark2")
+#' attr(gfdata::survey_blocks, "date-generated")
