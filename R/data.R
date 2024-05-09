@@ -22,3 +22,10 @@
 
 #' @rdname mssm_grid
 "mssm_grid_sf"
+
+#' Active survey blocks
+#'
+#' Active survey blocks for DFO Pacific groundfish surveys.
+#' Obtained via `gfdata::get_active_survey_blocks()` with some cleaning
+#' as documented in `data-raw/survey_blocks.R`.
+"survey_blocks"

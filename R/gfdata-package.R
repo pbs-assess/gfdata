@@ -1,9 +1,9 @@
-#' gfdata package
-#'
-#' @description An R package to facilitate extracting ground fish data at PBS
-#'
-#' @docType package
-#' @name gfdata
+#' @keywords internal
+"_PACKAGE"
+
+## usethis namespace: start
+## usethis namespace: end
+NULL
 
 #' @importFrom dplyr filter mutate summarise select group_by n arrange ungroup
 #' @importFrom dplyr inner_join left_join right_join anti_join full_join
@@ -61,7 +61,8 @@ if (getRversion() >= "2.15.1") {
       "usability_code",
       "value",
       "year",
-      "SURVEY_ABBREV"
+      "SURVEY_ABBREV",
+      "selection_ind"
     )
   )
 }
