@@ -43,8 +43,9 @@ get_ssids <- function() {
 #' @param ssid A numeric vector of survey series IDs. Run [get_ssids()] for a
 #'   look-up table of available survey series IDs with surveys series
 #'   descriptions.
+#' @param active_only Logical: return only active blocks?
 #' @rdname lookup
-get_active_survey_blocks <- function(ssid = NULL) {
+get_active_survey_blocks <- function(ssid = NULL, active_only = TRUE) {
   .q <- read_sql("get-active-survey-blocks.sql")
   .d <- run_sql("GFBioSQL", .q)
   names(.d) <- tolower(names(.d))
@@ -53,6 +54,9 @@ get_active_survey_blocks <- function(ssid = NULL) {
       sql_code = .q,
       search_flag = "-- insert ssid here", conversion_func = I
     )
+  }
+  if (active_only) {
+    .d <- filter(.d, selection_ind == 1)
   }
   .d
 }

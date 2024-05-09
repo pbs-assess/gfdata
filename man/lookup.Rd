@@ -22,7 +22,7 @@
 \usage{
 get_ssids()
 
-get_active_survey_blocks(ssid = NULL)
+get_active_survey_blocks(ssid = NULL, active_only = TRUE)
 
 get_major_areas()
 
@@ -56,6 +56,8 @@ get_table(name)
 \item{ssid}{A numeric vector of survey series IDs. Run \code{\link[=get_ssids]{get_ssids()}} for a
 look-up table of available survey series IDs with surveys series
 descriptions.}
+
+\item{active_only}{Logical: return only active blocks?}
 
 \item{name}{The name of the table to get all records from.
 For code table use variable name without the'_code' suffix.}
