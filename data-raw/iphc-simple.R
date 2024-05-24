@@ -298,6 +298,18 @@ old_sp[!old_sp %in% old$species_common_name]
 old$species_common_name[old$species_common_name == "spiny dogfish"] <- "north pacific spiny dogfish"
 old$species_common_name[old$species_common_name == "sixgill shark"] <- "bluntnose sixgill shark"
 
+# need to padd in zeros to old data:
+full_old <- select(
+  old, -number_observed, -species_common_name) |>
+  distinct()
+full_old <- purrr::map_dfr(
+  sort(unique(old$species_common_name)),
+  \(x) mutate(full_old, species_common_name = x)
+)
+missing <- anti_join(full_old, old)
+missing$number_observed <- 0L
+old <- bind_rows(old, missing)
+
 # join on the scientific names from PBS:
 old <- inner_join(old, select(spp, species_common_name, species_science_name),
   by = join_by(species_common_name))
@@ -344,9 +356,66 @@ dat_all <- select(
   soak_time_min
 )
 
-iphc_sets <- select(dat_all, -species_common_name, -species_science_name, -number_observed) |>
-  distinct()
-iphc_catch <- select(dat_all, station_keyspecies_common_name, species_science_name, number_observed) |>
-  distinct()
+# iphc_sets <- select(dat_all, -species_common_name, -species_science_name, -number_observed) |>
+#   distinct()
+# iphc_catch <- select(dat_all, station_keyspecies_common_name, species_science_name, number_observed) |>
+#   distinct()
 
 usethis::use_data(iphc, overwrite = TRUE)
+
+# compare against gfiphc ----------------------------------------------------
+
+gfiphc_dat <- readRDS("data-raw/gfiphc-dogfish-setcounts.rds") |>
+  mutate(standard = as.character(standard))
+
+x1 <- filter(gfiphc_dat, usable == "Y", standard == "Y")
+# x1 <- filter(gfiphc_dat, standard == "Y")
+# x1 <- filter(gfiphc_dat)
+x2 <- filter(iphc, species_common_name == "north pacific spiny dogfish", pbs_standard_grid)
+
+xx1 <- filter(x1, year == 2021)
+xx2 <- filter(x2, year == 2021)
+
+sum(xx1$N_it20, na.rm = TRUE)
+sum(xx2$number_observed)
+
+sum(xx1$E_it20, na.rm = TRUE)
+sum(xx2$number_observed)
+
+hooks_per_effective_skate <- sum(xx2$hooks_observed) / sum(xx1$E_it20)
+
+d1 <- group_by(x1, year) |>
+  mutate(E = ifelse(is.na(E_it), E_it20, E_it)) |>
+  mutate(N = ifelse(is.na(N_it), N_it20, N_it)) |>
+  summarise(n = sum(N, na.rm = TRUE), total_E = sum(E, na.rm = TRUE)) |>
+  mutate(type = "gfiphc") |>
+  mutate(n_hooks = total_E * hooks_per_effective_skate)
+d2 <- group_by(x2, year) |>
+  summarise(n = sum(number_observed), n_hooks = sum(hooks_observed)) |>
+  mutate(type = "simplified script")
+
+bind_rows(d1, d2) |>
+  group_by(type) |>
+  filter(year > 1995) |>
+  mutate(n_observed = n) |>
+  # mutate(n_hooks = n_hooks / n_hooks[year == 2018]) |>
+  # mutate(n_hooks = n_hooks / n_hooks[year == 1996]) |>
+  tidyr::pivot_longer(cols = c(n_observed, n_hooks), names_to = "measure") |>
+  ggplot(aes(year, value, colour = forcats::fct_rev(type))) +
+  geom_line() +
+  # geom_point() +
+  facet_wrap(~measure, scales = "free") +
+  geom_vline(xintercept = 1998, lty = 2) +
+  geom_hline(yintercept = 2152) +
+  labs(colour = "type") +
+  ggtitle(unique(x2$species_common_name))
+
+# what about 1997 which should match!?
+
+xx1 <- filter(gfiphc_dat, year == 1997, usable == "Y")
+sum(xx1$N_it20)
+nrow(xx1)
+
+xx2 <- filter(iphc, year == 1997, species_common_name == "north pacific spiny dogfish")
+sum(xx2$number_observed)
+nrow(xx2)
