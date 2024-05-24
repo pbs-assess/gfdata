@@ -23,6 +23,34 @@
 #' @rdname mssm_grid
 "mssm_grid_sf"
 
+#' IPHC data cleaned for use for non-halibut index standardization at PBS
+#'
+#' These data are best used for spatiotemporal analyses. Also see the
+#' \pkg{gfiphc} package which implements a design-based index standardization.
+#' Data from 1998 onwards come from the IPHC website.
+#' Data from 1996 and 1997 come from local spreadsheets as described in
+#' \pkg{gfiphc}.
+#'
+#' @format A data frame with these columns:
+#' \describe{
+#'   \item{year}{Year}
+#'   \item{station}{Station ID}
+#'   \item{station_key}{A unique station key from IPHC; occasionally there are multiple sets at the same `station` but this column is always unique. It's also unique across years.}
+#'   \item{longitude}{Longitude (mid point)}
+#'   \item{latitude}{Latitude (mid point)}
+#'   \item{species_science_name}{Scientific name}
+#'   \item{hooks_observed}{Number of hooks observed for non-halibut species}
+#'   \item{number_observed}{Number of hooks with the species of interest}
+#'   \item{pbs_standard_grid}{Logical: standard grid stations through time as defined in gfiphc}
+#'   \item{inside_wcvi}{Logical: inside Vancouver Island waters (2018 only) vs. anywhere else; you may want to exclude these from spatiotemporal modelling}
+#'   \item{sample_type}{Sample type (first 20 hooks vs. all hooks)}
+#'   \item{soak_time_min}{Soak time}
+#'   \item{temp_c}{Temperature in degrees C}
+#'   \item{depth_m}{Depth in m}
+#'   \item{species_common_name}{Species common name}
+#' }
+"iphc"
+
 #' Active survey blocks
 #'
 #' Active survey blocks for DFO Pacific groundfish surveys.
