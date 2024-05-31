@@ -180,7 +180,7 @@ dat <- bind_rows(dat, never_caught_non_halibut)
 # build a df of all possible stations and years for every species
 full <- select(
   dat, year, station, station_key, longitude, latitude,
-  hooks_observed, avg_no_hook_per_skate, no_skates_hauled,
+  hooks_observed, avg_no_hook_per_skate, no_skates_hauled, no_skates_set, effective_skates,
   sample_type, usable, soak_time_min, temp_c, depth_m
 ) |> distinct()
 full <- purrr::map_dfr(
@@ -406,23 +406,46 @@ plot_map(dat_all, temp_c) + scale_colour_viridis_c()
 
 # save it! ------------------------------------------------------------------
 
-attr(dat_all, "iphc_download_date") <- DOWNLOAD_DATE
-attr(dat_all, "data_preparation_date") <- lubridate::today()
-# saveRDS(dat_all, file = "report/iphc-simple/iphc-pbs.rds")
 
-# order nicely:
-iphc <- select(
+# # order nicely:
+# iphc <- select(
+#   dat_all,
+#   year,
+#   station,
+#   station_key,
+#   longitude,
+#   latitude,
+#   species_common_name,
+#   species_science_name,
+#   usable,
+#   hooks_observed,
+#   number_observed,
+#   pbs_standard_grid,
+#   inside_wcvi,
+#   sample_type,
+#   depth_m,
+#   temp_c,
+#   soak_time_min,
+#   avg_no_hook_per_skate,
+#   no_skates_hauled,
+#   no_skates_set,
+#   effective_skates
+# )
+
+# iphc_sets <- select(dat_all, -species_common_name, -species_science_name, -number_observed) |>
+#   distinct()
+# iphc_catch <- select(dat_all, station_keyspecies_common_name, species_science_name, number_observed) |>
+#   distinct()
+
+iphc_sets <- select(
   dat_all,
   year,
   station,
   station_key,
   longitude,
   latitude,
-  species_common_name,
-  species_science_name,
   usable,
   hooks_observed,
-  number_observed,
   pbs_standard_grid,
   inside_wcvi,
   sample_type,
@@ -433,11 +456,23 @@ iphc <- select(
   no_skates_hauled,
   no_skates_set,
   effective_skates
+) |> distinct()
+
+iphc_catch <- select(
+  dat_all,
+  year,
+  station,
+  station_key,
+  species_common_name,
+  species_science_name,
+  number_observed
 )
 
-# iphc_sets <- select(dat_all, -species_common_name, -species_science_name, -number_observed) |>
-#   distinct()
-# iphc_catch <- select(dat_all, station_keyspecies_common_name, species_science_name, number_observed) |>
-#   distinct()
+attr(iphc_sets, "iphc_download_date") <- DOWNLOAD_DATE
+attr(iphc_sets, "data_preparation_date") <- lubridate::today()
 
-usethis::use_data(iphc, overwrite = TRUE)
+attr(iphc_catch, "iphc_download_date") <- DOWNLOAD_DATE
+attr(iphc_catch, "data_preparation_date") <- lubridate::today()
+
+usethis::use_data(iphc_sets, overwrite = TRUE)
+usethis::use_data(iphc_catch, overwrite = TRUE)

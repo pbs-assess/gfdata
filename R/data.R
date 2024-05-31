@@ -31,7 +31,7 @@
 #' Data from 1996 and 1997 come from local spreadsheets as described in
 #' \pkg{gfiphc}.
 #'
-#' @format A data frame with these columns:
+#' @format Once the 2 data frames are joined, a data frame with these columns:
 #' \describe{
 #'   \item{year}{Year}
 #'   \item{station}{Station ID}
@@ -49,7 +49,19 @@
 #'   \item{depth_m}{Depth in m}
 #'   \item{species_common_name}{Species common name}
 #' }
-"iphc"
+#'
+#' @details
+#' One likely wants to join the data frames. E.g.
+#'
+#' ```
+#' iphc <- dplyr::inner_join(iphc_catch, iphc_sets)
+#' ```
+#'
+#' @rdname iphc
+"iphc_sets"
+
+#' @rdname iphc
+"iphc_catch"
 
 #' Active survey blocks
 #'

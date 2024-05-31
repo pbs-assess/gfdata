@@ -3,9 +3,12 @@
 library(dplyr)
 library(ggplot2)
 
-load("data/iphc.rda")
+load("data/iphc_catch.rda")
+load("data/iphc_sets.rda")
 gfiphc_dat <- readRDS("data-raw/gfiphc-dogfish-setcounts.rds") |>
   mutate(standard = as.character(standard))
+
+iphc <- inner_join(iphc_catch, iphc_sets, by = join_by(year, station, station_key))
 
 # visual comparison -----------------------------------------
 
