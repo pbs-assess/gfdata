@@ -120,29 +120,78 @@ set_dat <- transmute(set,
   depth_m = 1.8288 * avgdepth_fm,
   usable = eff,
   soak_time_min,
+  effective_skates = effective_skates_hauled,
+  avg_no_hook_per_skate = avg_no_hook_per_skate,
+  no_skates_set = no_skates_set,
+  no_skates_hauled = no_skates_hauled,
   temp_c
 )
+
 set_dat |>
   ggplot(aes(longitude, latitude)) +
   geom_point() +
   facet_wrap(~year)
 
-dat <- inner_join(count_dat, set_dat, by = join_by(year, station, station_key))
+# think about skates and hooks observed:
+dat_test <- inner_join(count_dat, set_dat, by = join_by(year, station, station_key))
+ggplot(dat_test, aes(avg_no_hook_per_skate * no_skates_hauled, hooks_observed, colour = sample_type)) +
+  geom_point() +
+  geom_abline(intercept = 0, slope = 0.2) + geom_abline(intercept = 0, slope = 1) +
+  facet_wrap(~year)
+
+# what's up with 2012!?
+filter(dat_test, year == 2012) |> select(avg_no_hook_per_skate, no_skates_hauled, hooks_observed, effective_skates) |>
+  distinct()
+# stated to be 'all' hooks observed,
+# *but* it actually looks like half of hooks were observed
+# and "effective skates" is all 0!?
+# gfiphc (GFBio) actually has effective skates for these
+# but they look to be based on the 'half' measurement (around 4 vs. 8 skates hauled)
+# so, let's leave them as is in the data according to hooks observed...
+
+# need this to be a right join because very occasionally there are no non-halibut catch!
+dat <- right_join(count_dat, set_dat, by = join_by(year, station, station_key))
 
 # need to fill in the zeros -------------------------------------------------
 
+# now pull out any rows that didn't have any non-halibut species;
+# we need to fill those in with zeros for all non-halibut species
+# and they're currently missing sample_type and hooks_observed!
+never_caught_non_halibut <- filter(dat, is.na(hooks_observed))
+# need to fill in those NAs for hook counts; do it from avg. hooks and no. skates hauled
+# first need to fill in the sample types, which will also be NAs here
+# so bring them back over:
+never_caught_non_halibut$sample_type <- NULL
+never_caught_non_halibut <- left_join(never_caught_non_halibut,
+  filter(dat, !is.na(sample_type)) |> select(year, sample_type) |> distinct(), by = join_by(year))
+never_caught_non_halibut <- never_caught_non_halibut |>
+  mutate(hooks_observed =
+      if_else(sample_type == "20 hooks", no_skates_hauled * 20,
+        no_skates_hauled * avg_no_hook_per_skate))
+
+# now go ahead and strip those from the main dataset
+dat <- filter(dat, !is.na(hooks_observed))
+# all good?
+stopifnot(sum(is.na(dat$number_observed)) == 0L)
+
+# and join back on our version that has the missing hooks_observed and sample_type columns:
+dat <- bind_rows(dat, never_caught_non_halibut)
+
+# build a df of all possible stations and years for every species
 full <- select(
   dat, year, station, station_key, longitude, latitude,
-  hooks_observed, sample_type, usable, soak_time_min, temp_c, depth_m
+  hooks_observed, avg_no_hook_per_skate, no_skates_hauled,
+  sample_type, usable, soak_time_min, temp_c, depth_m
 ) |> distinct()
 full <- purrr::map_dfr(
   sort(unique(count_dat$species_science_name)),
   \(x) mutate(full, species_science_name = x)
 )
 
-missing <- anti_join(full, dat)
+dat_with_counts <- filter(dat, !is.na(number_observed))
+missing <- anti_join(full, dat_with_counts)
 missing$number_observed <- 0L
-dat <- bind_rows(dat, missing)
+dat <- bind_rows(dat_with_counts, missing)
 dat <- arrange(dat, year, species_common_name, station)
 
 # replace common name with DFO common name:
@@ -150,8 +199,8 @@ dat$species_common_name <- NULL
 dat <- left_join(dat, select(spp, species_science_name, species_common_name),
   by = join_by(species_science_name)
 )
-dat <- filter(dat, usable == "Y")
-dat$usable <- NULL
+# dat <- filter(dat, usable == "Y")
+# dat$usable <- NULL
 
 # plotting helpers ----------------------------------------------------------
 
@@ -281,14 +330,14 @@ dat_pbs |> plot_map(paste(pbs_standard_grid, inside_wcvi))
 
 # bring in pre 1998 data from gfiphc ----------------------------------------
 
-old <- gfiphc::data1996to2002 |> filter(year < 1998) |> filter(usable == "Y")
+old <- gfiphc::data1996to2002 |> filter(year < 1998) # |> filter(usable == "Y")
 
 # check to make sure stations don't clash:
 stopifnot(sum(old$station %in% dat_pbs$station) == 0L)
 
 glimpse(dat_pbs)
 
-old <- select(old, year, station, longitude = lon, latitude = lat, depth_m = depthAvge, species_common_name = spNameIPHC, number_observed = catchCount, hooks_observed = hooksObserved)
+old <- select(old, year, station, longitude = lon, latitude = lat, depth_m = depthAvge, species_common_name = spNameIPHC, number_observed = catchCount, hooks_observed = hooksObserved, usable, no_skates_hauled = skates, effective_skates = E_it)
 old <- mutate(old, species_common_name = tolower(species_common_name))
 
 old_sp <- sort(unique(old$species_common_name))
@@ -298,7 +347,7 @@ old_sp[!old_sp %in% old$species_common_name]
 old$species_common_name[old$species_common_name == "spiny dogfish"] <- "north pacific spiny dogfish"
 old$species_common_name[old$species_common_name == "sixgill shark"] <- "bluntnose sixgill shark"
 
-# need to padd in zeros to old data:
+# need to pad in zeros to old data:
 full_old <- select(
   old, -number_observed, -species_common_name) |>
   distinct()
@@ -324,6 +373,31 @@ old <- mutate(old,
 dat_all <- bind_rows(old, dat_pbs) |>
   arrange(year, species_common_name, station)
 
+# fix some known problems!
+# - note hooks counted of 1390 in 2018, station 2227
+#   looks wrong! likely more like 7 sets * 99 avg. per skate = 693
+
+# confirm:
+ho <- filter(dat_all, year == 2018, station == 2227, species_common_name == "north pacific spiny dogfish") |>
+  pull(hooks_observed)
+stopifnot(ho == 1390)
+# fix:
+ii <- which(dat_all$year == 2018 & dat_all$station == 2227)
+dat_all$hooks_observed[ii] <- dat_all$avg_no_hook_per_skate[ii] * dat_all$no_skates_hauled[ii]
+
+# - also note year = 2004 and station = 2092
+#   effective skates only 1.5 but avg. 100 hooks per skate and 1.5
+#   skates hauled... so should not be 799 'observed'
+#   much more likely that it should be 1.5 * 100 = 150 hooks observed
+
+# confirm:
+ho <- filter(dat_all, year == 2004, station == 2092, species_common_name == "north pacific spiny dogfish") |>
+  pull(hooks_observed)
+stopifnot(ho == 799)
+# fix:
+ii <- which(dat_all$year == 2004 & dat_all$station == 2092)
+dat_all$hooks_observed[ii] <- dat_all$avg_no_hook_per_skate[ii] * dat_all$no_skates_hauled[ii]
+
 # visualize what we have:
 plot_map(dat_all, paste(pbs_standard_grid, inside_wcvi)) + scale_colour_brewer(palette = "Dark2")
 
@@ -337,7 +411,7 @@ attr(dat_all, "data_preparation_date") <- lubridate::today()
 # saveRDS(dat_all, file = "report/iphc-simple/iphc-pbs.rds")
 
 # order nicely:
-dat_all <- select(
+iphc <- select(
   dat_all,
   year,
   station,
@@ -346,6 +420,7 @@ dat_all <- select(
   latitude,
   species_common_name,
   species_science_name,
+  usable,
   hooks_observed,
   number_observed,
   pbs_standard_grid,
@@ -353,7 +428,11 @@ dat_all <- select(
   sample_type,
   depth_m,
   temp_c,
-  soak_time_min
+  soak_time_min,
+  avg_no_hook_per_skate,
+  no_skates_hauled,
+  no_skates_set,
+  effective_skates
 )
 
 # iphc_sets <- select(dat_all, -species_common_name, -species_science_name, -number_observed) |>
@@ -362,60 +441,3 @@ dat_all <- select(
 #   distinct()
 
 usethis::use_data(iphc, overwrite = TRUE)
-
-# compare against gfiphc ----------------------------------------------------
-
-gfiphc_dat <- readRDS("data-raw/gfiphc-dogfish-setcounts.rds") |>
-  mutate(standard = as.character(standard))
-
-x1 <- filter(gfiphc_dat, usable == "Y", standard == "Y")
-# x1 <- filter(gfiphc_dat, standard == "Y")
-# x1 <- filter(gfiphc_dat)
-x2 <- filter(iphc, species_common_name == "north pacific spiny dogfish", pbs_standard_grid)
-
-xx1 <- filter(x1, year == 2021)
-xx2 <- filter(x2, year == 2021)
-
-sum(xx1$N_it20, na.rm = TRUE)
-sum(xx2$number_observed)
-
-sum(xx1$E_it20, na.rm = TRUE)
-sum(xx2$number_observed)
-
-hooks_per_effective_skate <- sum(xx2$hooks_observed) / sum(xx1$E_it20)
-
-d1 <- group_by(x1, year) |>
-  mutate(E = ifelse(is.na(E_it), E_it20, E_it)) |>
-  mutate(N = ifelse(is.na(N_it), N_it20, N_it)) |>
-  summarise(n = sum(N, na.rm = TRUE), total_E = sum(E, na.rm = TRUE)) |>
-  mutate(type = "gfiphc") |>
-  mutate(n_hooks = total_E * hooks_per_effective_skate)
-d2 <- group_by(x2, year) |>
-  summarise(n = sum(number_observed), n_hooks = sum(hooks_observed)) |>
-  mutate(type = "simplified script")
-
-bind_rows(d1, d2) |>
-  group_by(type) |>
-  filter(year > 1995) |>
-  mutate(n_observed = n) |>
-  # mutate(n_hooks = n_hooks / n_hooks[year == 2018]) |>
-  # mutate(n_hooks = n_hooks / n_hooks[year == 1996]) |>
-  tidyr::pivot_longer(cols = c(n_observed, n_hooks), names_to = "measure") |>
-  ggplot(aes(year, value, colour = forcats::fct_rev(type))) +
-  geom_line() +
-  # geom_point() +
-  facet_wrap(~measure, scales = "free") +
-  geom_vline(xintercept = 1998, lty = 2) +
-  geom_hline(yintercept = 2152) +
-  labs(colour = "type") +
-  ggtitle(unique(x2$species_common_name))
-
-# what about 1997 which should match!?
-
-xx1 <- filter(gfiphc_dat, year == 1997, usable == "Y")
-sum(xx1$N_it20)
-nrow(xx1)
-
-xx2 <- filter(iphc, year == 1997, species_common_name == "north pacific spiny dogfish")
-sum(xx2$number_observed)
-nrow(xx2)
