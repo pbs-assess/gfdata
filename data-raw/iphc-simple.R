@@ -352,7 +352,7 @@ full_old <- select(
   old, -number_observed, -species_common_name) |>
   distinct()
 full_old <- purrr::map_dfr(
-  sort(unique(old$species_common_name)),
+  sort(unique(dat_pbs$species_common_name)),
   \(x) mutate(full_old, species_common_name = x)
 )
 missing <- anti_join(full_old, old)
