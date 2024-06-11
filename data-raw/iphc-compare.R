@@ -152,21 +152,8 @@ filter(j, pbs_usable != iphc_usable | is.na(pbs_usable) | is.na(iphc_usable)) |>
 
 # Compare gfiphc data with output dataset - for all species
 # --------------------------------------------------------
-get_iphc_dat <- function() {
-  dplyr::inner_join(iphc_catch2, iphc_sets2, by = join_by(year, station, station_key)) |>
-    dplyr::mutate(baited_hook_count = dplyr::case_when(
-      species_common_name == "pacific halibut" & sample_type == "all hooks" ~ baited_hook_count,
-      species_common_name == "pacific halibut" & sample_type == "20 hooks" ~ NA, # we do not have the data to know returned baited hooks for halibut catch
-      species_common_name != "pacific halibut" ~ baited_hook_count
-    )) |>
-    dplyr::mutate(hooks_observed = dplyr::case_when(
-      species_common_name == "pacific halibut" & sample_type == "all hooks" ~ hooks_observed,
-      species_common_name == "pacific halibut" & sample_type == "20 hooks" ~ hooks_retrieved,
-      .default = hooks_observed
-    ))
-}
-
-iphc2 <- get_iphc_dat()
+library(tidyr)
+iphc <- load_iphc_dat()
 
 f <- list.files("../gfsynopsis/report/data-cache-nov-2023/iphc", full.names = TRUE)
 f <- f[grepl(".rds$", f)]
@@ -185,7 +172,7 @@ old_d <- purrr::map_dfr(f, \(x) {
 })
 old_hook_counts <- readRDS("../gfsynopsis/report/data-cache-nov-2023/iphc/iphc-hook-counts.rds")
 
-sample_type_lu <- iphc2 |> distinct(year, sample_type) |> tidyr::drop_na(sample_type)
+sample_type_lu <- iphc |> distinct(year, sample_type) |> tidyr::drop_na(sample_type)
 
 old2 <- left_join(old_d, old_hook_counts)
 old2 <- old2 |>
@@ -201,16 +188,20 @@ old2 <- old2 |>
 
 # - it is possible that iphc data online has changed (e.g., usability codes)
 
-test_stations <- filter(iphc2, year == 2015) |> pull(station) |> as.character()
+test_stations <- filter(iphc, year == 2015) |> pull(station) |> as.character()
 
 test <- bind_rows(
   old2 |>
     mutate(source = 'gfiphc') |>
     filter(!(year == 2019 & station %in% c("2099", "2107"))), #|>,
-  iphc2 |>
+  iphc |>
     mutate(source = 'raw', station = as.character((station))) |>
-    filter(!(year == 2019 & station %in% c("2099", "2107"))) #|>
-    #filter(!inside_wcvi)
+    filter(!(year == 2019 & station %in% c("2099", "2107"))),
+  distinct(iphc, year, station, baited_hooks) |> # compare baited hook counts
+    drop_na(baited_hooks) |>
+    pivot_longer(cols = baited_hooks, names_to = "species_common_name", values_to = "number_observed") |>
+    mutate(source = 'raw', station = as.character((station))) |>
+    mutate(species_common_name = '_hook with bait')
 )
 not_zero <- test |>
   filter(source == "gfiphc") |>
@@ -223,11 +214,6 @@ not_zero <- test |>
   pull(species_common_name)
   #filter(usable == "Y") |>
 
-t2 <- filter(old2, species_common_name == "darkblotched rockfish", N_it > 0) |>
-  select(species_science_name, year, station, number_observed)
-
-left_join(t2, filter(test, source == "raw")) |> glimpse()
-
 test2 <- test |>
 filter(species_common_name %in% not_zero) |>
   filter(station %in% test_stations) |>
@@ -238,41 +224,8 @@ ggplot(data = test2, aes(x = year, y = count, colour = source)) +
   geom_point(data = filter(test2, source == 'raw')) +
   facet_wrap(~ species_common_name, scales = 'free_y')
 
-test2 <- left_join(
-  old_d |>
-    filter(species_common_name == "canary rockfish") |>
-    select(year, station, lat, lon, E_it, N_it, E_it20, N_it20, hooks_observed) |>
-    rename(hooksObs = "hooks_observed"),
-  dat_all |>
-    filter(species_common_name == "canary rockfish") |>
-    mutate(station = as.character(station)) |>
-    select(year, station, longitude, latitude, number_observed, hooks_observed)
-    ) |>
-  filter(year %in% 1996:2022)
+# Some data are in the gfiphc/GFBio data but not int he current raw FISS data
+t2 <- filter(old2, species_common_name == "darkblotched rockfish", N_it > 0) |>
+  select(species_science_name, year, station, number_observed)
 
-filter(old_d, year < 1998, species_common_name == "arrowtooth flounder")
-
-test2
-
-anti_join(
-  dat_all |>
-    filter(species_common_name == "canary rockfish") |>
-    mutate(station = as.character(station)) |>
-    select(year, station, longitude, latitude, number_observed, hooks_observed, pbs_standard_grid) |>
-    filter(year %in% 1996:2022),
-    old_d |>
-    filter(species_common_name == "canary rockfish") |>
-    select(year, station, lat, lon, E_it, N_it, E_it20, N_it20, hooks_observed) |>
-    rename(hooksObs = "hooks_observed") |>
-    filter(year %in% 1996:2022)
-)
-
-distinct(dat_all, usable, pbs_standard_grid, inside_wcvi)
-
-filter(dat_all, station == 2171, year == 2007) |> View()
-
-ggplot() +
-  geom_point(data = old_d |> group_by(year, species_common_name),
-    aes(x = year, y = N_it), shape = 21, stroke = 1.2) +
-  geom_point(data = ) +
-  facet_wrap(~ species_common_name, scales = 'free_y')
+left_join(t2, filter(test, source == "raw")) |> glimpse()

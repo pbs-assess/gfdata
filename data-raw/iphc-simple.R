@@ -74,7 +74,7 @@ baited_hooks <- set |>
       filter(species_name == "hook with bait") |>
       select(stlkey, number_observed)
    ) |>
-   mutate(baited_hook_count = if_else(is.na(number_observed), 0, number_observed)) |>
+   mutate(baited_hooks = if_else(is.na(number_observed), 0, number_observed)) |>
    left_join(distinct(d, year, sampletype)) |>
    rename(baited_hook_sampletype = "sampletype") |> # need this info to make decisions for halibut catch
    select(-number_observed)
@@ -110,7 +110,7 @@ re_bs <- filter(d, scientific_name %in% c("sebastes aleutianus", "sebastes melan
   group_by(year, stlkey, station, setno, scientific_name,
     sampletype, hooksfished, hooksretrieved, hooksobserved,
     no_skates_set, no_skates_hauled, avg_no_hook_per_skate,
-    effective_skates_hauled, baited_hook_count, baited_hook_sampletype) |>
+    effective_skates_hauled, baited_hooks, baited_hook_sampletype) |>
   summarise(number_observed = sum(number_observed)
   ) |> ungroup()
 # Replace rougheye/blackspotted rows with the summed counts of rougheye and blackspotted
@@ -164,7 +164,7 @@ count_dat <- transmute(count_dat,
   # set_number = as.integer(setno), # excluding for now
   station = as.integer(station),
   station_key = as.integer(stlkey),
-  baited_hook_count = as.integer(baited_hook_count)
+  baited_hooks = as.integer(baited_hooks)
 )
 
 # need to collapse bering skate and sandpaper skate into one species:
@@ -176,7 +176,7 @@ count_dat <- count_dat |>
     hooks_retrieved = as.integer(hooks_retrieved),
     hooks_observed = sum(hooks_observed),
     number_observed = sum(number_observed),
-    baited_hook_count = sum(baited_hook_count),
+    baited_hooks = sum(baited_hooks),
     species_common_name = species_common_name[1], # pick one for now; the DFO ones get joined anyways
     .groups = "drop"
   )
@@ -260,7 +260,7 @@ full <- select(
   dat, year, station, station_key, longitude, latitude,
   hooks_observed, hooks_fished, hooks_retrieved,
   avg_no_hook_per_skate, no_skates_hauled, no_skates_set, effective_skates,
-  sample_type, usable, soak_time_min, temp_c, depth_m, baited_hook_count
+  sample_type, usable, soak_time_min, temp_c, depth_m, baited_hooks
 ) |> distinct()
 full <- purrr::map_dfr(
   sort(unique(count_dat$species_science_name)),
@@ -413,6 +413,11 @@ dat_pbs |> plot_map(paste(pbs_standard_grid, inside_wcvi))
 
 old <- gfiphc::data1996to2002 |> filter(year < 1998) # |> filter(usable == "Y")
 
+# add sample type - see Table 2 in Anderson et al. 2022 (Data synopsis 2021)
+old$sample_type <- NA
+old$sample_type[old$year == 1996] <- "all hooks"
+old$sample_type[old$year == 1997] <- "20 hooks"
+
 # check to make sure stations don't clash:
 stopifnot(sum(old$station %in% dat_pbs$station) == 0L)
 
@@ -561,7 +566,7 @@ iphc_sets <- select(
   no_skates_hauled,
   no_skates_set,
   effective_skates,
-  baited_hook_count
+  baited_hooks
 ) |>
 distinct()
 
