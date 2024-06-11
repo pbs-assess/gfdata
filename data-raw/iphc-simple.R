@@ -25,9 +25,28 @@ DOWNLOAD_DATE <- "2024-05-23"
 
 library(dplyr)
 library(ggplot2)
+devtools::load_all("../gfsynopsis")
 theme_set(theme_light())
 
 # read in and clean up IPHC .xlsx downloads ---------------------------------
+# load station meta-data and halibut data
+# all stations; 2B
+if (file.exists("data-raw/Set and Pacific halibut data.xlsx")) {
+  set <- readxl::read_xlsx("data-raw/Set and Pacific halibut data.xlsx")
+  saveRDS(set, file = "data-raw/Set and Pacific halibut data.rds")
+} else {
+  set <- readRDS("data-raw/Set and Pacific halibut data.rds")
+}
+
+names(set) <- tolower(names(set))
+names(set) <- gsub(" ", "_", names(set))
+names(set) <- gsub("\\(", "", names(set))
+names(set) <- gsub("\\)", "", names(set))
+names(set) <- gsub("\\-", "_", names(set))
+names(set) <- gsub("\\/", "_per_", names(set))
+names(set) <- gsub("\\.", "", names(set))
+names(set) <- gsub("___", "_", names(set))
+set$date <- lubridate::dmy(set$date)
 
 # download 2B:
 if (file.exists("data-raw/Non-Pacific halibut data.xlsx")) {
@@ -40,8 +59,80 @@ names(d) <- tolower(names(d))
 names(d) <- gsub(" ", "_", names(d))
 d$scientific_name <- tolower(d$scientific_name)
 d$species_name <- tolower(d$species_name)
+# Out of date scientific names in raw IPHC FISS data
 d$scientific_name[d$scientific_name == "raja binoculata"] <- "beringraja binoculata"
 d$scientific_name[d$scientific_name == "bathyraja kincaida"] <- "bathyraja interrupta"
+d$scientific_name[d$scientific_name == "galeorhinus zyopterus"] <- "galeorhinus galeus" # tope shark
+d$scientific_name[d$scientific_name == "delolepis gigantia"] <- "cryptacanthodes giganteus" # giant wrymouth
+d$scientific_name[d$scientific_name == "eopsetta exilis"] <- "lyopsetta exilis" # slender sole
+
+# baited hook count is used for Watson et al. 2023 censoring approach
+baited_hooks <- set |>
+  distinct(year, stlkey, station) |>
+  left_join(
+    d |>
+      filter(species_name == "hook with bait") |>
+      select(stlkey, number_observed)
+   ) |>
+   mutate(baited_hook_count = if_else(is.na(number_observed), 0, number_observed)) |>
+   left_join(distinct(d, year, sampletype)) |>
+   rename(baited_hook_sampletype = "sampletype") |> # need this info to make decisions for halibut catch
+   select(-number_observed)
+
+# get halibut data and match format of `d`
+hal_count_dat <- set |>
+  mutate(scientific_name = "hippoglossus stenolepis",
+         species_name = "pacific halibut",
+         number_observed = o32_pacific_halibut_count + u32_pacific_halibut_count) |>
+  select(any_of(c(names(d), "no_skates_set", "no_skates_hauled", "avg_no_hook_per_skate", "effective_skates_hauled"))) |>
+  select(-row_number) |>
+  left_join(x = _,
+            y = distinct(d, stlkey, setno, sampletype, hooksfished, hooksretrieved, hooksobserved)) |> # need hook counts from non-halibut data
+  filter(!is.na(hooksfished)) # omt stations where no other species were seemingly sampled
+  # mutate(hooksfished = avg_no_hook_per_skate * no_skates_hauled) # except for sets where no non-halibut were captured...
+
+d <- bind_rows(d, hal_count_dat) |>
+  left_join(baited_hooks)
+
+# Additional species clean up --------------------------------------------------
+# --- Rougheye/blackspotted complex ---
+# d |>
+#   filter(stringr::str_detect(species_name, "rougheye|blackspotted|shortraker")) |>
+#   janitor::tabyl(species_name)
+# The blackspotted rockfish first appears in 2020 see: https://github.com/pbs-assess/gfiphc/issues/17
+# Before that gfiphc and GFBio had rougheye rockfish listed as rougheye/blackspotted
+# so for now we will continue to do this and omit the rougheye/shortraker occurences
+# which have only occured 5 times so far, with only 9 total observed to date (2023)
+# filter(d, species_name == "rougheye/shortraker") |> glimpse()
+#d$scientific_name[d$scientific_name %in% c("sebastes aleutianus", "sebastes melanostictus")] <- "sebastes aleutianus/melanostictus complex"
+re_bs <- filter(d, scientific_name %in% c("sebastes aleutianus", "sebastes melanostictus")) |>
+  mutate(scientific_name = "sebastes aleutianus/melanostictus complex") |>
+  group_by(year, stlkey, station, setno, scientific_name,
+    sampletype, hooksfished, hooksretrieved, hooksobserved,
+    no_skates_set, no_skates_hauled, avg_no_hook_per_skate,
+    effective_skates_hauled, baited_hook_count, baited_hook_sampletype) |>
+  summarise(number_observed = sum(number_observed)
+  ) |> ungroup()
+# Replace rougheye/blackspotted rows with the summed counts of rougheye and blackspotted
+d <- d |>
+  filter(!(scientific_name %in% c("sebastes aleutianus", "sebastes melanostictus"))) |>
+  bind_rows(re_bs)
+
+# --- Pacific Sand Dab ---
+# See also: https://github.com/pbs-assess/gfiphc/blob/master/inst/extdata/iphc-spp-names.csv
+# "GFbio also has speckled, Maria says IPHC ones are likely Pacific sand dab"
+d$scientific_name[d$scientific_name == "citharichthys spp"] <- "citharichthys sordidus"
+
+# --- Southern Rock Sole ---
+# See also: https://github.com/pbs-assess/gfiphc/blob/master/inst/extdata/iphc-spp-names.csv
+# in GFBio and gfiphc, rock sole has been considered to be southern rock sole
+d$scientific_name[d$scientific_name == "lepidopsetta sp."] <- "lepidopsetta bilineata"
+
+# --- Pacific Grenadier ---
+# In the past, GFBio and gfiphc appear to have scientific_name == "macrouridae",
+# classified as pacific grenadier (coryphaenoides acrolepis). But it is unclear
+# if this is what we should continue doing
+#d$scientific_name[d$scientific_name == "macrouridae"] <- "coryphaenoides acrolepis"
 
 spp <- gfsynopsis::get_spp_names()
 missing <- filter(d, !scientific_name %in% spp$species_science_name)
@@ -65,14 +156,15 @@ count_dat <- transmute(count_dat,
   year = as.integer(year),
   species_common_name = species_name,
   species_science_name = scientific_name,
-  # hooks_fished = as.integer(hooksfished), # excluding for now
-  # hooks_retrieved = as.integer(hooksretrieved), # excluding for now
+  hooks_fished = as.integer(hooksfished), # excluding for now
+  hooks_retrieved = as.integer(hooksretrieved), # excluding for now
   hooks_observed = as.integer(hooksobserved),
   number_observed = as.integer(number_observed),
   sample_type = if_else(sampletype == "20Hook", "20 hooks", "all hooks"),
   # set_number = as.integer(setno), # excluding for now
   station = as.integer(station),
-  station_key = as.integer(stlkey)
+  station_key = as.integer(stlkey),
+  baited_hook_count = as.integer(baited_hook_count)
 )
 
 # need to collapse bering skate and sandpaper skate into one species:
@@ -80,29 +172,14 @@ count_dat <- transmute(count_dat,
 count_dat <- count_dat |>
   group_by(year, species_science_name, sample_type, station, station_key) |>
   summarise(
+    hooks_fished = sum(hooks_fished),
+    hooks_retrieved = as.integer(hooks_retrieved),
     hooks_observed = sum(hooks_observed),
     number_observed = sum(number_observed),
+    baited_hook_count = sum(baited_hook_count),
     species_common_name = species_common_name[1], # pick one for now; the DFO ones get joined anyways
     .groups = "drop"
   )
-
-# all stations; 2B
-if (file.exists("data-raw/Non-Pacific halibut data.xlsx")) {
-  set <- readxl::read_xlsx("data-raw/Set and Pacific halibut data.xlsx")
-  saveRDS(set, file = "data-raw/Set and Pacific halibut data.rds")
-} else {
-  set <- readRDS("data-raw/Set and Pacific halibut data.rds")
-}
-
-names(set) <- tolower(names(set))
-names(set) <- gsub(" ", "_", names(set))
-names(set) <- gsub("\\(", "", names(set))
-names(set) <- gsub("\\)", "", names(set))
-names(set) <- gsub("\\-", "_", names(set))
-names(set) <- gsub("\\/", "_per_", names(set))
-names(set) <- gsub("\\.", "", names(set))
-names(set) <- gsub("___", "_", names(set))
-set$date <- lubridate::dmy(set$date)
 
 set |>
   ggplot(aes(midlon_fished, midlat_fished, colour = purpose_code)) +
@@ -151,23 +228,24 @@ filter(dat_test, year == 2012) |> select(avg_no_hook_per_skate, no_skates_hauled
 
 # need this to be a right join because very occasionally there are no non-halibut catch!
 dat <- right_join(count_dat, set_dat, by = join_by(year, station, station_key))
+#dat <- left_join(count_dat, set_dat, by = join_by(year, station, station_key))
 
 # need to fill in the zeros -------------------------------------------------
 
-# now pull out any rows that didn't have any non-halibut species;
-# we need to fill those in with zeros for all non-halibut species
-# and they're currently missing sample_type and hooks_observed!
-never_caught_non_halibut <- filter(dat, is.na(hooks_observed))
-# need to fill in those NAs for hook counts; do it from avg. hooks and no. skates hauled
-# first need to fill in the sample types, which will also be NAs here
-# so bring them back over:
-never_caught_non_halibut$sample_type <- NULL
-never_caught_non_halibut <- left_join(never_caught_non_halibut,
-  filter(dat, !is.na(sample_type)) |> select(year, sample_type) |> distinct(), by = join_by(year))
-never_caught_non_halibut <- never_caught_non_halibut |>
-  mutate(hooks_observed =
-      if_else(sample_type == "20 hooks", no_skates_hauled * 20,
-        no_skates_hauled * avg_no_hook_per_skate))
+# # now pull out any rows that didn't have any non-halibut species;
+# # we need to fill those in with zeros for all non-halibut species
+# # and they're currently missing sample_type and hooks_observed!
+# never_caught_non_halibut <- filter(dat, is.na(hooks_observed))
+# # need to fill in those NAs for hook counts; do it from avg. hooks and no. skates hauled
+# # first need to fill in the sample types, which will also be NAs here
+# # so bring them back over:
+# never_caught_non_halibut$sample_type <- NULL
+# never_caught_non_halibut <- left_join(never_caught_non_halibut,
+#   filter(dat, !is.na(sample_type)) |> select(year, sample_type) |> distinct(), by = join_by(year))
+# never_caught_non_halibut <- never_caught_non_halibut |>
+#   mutate(hooks_observed =
+#       if_else(sample_type == "20 hooks", no_skates_hauled * 20,
+#         no_skates_hauled * avg_no_hook_per_skate))
 
 # now go ahead and strip those from the main dataset
 dat <- filter(dat, !is.na(hooks_observed))
@@ -175,13 +253,14 @@ dat <- filter(dat, !is.na(hooks_observed))
 stopifnot(sum(is.na(dat$number_observed)) == 0L)
 
 # and join back on our version that has the missing hooks_observed and sample_type columns:
-dat <- bind_rows(dat, never_caught_non_halibut)
+#dat <- bind_rows(dat, never_caught_non_halibut)
 
 # build a df of all possible stations and years for every species
 full <- select(
   dat, year, station, station_key, longitude, latitude,
-  hooks_observed, avg_no_hook_per_skate, no_skates_hauled, no_skates_set, effective_skates,
-  sample_type, usable, soak_time_min, temp_c, depth_m
+  hooks_observed, hooks_fished, hooks_retrieved,
+  avg_no_hook_per_skate, no_skates_hauled, no_skates_set, effective_skates,
+  sample_type, usable, soak_time_min, temp_c, depth_m, baited_hook_count
 ) |> distinct()
 full <- purrr::map_dfr(
   sort(unique(count_dat$species_science_name)),
@@ -329,6 +408,8 @@ filter(dat_pbs, year == 2018, inside_wcvi) |> plot_map(pbs_standard_grid)
 dat_pbs |> plot_map(paste(pbs_standard_grid, inside_wcvi))
 
 # bring in pre 1998 data from gfiphc ----------------------------------------
+# Need to consider if/how we can include 1995 data
+#data1995 <- left_join(gfiphc::setData1995rs, gfiphc::countData1995) # No data for hook counts in 1995
 
 old <- gfiphc::data1996to2002 |> filter(year < 1998) # |> filter(usable == "Y")
 
@@ -404,6 +485,28 @@ plot_map(dat_all, paste(pbs_standard_grid, inside_wcvi)) + scale_colour_brewer(p
 plot_map(dat_all, number_observed/hooks_observed) + scale_colour_viridis_c(trans = "sqrt")
 plot_map(dat_all, temp_c) + scale_colour_viridis_c()
 
+# Filter IPHC species known to be only enumerated explicitly since a certain year:
+# See HG predators analysis: gfiphc/vignettes/analysis_for_HG_herring_predators.html
+#   Aleutian Skate: Looks like only enumerated explicitly since 2007, 2018 map shows mean 0.31 fish/skate. Include.
+#   Abyssal Skate - no catch, ignore.
+#   Broad Skate - no catch, ignore.
+#   Big Skate - looks like enumerated explicitly since 1998, and 2018 map shows mean 0.69 fish/skate. Include.
+#   Roughtail Skate - looks like only caught in three or four years (mean +ve sets 1/177). No catch in 2018. Include.
+#   Sandpaper Skate - only shows up for a few years. Mean +ve sets 5/177, 2018 mean 0.14 fish/skate. Include.
+#   Longnose Skate - only shows up since 1998 (presumably unidentified beforehand), mean +ve sets 57/135, 2018 mean 0.96 fish/skate. Include.
+#   Alaska Skate - only showed up in five years, 2018 mean 0.14 fish/skate. Only plotted since 2003 (like Sandpaper). Include.
+dat_all <-
+  dat_all |>
+  mutate(number_observed = case_when(
+    species_common_name == "aleutian skate" & year < 2007 ~ NA,
+    species_common_name == "big skate" & year < 1998 ~ NA,
+    species_common_name == "longnose skate" & year < 1998 ~ NA,
+    species_common_name == "alaska skate" & year < 2003 ~ NA,
+    species_common_name == "sandpaper skate" & year < 2003 ~ NA,
+    species_common_name == "shortspine thornyhead" & year < 1998 ~ NA, # Not analysed in HG analysis, but is not explicitly identified until 1998 ('unidentified idiots' until then)
+    .default = number_observed
+  ))
+
 # save it! ------------------------------------------------------------------
 
 
@@ -445,6 +548,8 @@ iphc_sets <- select(
   longitude,
   latitude,
   usable,
+  #hooks_fished,
+  hooks_retrieved,
   hooks_observed,
   pbs_standard_grid,
   inside_wcvi,
@@ -455,8 +560,10 @@ iphc_sets <- select(
   avg_no_hook_per_skate,
   no_skates_hauled,
   no_skates_set,
-  effective_skates
-) |> distinct()
+  effective_skates,
+  baited_hook_count
+) |>
+distinct()
 
 iphc_catch <- select(
   dat_all,
