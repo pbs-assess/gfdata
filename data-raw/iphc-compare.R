@@ -197,15 +197,14 @@ test <- bind_rows(
   iphc |>
     mutate(source = 'raw', station = as.character((station))) |>
     filter(!(year == 2019 & station %in% c("2099", "2107"))),
-  distinct(iphc, year, station, baited_hooks) |> # compare baited hook counts
-    drop_na(baited_hooks) |>
-    pivot_longer(cols = baited_hooks, names_to = "species_common_name", values_to = "number_observed") |>
+  distinct(iphc, year, station, baits_returned) |> # compare baited hook counts
+    drop_na(baits_returned) |>
+    pivot_longer(cols = baits_returned, names_to = "species_common_name", values_to = "number_observed") |>
     mutate(source = 'raw', station = as.character((station))) |>
     mutate(species_common_name = '_hook with bait')
 )
 not_zero <- test |>
   filter(source == "gfiphc") |>
-  filter(year > 1995) |>
   filter(standard == "Y") |>
   group_by(species_common_name, year) |>
   summarise(count = sum(number_observed, na.rm = TRUE)) |>
@@ -216,7 +215,7 @@ not_zero <- test |>
 
 test2 <- test |>
 filter(species_common_name %in% not_zero) |>
-  filter(station %in% test_stations) |>
+  #filter(station %in% test_stations) |>
   group_by(source, species_common_name, year) |>
   summarise(count = sum(number_observed, na.rm = TRUE))
 ggplot(data = test2, aes(x = year, y = count, colour = source)) +
@@ -229,3 +228,25 @@ t2 <- filter(old2, species_common_name == "darkblotched rockfish", N_it > 0) |>
   select(species_science_name, year, station, number_observed)
 
 left_join(t2, filter(test, source == "raw")) |> glimpse()
+
+
+t1 <- filter(test, species_common_name == "north pacific spiny dogfish") |>
+  #filter(effective_skates == 0) |>
+  filter(source == "gfiphc", year == 1996)
+
+t2 <- filter(test, species_common_name == "north pacific spiny dogfish") |>
+  filter(effective_skates == 0)
+
+
+hooks_per_effective_skate <- sum(xx2$hooks_observed) / sum(xx1$E_it20)
+
+t2 |> select(year, station, species_common_name:no_skates_set) |> glimpse()
+
+temp <- left_join(
+t2 |> select(year, station, species_common_name:no_skates_set) |>
+mutate(check_eff_skate = hooks_observed / avg_no_hook_per_skate),
+test |> filter(source == "gfiphc")
+)
+
+glimpse(temp)
+
