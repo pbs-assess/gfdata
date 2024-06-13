@@ -4,7 +4,10 @@
 \alias{load_iphc_dat}
 \title{Load and join IPHC FISS set and catch data}
 \usage{
-load_iphc_dat()
+load_iphc_dat(species = NULL)
+}
+\arguments{
+\item{species}{Optional vector specifying the \code{species_common_name} to subset the IPHC data.}
 }
 \value{
 A tibble with 273,714 rows and 22 columns, containing the processed IPHC catch and set data.
@@ -12,17 +15,17 @@ The main columns include:
 \itemize{
 \item year. Year the set was hauled.
 \item station. Permanent station ID named by IPHC.
-\item station_key. Unique key for the set; can be used to join set table to non-Pacific halibut catch data from FISS Survey download page.
+\item station_key. Unique key for the set; can be used to join set table to non-Pacific halibut catch data from FISS Survey download page. Occasionally there are multiple sets at the same \code{station} but this column is always unique. It's also unique across years.
 \item species_common_name. Species name used in GFBio.
 \item species_science_name. Scientific name used in GFBio.
-\item number_observed. Number of individuals of a species observed. Some species such as skates and shortspine thornyheads were not enumerated to the species level in early years and so these values are \code{NA}.
-\item longitude. Calculated longitude in decimal degrees of the midpoint of the set.
-\item latitude. Calculated latitude in decimal degrees of the midpoint of the set.
+\item number_observed. Number of hooks with the species of interest. Some species such as skates and shortspine thornyheads were not enumerated to the species level in early years and so these values are \code{NA}.
+\item longitude. Longitude in decimal degrees of the midpoint of the set.
+\item latitude. Latitude in decimal degrees of the midpoint of the set.
 \item usable. IPHC indication of whether station was deemed effective ("Y") or ineffective ("N") for assessment.
 \item hooks_retrieved. Number of hooks retrieved.
-\item hooks_observed. Number of hooks observed for non-Pacific halibut species catch.
+\item hooks_observed. Number of hooks observed for non-Pacific halibut species catch. For Pacific halibut this is the value of \code{hooks_retrieved}.
 \item pbs_standard_grid. Stations defined as 'standard' in \code{gfiphc}.
-\item inside_wcvi. Is station in inside West Coast Vancouver Island waters. To date, these additional stations in inside waters were only sampled in 2018.
+\item inside_wcvi. Logical: inside Vancouver Island waters (2018 only) vs. anywhere else; you may want to exclude these from spatiotemporal modelling.
 \item sample_type. Type of observations.
 \itemize{
 \item "20 hooks" - Observation of the first 20 (non-halibut) hooks of each skate.
@@ -35,8 +38,13 @@ The main columns include:
 \item avg_no_hook_per_skate. Average number of hooks per skate at setting.
 \item no_skates_hauled. Number of skates hauled (no metadata on IPHC website).
 \item no_skates_set. Number of skates set, not adjusted for baits or average number of hooks per skate.
-\item effective_skates. "An effective skate is 100 baited hooks. The average number of hooks/skate and the number of missing baits at setting factor into the effective skate calculation". Description from IPHC table: "data field names defined"
-\item baits_returned The number of baited hooks remaining. These are unavailable (NA) for some Pacific halibut records where the sample_type = '20 hooks'.
+\item effective_skates. When all hooks are observed, this is the effective skate
+number found in the raw IPHC FISS set data. For 1995-1997 this value
+comes from \code{gfiphc}. For cases where only a subset of hooks are observed,
+the effective skate based on all observed hooks is scaled as:
+\code{effective_skates * (hooks_observed / hooks_retrieved)}.
+See eqn G.4 in Anderson et al. (2019).
+\item baits_returned. The number of baited hooks remaining. These are unavailable (NA) for some Pacific halibut records where the sample_type = '20 hooks'.
 }
 
 The tibble also contains the following attributes:
@@ -57,7 +65,12 @@ year. The catch and set dataframes are saved separately for space efficiency.
 \examples{
 \dontrun{
 # Retrieve and process the IPHC data
-iphc_data <- get_iphc_dat()
+iphc_data <- load_iphc_dat()
 }
 
+}
+\references{
+Anderson, S.C., E.A. Keppel, A.M. Edwards. 2019. A reproducible data synopsis
+for over 100 species of British Columbia groundfish. DFO Can. Sci. Advis. Sec.
+Res. Doc. 2019/041. vii + 321 p.
 }

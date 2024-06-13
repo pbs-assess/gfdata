@@ -2,6 +2,8 @@
 #'
 #' These data start with year 1996.
 #'
+#' @param species Optional vector specifying the `species_common_name` to subset the IPHC data.
+#'
 #' @return A tibble with 273,714 rows and 22 columns, containing the processed IPHC catch and set data.
 #' The main columns include:
 #' \itemize{
@@ -15,7 +17,7 @@
 #'   \item latitude. Latitude in decimal degrees of the midpoint of the set.
 #'   \item usable. IPHC indication of whether station was deemed effective ("Y") or ineffective ("N") for assessment.
 #'   \item hooks_retrieved. Number of hooks retrieved.
-#'   \item hooks_observed. Number of hooks observed for non-Pacific halibut species catch.
+#'   \item hooks_observed. Number of hooks observed for non-Pacific halibut species catch. For Pacific halibut this is the value of `hooks_retrieved`.
 #'   \item pbs_standard_grid. Stations defined as 'standard' in `gfiphc`.
 #'   \item inside_wcvi. Logical: inside Vancouver Island waters (2018 only) vs. anywhere else; you may want to exclude these from spatiotemporal modelling.
 #'   \item sample_type. Type of observations.
@@ -28,7 +30,12 @@
 #'   \item avg_no_hook_per_skate. Average number of hooks per skate at setting.
 #'   \item no_skates_hauled. Number of skates hauled (no metadata on IPHC website).
 #'   \item no_skates_set. Number of skates set, not adjusted for baits or average number of hooks per skate.
-#'   \item effective_skates. "An effective skate is 100 baited hooks. The average number of hooks/skate and the number of missing baits at setting factor into the effective skate calculation". Description from IPHC table: "data field names defined"
+#'   \item effective_skates. When all hooks are observed, this is the effective skate
+#'         number found in the raw IPHC FISS set data. For 1995-1997 this value
+#'         comes from `gfiphc`. For cases where only a subset of hooks are observed,
+#'         the effective skate based on all observed hooks is scaled as:
+#'         `effective_skates * (hooks_observed / hooks_retrieved)`.
+#'         See eqn G.4 in Anderson et al. (2019).
 #'   \item baits_returned. The number of baited hooks remaining. These are unavailable (NA) for some Pacific halibut records where the sample_type = '20 hooks'.
 #'}
 #'
@@ -43,6 +50,12 @@
 #' in a year but non-halibut species are only enumerated for hooks_observed in a
 #' year. The catch and set dataframes are saved separately for space efficiency.
 #'
+#' @references
+#'
+#' Anderson, S.C., E.A. Keppel, A.M. Edwards. 2019. A reproducible data synopsis
+#' for over 100 species of British Columbia groundfish. DFO Can. Sci. Advis. Sec.
+#' Res. Doc. 2019/041. vii + 321 p.
+#'
 #' @examples
 #' \dontrun{
 #' # Retrieve and process the IPHC data
@@ -50,8 +63,14 @@
 #' }
 #'
 #' @export
-load_iphc_dat <- function() {
-  iphc_dat <- dplyr::inner_join(gfdata::iphc_catch, gfdata::iphc_sets,
+load_iphc_dat <- function(species = NULL) {
+  catch_dat <- gfdata::iphc_catch
+  set_dat <- gfdata::iphc_sets
+
+  if (!is.null(species)) {
+    catch_dat <- catch_dat |> filter(species_common_name %in% tolower(species))
+  }
+  iphc_dat <- dplyr::inner_join(catch_dat, set_dat,
                                 by = c("year", "station", "station_key")) |>
     dplyr::mutate(baits_returned = dplyr::case_when(
       .data$species_common_name == "pacific halibut" & .data$sample_type == "all hooks" ~ .data$baits_returned,
@@ -62,5 +81,6 @@ load_iphc_dat <- function() {
       .data$species_common_name == "pacific halibut" & .data$sample_type == "all hooks" ~ .data$hooks_observed,
       .data$species_common_name == "pacific halibut" & .data$sample_type == "20 hooks" ~ .data$hooks_retrieved,
       .default = .data$hooks_observed
-    ))
+    )) |>
+    dplyr::mutate(effective_skates = effective_skates * (hooks_observed / hooks_retrieved)) # see eqn G.4 in Anderson et al. 2019
 }
