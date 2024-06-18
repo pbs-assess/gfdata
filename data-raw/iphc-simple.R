@@ -131,7 +131,7 @@ d$scientific_name[d$scientific_name == "lepidopsetta sp."] <- "lepidopsetta bili
 # --- Pacific Grenadier ---
 # In the past, GFBio and gfiphc appear to have scientific_name == "macrouridae",
 # classified as pacific grenadier (coryphaenoides acrolepis). But it is unclear
-# if this is what we should continue doing
+# if this is what we should continue doing. So for now we have not included 'pacific grenadier'
 #d$scientific_name[d$scientific_name == "macrouridae"] <- "coryphaenoides acrolepis"
 
 spp <- gfsynopsis::get_spp_names()
@@ -266,7 +266,9 @@ full <- select(
   sample_type, usable, soak_time_min, temp_c, depth_m, baits_returned
 ) |> distinct()
 full <- purrr::map_dfr(
-  sort(unique(count_dat$species_science_name)),
+  sort(c(unique(count_dat$species_science_name),
+         'pleuronichthys coenosus', # add c-o sole zero counts - only observed once in 1995
+         'microgadus proximus')), # add pacific tomcod zero counts - only observed once in 1995
   \(x) mutate(full, species_science_name = x)
 )
 
@@ -446,7 +448,7 @@ old <- select(old, year, station, longitude = lon, latitude = lat,
   depth_m = depthAvge, species_common_name = spNameIPHC,
   number_observed = catchCount, hooks_observed = hooksObserved, usable,
   no_skates_hauled = skates, effective_skates = E_it,
-  baits_returned)
+  sample_type, baits_returned)
 old <- mutate(old, species_common_name = tolower(species_common_name))
 
 old_sp <- sort(unique(old$species_common_name))
@@ -454,10 +456,12 @@ old_sp[!old_sp %in% old$species_common_name]
 
 # most can be dropped, but fix others:
 old$species_common_name[old$species_common_name == "spiny dogfish"] <- "north pacific spiny dogfish"
+old$species_common_name[old$species_common_name == "sleeper shark"] <- "pacific sleeper shark"
 old$species_common_name[old$species_common_name == "sixgill shark"] <- "bluntnose sixgill shark"
 old$species_common_name[old$species_common_name == "rock sole"] <- "southern rock sole"
 old$species_common_name[old$species_common_name == "rougheye rockfish"] <- "rougheye/blackspotted rockfish complex"
 old$species_common_name[old$species_common_name == "sablefish (blackcod)"] <- "sablefish"
+old$species_common_name[old$species_common_name == "wolf-eel"] <- "wolf eel"
 
 # need to pad in zeros to old data:
 full_old <- select(
@@ -581,7 +585,7 @@ iphc_sets <- select(
   longitude,
   latitude,
   usable,
-  #hooks_fished,
+  hooks_fished,
   hooks_retrieved,
   hooks_observed,
   pbs_standard_grid,
@@ -616,3 +620,5 @@ attr(iphc_catch, "data_preparation_date") <- lubridate::today()
 
 usethis::use_data(iphc_sets, overwrite = TRUE)
 usethis::use_data(iphc_catch, overwrite = TRUE)
+
+

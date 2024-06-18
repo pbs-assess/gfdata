@@ -61,6 +61,11 @@ This function joins the IPHC catch data with the set metadata.
 This is needed because Pacific halibut are enumerated for all hooks_retrieved
 in a year but non-halibut species are only enumerated for hooks_observed in a
 year. The catch and set dataframes are saved separately for space efficiency.
+Note that in 2012 a bait experiment was run where the typically used chum bait
+was only used on only 4 skates (see Appendix G.3 Anderson et al. 2019 and
+Henry et al. 2013). Therefore we have estimated the hooks_observed for
+Pacific halibut in 2012 to be the \code{avg_no_hook_per_skate * .data$no_skates_hauled}
+and because the IPHC has \code{effective_skates} = 0, this is returned here as \code{NA}.
 }
 \examples{
 \dontrun{
@@ -73,4 +78,8 @@ iphc_data <- load_iphc_dat()
 Anderson, S.C., E.A. Keppel, A.M. Edwards. 2019. A reproducible data synopsis
 for over 100 species of British Columbia groundfish. DFO Can. Sci. Advis. Sec.
 Res. Doc. 2019/041. vii + 321 p.
+
+Henry, E., Soderlund, E., Dykstra, C.L., Geernaert, T.O., and Ranta, A.M.
+2013. 2012 standardized stock assessment survey. In Int. Pac. Halibut Comm.
+Report of Assessment and Research Activities 2012. pp. 503–538.
 }

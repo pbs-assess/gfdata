@@ -153,7 +153,29 @@ filter(j, pbs_usable != iphc_usable | is.na(pbs_usable) | is.na(iphc_usable)) |>
 # Compare gfiphc data with output dataset - for all species
 # --------------------------------------------------------
 library(tidyr)
+library(stringr)
 iphc <- load_iphc_dat()
+
+sample_type_lu <- iphc |> distinct(year, sample_type) |> tidyr::drop_na(sample_type)
+
+raw_d <- readRDS("data-raw/Non-Pacific halibut data.rds") |>
+  janitor::clean_names() |>
+  mutate(year = as.numeric(year)) |>
+  mutate(across(where(is.character), tolower)) |>
+  select(-sample_type, -row_number, -setno, -iphc_species_code, -hooks_fished) # these columns have been getting in the way
+
+set <- readRDS("data-raw/Set and Pacific halibut data.rds") |>
+  janitor::clean_names()
+hal <- set |>
+  mutate(scientific_name = "hippoglossus stenolepis",
+         species_name = "pacific halibut",
+         number_observed = o32_pacific_halibut_count + u32_pacific_halibut_count,
+         year = as.numeric(year)) |>
+  select(any_of(c(names(raw_d)))) |>
+  left_join(x = _,
+            y = distinct(raw_d, stlkey, hooks_retrieved, hooks_observed)) # need hook counts from non-halibut data
+raw_d <- bind_rows(raw_d, hal) |>
+  left_join(sample_type_lu)
 
 f <- list.files("../gfsynopsis/report/data-cache-nov-2023/iphc", full.names = TRUE)
 f <- f[grepl(".rds$", f)]
@@ -172,7 +194,6 @@ old_d <- purrr::map_dfr(f, \(x) {
 })
 old_hook_counts <- readRDS("../gfsynopsis/report/data-cache-nov-2023/iphc/iphc-hook-counts.rds")
 
-sample_type_lu <- iphc |> distinct(year, sample_type) |> tidyr::drop_na(sample_type)
 
 old2 <- left_join(old_d, old_hook_counts)
 old2 <- old2 |>
@@ -188,9 +209,9 @@ old2 <- old2 |>
 
 # - it is possible that iphc data online has changed (e.g., usability codes)
 
-test_stations <- filter(iphc, year == 2015) |> pull(station) |> as.character()
+common_stations <- filter(iphc, year == 2015) |> pull(station) |> as.character()
 
-test <- bind_rows(
+combined_df <- bind_rows(
   old2 |>
     mutate(source = 'gfiphc') |>
     filter(!(year == 2019 & station %in% c("2099", "2107"))), #|>,
@@ -203,50 +224,224 @@ test <- bind_rows(
     mutate(source = 'raw', station = as.character((station))) |>
     mutate(species_common_name = '_hook with bait')
 )
-not_zero <- test |>
+
+# calculate average proportional difference by species
+# and absolute difference between counts
+# Use inner join to compare stations to
+# ok with excluding grenadier, maybe just make a comment in the gfsynopsis
+common_stations <- inner_join(
+  distinct(iphc, year, station),
+  distinct(old2, year, station)
+)
+
+not_zero <- combined_df |>
   filter(source == "gfiphc") |>
   filter(standard == "Y") |>
   group_by(species_common_name, year) |>
   summarise(count = sum(number_observed, na.rm = TRUE)) |>
   summarise(all_zero = sum(count) == 0) |>
   filter(!all_zero) |>
+  filter(species_common_name != 'pacific grenadier') |> # not included because it is unclear if macrouridae should be coryphaenoides acrolepis
   pull(species_common_name)
   #filter(usable == "Y") |>
 
-test2 <- test |>
+test2 <- combined_df |>
 filter(species_common_name %in% not_zero) |>
-  #filter(station %in% test_stations) |>
+  left_join(x = common_stations, y = _) |>
   group_by(source, species_common_name, year) |>
   summarise(count = sum(number_observed, na.rm = TRUE))
 ggplot(data = test2, aes(x = year, y = count, colour = source)) +
   geom_point(data = filter(test2, source == 'gfiphc'), shape = 21, stroke = 1.2) +
   geom_point(data = filter(test2, source == 'raw')) +
-  facet_wrap(~ species_common_name, scales = 'free_y')
+  facet_wrap(~ species_common_name, scales = 'free_y') +
+  geom_vline(xintercept = 2012)
 
-# Some data are in the gfiphc/GFBio data but not int he current raw FISS data
-t2 <- filter(old2, species_common_name == "darkblotched rockfish", N_it > 0) |>
-  select(species_science_name, year, station, number_observed)
+# Get proportional difference by species
+diff_df <- test2  |>
+  pivot_wider(names_from = source, values_from = count) |>
+  left_join(sample_type_lu) |>
+  filter(!(species_common_name == 'pacific halibut' & sample_type == '20 hooks')) |>
+  group_by(species_common_name) |>
+  mutate(abs_diff = gfiphc - raw,
+         prop_diff = abs_diff / raw) |>
+  filter(abs_diff != 0) |>
+  arrange(-abs(prop_diff)) |>
+  ungroup()
+  #arrange(-abs(abs_diff))
 
-left_join(t2, filter(test, source == "raw")) |> glimpse()
+
+# Look at species that never show up in raw FISS data:abs_diff
+# Other than the aleutian skate (which we have put as NA before 2007), these
+# species are just zero or do not show up at the site-year combinations in the
+# raw data
+
+diff_df |>
+  filter(raw == 0) |>
+  left_join(old2) |>
+  filter(gfiphc == N_it | N_it20) |>
+  select(year, station) |>
+  slice(5) |>
+  left_join(raw_d) |>
+  arrange(year, station, species_name) |> select(-row_number, -stlkey, -iphc_species_code, -hooks_fished)
+
+diff_df |>
+  filter(gfiphc == 0) |>
+  left_join(iphc) |>
+  filter(raw == number_observed) |>
+  mutate(sp = species_common_name) |>
+  select(sp, year, station) |>
+  slice(4) |>
+  left_join(old2) |>
+  select(sp, year, station, N_it, N_it20, species_common_name, species_science_name) |>
+  arrange(year, station, species_common_name) |>
+  print(n = 117)
+  #select(-row_number, -stlkey, -iphc_species_code, -hooks_fished, -sample_type) |>
+# Basically I don't think we can know why there are these small discrepancies
+
+#
+diff_df |>
+  arrange(-abs(abs_diff)) |>
+  print(n = 100)
+
+# Focus on bigger differences:
+bigger_diffs <-
+  diff_df |>
+    filter(gfiphc > 0 & raw > 0) |>
+    filter(!(abs_diff == 1 & prop_diff == 1)) |>
+    filter(abs_diff > 5) |>
+    arrange(-abs(prop_diff))
+
+bigger_diffs |> print(n = 58)
+
+bigger_diffs |> filter(year != 2006) |> print(n = 46)
+
+combined_df |>
+  left_join(x = common_stations, y = _) |>
+  select(year, station, species_common_name, number_observed,
+         source, species_science_name) |>
+  # filter(species_common_name == "shortspine thornyhead" & year > 1998) |> # difference is likely due to differences in what was considered 'unidentified thornyhead'
+  # filter(species_common_name == "redbanded rockfish", year == 2006) |> # big differences due to likely change in hooks_observed
+  # filter(species_common_name == "sablefish", year != 2006) |> # other than the 2006 differences, some small changes I can't explain
+  # filter(species_common_name == "quillback rockfish", year == 2019) |> # sum of small differences at 5 sites
+  filter(species_common_name == "arrowtooth flounder", year != 2006) |>
+  pivot_wider(names_from = source, values_from = number_observed) |>
+  mutate(diff = gfiphc - raw) |>
+  filter(diff > 0) |>
+  arrange(-diff)
+
+# Looking into thornyheads ---
+# Differences are due to differences in what is considered unidentified thornyhead
+# Pooling them all (similar to what we did for RE/BS) just creates larger discrepancies
+# with higher counts in the raw FISS data relative to gfiphc, so I have left them
+# as is. Also see: https://github.com/pbs-assess/gfiphc/issues/18
+filter(raw_d, stringr::str_detect(scientific_name, "sebastolobus")) |>
+  group_by(year, station) |>
+  summarise(rows = n()) |>
+   filter(rows > 1) |>
+   left_join(raw_d) |>
+   arrange(scientific_name) |>
+   print(n = 60)
+# ---
+
+# Looking into redbanded ---
+filter(old2, year == 2006, station == 2088) |>
+  select(year, station, species_science_name, species_common_name, N_it, N_it20, number_observed, hooks_observed) |>
+  filter(number_observed > 0) # unclear why there is this difference
+filter(raw_d, year == 2006, station == 2088) |> filter(number_observed > 0)
+# I think this is a case where IPHC changed what hooks were considered observed
+# and so the raw dataset has changed for undescribed reasons
+# Seems like a similar case for year == 2006, station %in% c(2108, 2086, 2167); hooks_observed has changed by 100
+# Side note - I think this likely also explains the large discrepancies I found
+# last year in the number of hooks_observed in the gfiphc data and the IPHC FISS
+# data
+# ---
+
+# Looking into sablefish ---
+filter(old2, year == 2006, station == 2105) |>
+  select(year, station, species_science_name, species_common_name, N_it, N_it20, number_observed, hooks_observed) |>
+  filter(number_observed > 0)
+filter(raw_d, year == 2006, station == 2105)
+# In 2006 I think this is the same thing with the change in hooks_observed
+
+filter(old2, year == 2011, station == 2018) |>
+  select(year, station, species_science_name, species_common_name, N_it, N_it20, number_observed, hooks_observed) |>
+  filter(number_observed > 0)
+filter(raw_d, year == 2011, station == 2018)
+# small difference, unclear why
+
+filter(old2, year == 2010, station == 2017) |>
+  select(year, station, species_science_name, species_common_name, N_it, N_it20, number_observed, hooks_observed) |>
+  filter(number_observed > 0)
+filter(raw_d, year == 2010, station == 2017)
+# small difference, unclear why
+# ---
+
+# Looking into quillback ---
+filter(old2, year == 2019, station == 2130) |>
+  select(year, station, species_science_name, species_common_name, N_it, N_it20, number_observed, hooks_observed) |>
+  filter(number_observed > 0)
+filter(raw_d, year == 2019, station == 2130)
+# small differences
+
+# Looking into arrowtooth ---
+filter(old2, year == 2011, station == 2159) |>
+  select(year, station, species_science_name, species_common_name, N_it, N_it20, number_observed, hooks_observed) |>
+  filter(number_observed > 0) #|>
+  # mutate(all_obs = sum(number_observed)) # doesn't include all observed species, so this number is less than hooks_observed
+
+filter(raw_d, year == 2011, station == 2159) |>
+  select(-stlkey) |>
+  mutate(all_obs = sum(number_observed))
+# ------------------------------------------------------------------------------
+
+# There are just some discrepancies in the raw IPHC FISS data (total number_observed per set != hooks_observed)
+raw_d |>
+  group_by(year, station, stlkey, sample_type, hooks_observed) |>
+  summarise(all_obs = sum(number_observed), .groups = "drop") |>
+  filter(sample_type == "all hooks") |>
+  mutate(ho_diff = all_obs - hooks_observed) |>
+  arrange(-abs(ho_diff)) |>
+  filter(year != 2012) |>
+  print(n = 50)
+
+filter(raw_d, stlkey == 20161353)
+filter(raw_d, stlkey == 20060139)
+
+# Notes:
+# -------------
+# Maybe we should grab the halibut data from GFBio for 2012 to be able to get the chum
+# only baited hooks because otherwise the halibut counts will be affected by
+# catch-rate effects of alternative baits - maybe for our purposes this is fine?
+# Also for the 2012 data, I think they give the halibut counts for all fished hooks
+# regardless of bait, and so when you calculate total number_observed (and include
+# halibut) this value can be than hooks_observed. So I have noted this in the docs
+# -------------
+check_2012 <- raw_d |>
+  group_by(year, station, stlkey, sample_type, hooks_observed) |>
+  summarise(all_obs = sum(number_observed), .groups = "drop") |>
+  filter(sample_type == "all hooks") |>
+  mutate(ho_diff = all_obs - hooks_observed) |>
+  arrange(-abs(ho_diff)) |>
+  filter(year == 2012)
+
+check_2012 |>
+  select(year, station) |>
+  left_join(old2) |>
+  filter(number_observed > 0) |>
+  select(year, station, species_science_name, species_common_name, N_it, N_it20, number_observed, hooks_observed) |>
+  filter(species_common_name == "pacific halibut")
+
+check_2012 |>
+  select(year, station) |>
+  left_join(raw_d) |>
+  filter(number_observed > 0) |>
+  filter(species_name == "pacific halibut")
 
 
-t1 <- filter(test, species_common_name == "north pacific spiny dogfish") |>
-  #filter(effective_skates == 0) |>
-  filter(source == "gfiphc", year == 1996)
+test <- load_iphc_dat()
 
-t2 <- filter(test, species_common_name == "north pacific spiny dogfish") |>
-  filter(effective_skates == 0)
-
-
-hooks_per_effective_skate <- sum(xx2$hooks_observed) / sum(xx1$E_it20)
-
-t2 |> select(year, station, species_common_name:no_skates_set) |> glimpse()
-
-temp <- left_join(
-t2 |> select(year, station, species_common_name:no_skates_set) |>
-mutate(check_eff_skate = hooks_observed / avg_no_hook_per_skate),
-test |> filter(source == "gfiphc")
-)
-
-glimpse(temp)
-
+test |>
+  filter(year == 2012) |> glimpse()
+  # filter(station_key == 20120162) |>
+  # filter(number_observed > 0) |>
+  # glimpse()
