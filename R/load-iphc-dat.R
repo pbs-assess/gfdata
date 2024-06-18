@@ -95,6 +95,8 @@ load_iphc_dat <- function(species = NULL) {
     )) |>
     dplyr::mutate(effective_skates = case_when(
       .data$species_common_name == "pacific halibut" & .data$year == 2012 ~ NA,
-      .default = effective_skates * (hooks_observed / hooks_retrieved)
+      .data$species_common_name != "pacific halibut" & .data$sample_type == "20 hooks" ~
+        effective_skates * (hooks_observed / hooks_retrieved),
+      .default = effective_skates
       )) # see eqn G.4 in Anderson et al. 2019
 }
