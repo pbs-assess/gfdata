@@ -68,7 +68,18 @@
 #' Active survey blocks for DFO Pacific groundfish surveys.
 #' Obtained via `gfdata::get_active_survey_blocks()` with some cleaning
 #' as documented in `data-raw/survey_blocks.R`.
-"survey_blocks"
+#'
+#' @format Simple feature (`sf`) collection with 66293 features and 6 fields:
+#' \describe{
+#'   \item{survey_abbrev}{Survey abbreviation.}
+#'   \item{survey_series_id}{Unique identifier for the survey series.}
+#'   \item{station_key}{Unique identifier for each grid cell}
+#'   \item{depth_m}{Depth in metres.}
+#'   \item{active_block}{Is block actively fished as of date downloaded:
+#'      e.g., `attr(gfdata::survey_blocks, "date-downloaded")`)}
+#'  \item{geometry}{Represents grid cell.}
+#'  \item{area}{Overwater area in km^2.}
+#'}
 #'
 #' @examplesIf requireNamespace("sf", quietly = TRUE)
 #' library(sf)
@@ -79,3 +90,6 @@
 #'   theme_minimal() +
 #'   scale_colour_brewer(palette = "Dark2")
 #' attr(gfdata::survey_blocks, "date-generated")
+#' attr(gfdata::survey_blocks, "date-downloaded")
+#'
+"survey_blocks"
