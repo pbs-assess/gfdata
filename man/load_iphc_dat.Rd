@@ -64,8 +64,10 @@ year. The catch and set dataframes are saved separately for space efficiency.
 Note that in 2012 a bait experiment was run where the typically used chum bait
 was only used on only 4 skates (see Appendix G.3 Anderson et al. 2019 and
 Henry et al. 2013). Therefore we have estimated the hooks_observed for
-Pacific halibut in 2012 to be the \code{avg_no_hook_per_skate * .data$no_skates_hauled}
+Pacific halibut in 2012 as \code{avg_no_hook_per_skate * .data$no_skates_hauled}
 and because the IPHC has \code{effective_skates} = 0, this is returned here as \code{NA}.
+This total estimate of hooks observed for Pacific halibut is therefore for all
+baits, not chum-only.
 }
 \examples{
 \dontrun{

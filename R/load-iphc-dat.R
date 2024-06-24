@@ -52,8 +52,10 @@
 #' Note that in 2012 a bait experiment was run where the typically used chum bait
 #' was only used on only 4 skates (see Appendix G.3 Anderson et al. 2019 and
 #' Henry et al. 2013). Therefore we have estimated the hooks_observed for
-#' Pacific halibut in 2012 to be the `avg_no_hook_per_skate * .data$no_skates_hauled`
+#' Pacific halibut in 2012 as `avg_no_hook_per_skate * .data$no_skates_hauled`
 #' and because the IPHC has `effective_skates` = 0, this is returned here as `NA`.
+#' This total estimate of hooks observed for Pacific halibut is therefore for all
+#' baits, not chum-only.
 #'
 #' @references
 #'
@@ -98,6 +100,6 @@ load_iphc_dat <- function(species = NULL) {
       .data$species_common_name != "pacific halibut" &
         .data$sample_type == "20 hooks" &
         .data$year != 1997 ~ effective_skates * (hooks_observed / hooks_retrieved), # For 1997 this value comes from gfiphc because there are no hooks_retrieved to calculate as above
-      .default = effective_skates
+      .default = .data$effective_skates
       )) # see eqn G.4 in Anderson et al. 2019
 }
