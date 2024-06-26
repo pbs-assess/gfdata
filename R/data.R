@@ -82,6 +82,7 @@
 #'}
 #'
 #' @examplesIf requireNamespace("sf", quietly = TRUE)
+#' requireNamespace("ggplot2", quietly = TRUE)
 #' library(sf)
 #' library(ggplot2)
 #' gfdata::survey_blocks |>
