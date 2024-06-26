@@ -5,7 +5,17 @@
 \alias{survey_blocks}
 \title{Active survey blocks}
 \format{
-An object of class \code{sf} (inherits from \code{data.frame}) with 22026 rows and 6 columns.
+Simple feature (\code{sf}) collection with 66293 features and 6 fields:
+\describe{
+\item{survey_abbrev}{Survey abbreviation.}
+\item{survey_series_id}{Unique identifier for the survey series.}
+\item{station_key}{Unique identifier for each grid cell}
+\item{depth_m}{Depth in metres.}
+\item{active_block}{Is block actively fished as of date downloaded:
+e.g., \code{attr(gfdata::survey_blocks, "date-downloaded")})}
+\item{geometry}{Represents grid cell.}
+\item{area}{Overwater area in km^2.}
+}
 }
 \usage{
 survey_blocks
@@ -14,5 +24,18 @@ survey_blocks
 Active survey blocks for DFO Pacific groundfish surveys.
 Obtained via \code{gfdata::get_active_survey_blocks()} with some cleaning
 as documented in \code{data-raw/survey_blocks.R}.
+}
+\examples{
+\dontshow{if (requireNamespace("sf", quietly = TRUE)) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+library(sf)
+library(ggplot2)
+gfdata::survey_blocks |>
+  ggplot(aes(colour = survey_abbrev)) +
+  geom_sf() +
+  theme_minimal() +
+  scale_colour_brewer(palette = "Dark2")
+attr(gfdata::survey_blocks, "date-generated")
+attr(gfdata::survey_blocks, "date-downloaded")
+\dontshow{\}) # examplesIf}
 }
 \keyword{datasets}
