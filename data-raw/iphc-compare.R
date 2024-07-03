@@ -177,7 +177,13 @@ hal <- set |>
 raw_d <- bind_rows(raw_d, hal) |>
   left_join(sample_type_lu)
 
-f <- list.files("../gfsynopsis/report/data-cache-nov-2023/iphc", full.names = TRUE)
+if (Sys.info()[["user"]] == "seananderson") {
+  dc <- "../gfsynopsis-2022/report/data-cache-nov-2023/"
+} else {
+  dc <- "../gfsynopsis/report/data-cache-nov-2023/"
+}
+
+f <- list.files(paste0(dc, "iphc"), full.names = TRUE)
 f <- f[grepl(".rds$", f)]
 f <- f[!grepl("iphc/iphc.*.rds", f)]
 devtools::load_all('../gfsynopsis')
@@ -190,10 +196,10 @@ old_d <- purrr::map_dfr(f, \(x) {
   }
   old_d |>
     filter(!(year == 2019 & station %in% c("2099", "2107"))) |> # ignore this for now, not worth fixing for this check
-    left_join(select(spp, species_common_name, species_science_name, spp_w_hyphens))
+    left_join(select(spp, species_common_name, species_science_name, spp_w_hyphens), by = join_by(spp_w_hyphens))
 })
-old_hook_counts <- readRDS("../gfsynopsis/report/data-cache-nov-2023/iphc/iphc-hook-counts.rds")
 
+old_hook_counts <- readRDS(paste0(dc, "iphc/iphc-hook-counts.rds"))
 
 old2 <- left_join(old_d, old_hook_counts)
 old2 <- old2 |>
@@ -253,15 +259,25 @@ test2 <- combined_df |>
   group_by(source, species_common_name, year) |>
   summarise(count = sum(number_observed, na.rm = TRUE)) |>
   mutate(species_common_name = factor(species_common_name, levels = c(not_zero[-1], not_zero[1])))
-ggplot(data = test2, aes(x = year, y = count, colour = source)) +
-  geom_point(data = filter(test2, source == 'gfiphc'), shape = 21, stroke = 1.2) +
-  geom_point(data = filter(test2, source == 'raw')) +
-  geom_vline(xintercept = 2012) +
-  facet_wrap(~ species_common_name, scales = 'free_y', ncol = 6) +
+
+test3 <- test2 |>
+  mutate(source2 = ifelse(source == "raw", "IPHC website", source)) |>
+  filter(species_common_name != "hook with bait") |>
+  mutate(species_common_name = gsub("rougheye/blackspotted rockfish complex", "Rougheye/Blackspotted", species_common_name))
+
+g <- test3 |>
+  ggplot(aes(x = year, y = count, colour = source2)) +
+  geom_point(data = filter(test3, source == 'gfiphc'), shape = 21, stroke = 1.1, size = 1.1) +
+  geom_point(data = filter(test3, source == 'raw'), size = 1.1) +
+  facet_wrap(~ stringr::str_to_title(species_common_name), scales = 'free_y', ncol = 6) +
   labs(x = "Year", y = "Count", colour = "Data source") +
   gfplot::theme_pbs() +
-  theme(legend.position = c(0.9, 0.05))
-ggsave('iphc-compare.png', width = 12, height = 15)
+  theme(legend.position = c(0.9, 0.05)) +
+  # scale_colour_brewer(palette = "Paired")
+  scale_colour_manual(values = c("grey40", brewer.pal(6, "Reds")[4]))
+dir.create("data-raw/figs", showWarnings = FALSE)
+ggsave('data-raw/figs/iphc-compare.pdf', width = 12, height = 15)
+ggsave('data-raw/figs/iphc-compare.png', width = 12, height = 15)
 
 # Get proportional difference by species
 diff_df <- test2  |>
