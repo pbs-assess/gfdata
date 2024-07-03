@@ -154,7 +154,7 @@ filter(j, pbs_usable != iphc_usable | is.na(pbs_usable) | is.na(iphc_usable)) |>
 # --------------------------------------------------------
 library(tidyr)
 library(stringr)
-iphc <- load_iphc_dat()
+iphc <- gfdata::load_iphc_dat()
 
 sample_type_lu <- iphc |> distinct(year, sample_type) |> tidyr::drop_na(sample_type)
 
@@ -242,19 +242,26 @@ not_zero <- combined_df |>
   summarise(all_zero = sum(count) == 0) |>
   filter(!all_zero) |>
   filter(species_common_name != 'pacific grenadier') |> # not included because it is unclear if macrouridae should be coryphaenoides acrolepis
-  pull(species_common_name)
+  pull(species_common_name) |>
+  gsub("_", "", x = _)
   #filter(usable == "Y") |>
 
 test2 <- combined_df |>
-filter(species_common_name %in% not_zero) |>
+  mutate(species_common_name = gsub("_", "", x = species_common_name)) |>
+  filter(species_common_name %in% not_zero) |>
   left_join(x = common_stations, y = _) |>
   group_by(source, species_common_name, year) |>
-  summarise(count = sum(number_observed, na.rm = TRUE))
+  summarise(count = sum(number_observed, na.rm = TRUE)) |>
+  mutate(species_common_name = factor(species_common_name, levels = c(not_zero[-1], not_zero[1])))
 ggplot(data = test2, aes(x = year, y = count, colour = source)) +
   geom_point(data = filter(test2, source == 'gfiphc'), shape = 21, stroke = 1.2) +
   geom_point(data = filter(test2, source == 'raw')) +
-  facet_wrap(~ species_common_name, scales = 'free_y') +
-  geom_vline(xintercept = 2012)
+  geom_vline(xintercept = 2012) +
+  facet_wrap(~ species_common_name, scales = 'free_y', ncol = 6) +
+  labs(x = "Year", y = "Count", colour = "Data source") +
+  gfplot::theme_pbs() +
+  theme(legend.position = c(0.9, 0.05))
+ggsave('iphc-compare.png', width = 12, height = 15)
 
 # Get proportional difference by species
 diff_df <- test2  |>
