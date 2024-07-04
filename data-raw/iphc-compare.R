@@ -279,24 +279,42 @@ dir.create("data-raw/figs", showWarnings = FALSE)
 ggsave('data-raw/figs/iphc-compare.pdf', width = 12, height = 15)
 ggsave('data-raw/figs/iphc-compare.png', width = 12, height = 15)
 
-# ## hook counts
-# raw_d |>
-#   group_by(year, station, stlkey, sample_type, hooks_observed) |>
-#   summarise(gfdata = sum(number_observed), .groups = "drop") |>
-#   filter(sample_type == "all hooks") |>
-#   tidyr::pivot_longer(cols = c(hooks_observed, gfdata), names_to = "source") |>
-#   mutate(source = gsub("hooks_observed", "GFBio/gfiphc", source)) |>
-#   mutate(source = gsub("gfdata", "IPHC website/gfdata", source)) |>
-#   group_by(year, source) |> summarise(value = sum(value, na.rm = TRUE)) |>
-#   ggplot(aes(year, value, colour = source)) + geom_line() + geom_point(pch = 21) +
-#   scale_colour_manual(values = c("grey40", brewer.pal(6, "Reds")[4])) +
-#   gfplot::theme_pbs() + labs(colour = "Source") +
-#   ylab("Hooks observed") + xlab("Year") +
-#   scale_x_continuous(breaks = seq(2000, 2025, 2)) +
-#   ylim(0, NA) +
-#   theme(legend.position = "inside", legend.position.inside = c(0.2, 0.25))
-# ggsave("data-raw/figs/iphc-hooks-observed-compare.pdf", width = 5, height = 3)
-# ggsave("data-raw/figs/iphc-hooks-observed-compare.png", width = 5, height = 3)
+old_hc <- old2 |>
+    filter(species_common_name == "lingcod") |>
+    group_by(year) |>
+    summarise(gfiphc_hooks_obs = sum(hooks_observed, na.rm = TRUE))
+new_hc <- iphc_sets |>
+  group_by(year) |>
+  summarise(gfdata_hooks_obs = sum(hooks_observed, na.rm = TRUE))
+hc <- left_join(old_hc, new_hc) |>
+  tidyr::pivot_longer(cols = c(gfiphc_hooks_obs, gfdata_hooks_obs), names_to = "source")
+hc |>
+  ggplot(aes(year, value, colour = source)) + geom_line()
+
+
+old_hc <- old2 |>
+  filter(species_common_name == "lingcod") |>
+  select(year, station, gfiphc_hooks_obs = effective_skates, standard)
+
+old_hc$gfiphc_hooks_obs <- old_hc$gfiphc_hooks_obs * hooks_per_effective_skate
+new_hc <- iphc_sets |>
+  select(year, station, gfdata_hooks_obs = hooks_observed)
+hc <- left_join(old_hc, new_hc)
+hc |>
+  right_join(common_stations) |>
+  tidyr::pivot_longer(cols = c(gfiphc_hooks_obs, gfdata_hooks_obs), names_to = "source") |>
+  group_by(year, source) |> summarise(value = sum(value, na.rm = TRUE), .groups = "drop") |>
+  ggplot(aes(year, value, colour = source)) +
+    gfplot::theme_pbs() + labs(colour = "Source") +
+  geom_line(alpha = 0.5) +
+  geom_point(pch = 21, fill = "white") +
+    ylab("Hooks observed") + xlab("Year") +
+    scale_x_continuous(breaks = seq(1995, 2025, 5)) +
+    ylim(0, NA) +
+  scale_colour_manual(values = c("grey40", brewer.pal(6, "Reds")[4])) +
+    theme(legend.position = "inside", legend.position.inside = c(0.2, 0.65))
+ggsave("data-raw/figs/iphc-hooks-observed-compare.pdf", width = 5, height = 3)
+ggsave("data-raw/figs/iphc-hooks-observed-compare.png", width = 5, height = 3)
 
 # Get proportional difference by species
 diff_df <- test2  |>
