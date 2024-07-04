@@ -292,11 +292,21 @@ hc |>
   ggplot(aes(year, value, colour = source)) + geom_line()
 
 
+OLD <- old2 |>
+  filter(species_common_name == "lingcod") |>
+  select(year, station, effective_skates, hooks_observed)
+OLD |> filter(year %in% c(2008:2014)) |> mutate(hooks_per_skate = hooks_observed / effective_skates) |> ggplot(aes(x = as.factor(year), y = hooks_per_skate)) + geom_violin()
+
+## hook counts look off in 'old' data in 2012!
+
 old_hc <- old2 |>
   filter(species_common_name == "lingcod") |>
   select(year, station, gfiphc_hooks_obs = effective_skates, standard)
 
-old_hc$gfiphc_hooks_obs <- old_hc$gfiphc_hooks_obs * hooks_per_effective_skate
+hooks_per_skate_avg <- OLD |> filter(year != 2012, year >= 1998) |>
+  mutate(r = hooks_observed / effective_skates) |> summarise(m = mean(r, na.rm = T)) |> pull(m)
+
+old_hc$gfiphc_hooks_obs <- old_hc$gfiphc_hooks_obs * hooks_per_skate_avg
 new_hc <- iphc_sets |>
   select(year, station, gfdata_hooks_obs = hooks_observed)
 hc <- left_join(old_hc, new_hc)
@@ -304,6 +314,7 @@ hc |>
   right_join(common_stations) |>
   tidyr::pivot_longer(cols = c(gfiphc_hooks_obs, gfdata_hooks_obs), names_to = "source") |>
   group_by(year, source) |> summarise(value = sum(value, na.rm = TRUE), .groups = "drop") |>
+  filter(year >= 1998) |>
   ggplot(aes(year, value, colour = source)) +
     gfplot::theme_pbs() + labs(colour = "Source") +
   geom_line(alpha = 0.5) +
