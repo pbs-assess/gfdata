@@ -315,6 +315,8 @@ hc |>
   tidyr::pivot_longer(cols = c(gfiphc_hooks_obs, gfdata_hooks_obs), names_to = "source") |>
   group_by(year, source) |> summarise(value = sum(value, na.rm = TRUE), .groups = "drop") |>
   filter(year >= 1998) |>
+  mutate(source = gsub("gfiphc_hooks_obs", "gfiphc hooks observed", source)) |>
+  mutate(source = gsub("gfdata_hooks_obs", "IPHC website hooks observed", source)) |>
   ggplot(aes(year, value, colour = source)) +
     gfplot::theme_pbs() + labs(colour = "Source") +
   geom_line(alpha = 0.5) +
@@ -323,9 +325,10 @@ hc |>
     scale_x_continuous(breaks = seq(1995, 2025, 5)) +
     ylim(0, NA) +
   scale_colour_manual(values = c("grey40", brewer.pal(6, "Reds")[4])) +
-    theme(legend.position = "inside", legend.position.inside = c(0.2, 0.65))
-ggsave("data-raw/figs/iphc-hooks-observed-compare.pdf", width = 5, height = 3)
-ggsave("data-raw/figs/iphc-hooks-observed-compare.png", width = 5, height = 3)
+  theme(legend.position = "top")
+# theme(legend.position = "inside", legend.position.inside = c(0.23, 0.88))
+ggsave("data-raw/figs/iphc-hooks-observed-compare.pdf", width = 5, height = 3.1)
+ggsave("data-raw/figs/iphc-hooks-observed-compare.png", width = 5, height = 3.1)
 
 # Get proportional difference by species
 diff_df <- test2  |>
