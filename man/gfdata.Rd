@@ -2,8 +2,29 @@
 % Please edit documentation in R/gfdata.R
 \docType{package}
 \name{gfdata}
+\alias{gfdata-package}
 \alias{gfdata}
 \title{gfdata package}
 \description{
 An R package to facilitate extracting ground fish data at PBS
+}
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/pbs-assess/gfdata}
+  \item Report bugs at \url{https://github.com/pbs-assess/gfdata/issues}
+}
+
+}
+\author{
+\strong{Maintainer}: Sean C. Anderson \email{sean.anderson@dfo-mpo.gc.ca}
+
+Authors:
+\itemize{
+  \item Elise A. Keppel
+  \item Andrew M. Edwards
+  \item Chris Grandin
+  \item Philina A. English
+}
+
 }
