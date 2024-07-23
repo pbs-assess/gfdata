@@ -38,6 +38,7 @@ get_commercial_samples2(
   unsorted_only = TRUE,
   return_all_lengths = FALSE,
   include_event_info = FALSE,
+  return_dna_info = FALSE,
   major = NULL,
   usability = NULL
 )
@@ -146,6 +147,7 @@ get_survey_samples2(
   unsorted_only = TRUE,
   usability = NULL,
   include_event_info = FALSE,
+  return_dna_info = FALSE,
   major = NULL
 )
 
@@ -168,14 +170,16 @@ names and species codes should not be mixed. If any element is missing a
 species code, then all elements will be assumed to be species common
 names.}
 
-\item{unsorted_only}{Remove sorted biological data ('keepers' and 'discards'
-and unknown). Default = TRUE.}
+\item{unsorted_only}{Defaults to TRUE.}
 
 \item{return_all_lengths}{Include all length types, rather than just
 with most common measurement. Default = FALSE.}
 
 \item{include_event_info}{Logical for whether to append all relevant fishing event info
 (location, timing, effort, catch, etc.). Defaults to false.}
+
+\item{return_dna_info}{Should DNA container ids and sample type be returned?
+This can create duplication of specimen ids for some species.  Defaults to FALSE.}
 
 \item{major}{Character string (or vector, though doesn't work yet with
 \code{cache_pbs_data}) of major stat area code to include (characters). Use
@@ -184,9 +188,7 @@ get_major_areas() to lookup area codes with descriptions.}
 \item{usability}{A vector of usability codes to include. Defaults to all.
 IPHC codes may be different to other surveys.}
 
-\item{ssid}{A numeric vector of survey series IDs. Run \code{\link[=get_ssids]{get_ssids()}} for a
-look-up table of available survey series IDs with surveys series
-descriptions.}
+\item{ssid}{Default is to return all survey samples.}
 
 \item{join_sample_ids}{If \code{TRUE} then the sample IDs will be joined in. This
 may result in repeated rows of data if the same sample ID is part of
