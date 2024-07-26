@@ -9,15 +9,16 @@
 # - E.g. spp <- "009"; ssid <- 1; returns errors for both functions
 
 # Get ssids - Gives a pretty reasonable set
-ids <- gfdata::get_ssids() |>
+ssid_table <- gfdata::get_ssids() |>
   # dplyr::filter(!grepl("OTHER", SURVEY_ABBREV)) |> # includes Hake and some other surveys of interest...
   dplyr::filter(!(SURVEY_ABBREV == "OTHER" & !(SURVEY_SERIES_ID %in% c(9, 11, 68)))) |>
   dplyr::filter(!grepl("EUL", SURVEY_ABBREV)) |>
   dplyr::filter(!grepl("Edas", SURVEY_SERIES_DESC, ignore.case = TRUE)) |>
   dplyr::filter(!grepl("Salmon", SURVEY_SERIES_DESC, ignore.case = TRUE)) |>
   dplyr::filter(!grepl("Ecosystem", SURVEY_SERIES_DESC, ignore.case = TRUE)) |>
-  dplyr::filter(!grepl("Commercial", SURVEY_SERIES_DESC, ignore.case = TRUE)) |>
-  dplyr::pull(SURVEY_SERIES_ID)
+  dplyr::filter(!grepl("Commercial", SURVEY_SERIES_DESC, ignore.case = TRUE))# |>
+
+ids <- ssid_table |> dplyr::pull(SURVEY_SERIES_ID)
 
 # Get species - way way too many
 # TODO: Refine list much much further or take from different source
@@ -36,6 +37,7 @@ spp <- gfdata::get_species() |>
 
 # Shorter species set
 spp <- "225" # Test with Hake - works okay
+spp <- "044" # dogfish
 
 # Initialize storage tibbles
 s1 <- tibble::tibble()
