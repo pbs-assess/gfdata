@@ -10,7 +10,8 @@
 
 # Get ssids - Gives a pretty reasonable set
 ids <- gfdata::get_ssids() |>
-  dplyr::filter(!grepl("OTHER", SURVEY_ABBREV)) |>
+  # dplyr::filter(!grepl("OTHER", SURVEY_ABBREV)) |> # includes Hake and some other surveys of interest...
+  !(SURVEY_ABBREV == "OTHER" & !(SURVEY_SERIES_ID %in% c(9, 11, 68))) |>
   dplyr::filter(!grepl("EUL", SURVEY_ABBREV)) |>
   dplyr::filter(!grepl("Edas", SURVEY_SERIES_DESC, ignore.case = TRUE)) |>
   dplyr::filter(!grepl("Salmon", SURVEY_SERIES_DESC, ignore.case = TRUE)) |>
