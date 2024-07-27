@@ -8,55 +8,84 @@
 # - Update get_survey_samples*() functions to avoid errors when no data
 # - E.g. spp <- "009"; ssid <- 1; returns errors for both functions
 
-# Get ssids - Gives a pretty reasonable set
-ssid_table <- gfdata::get_ssids() |>
-  # dplyr::filter(!grepl("OTHER", SURVEY_ABBREV)) |> # includes Hake and some other surveys of interest...
-  dplyr::filter(!(SURVEY_ABBREV == "OTHER" & !(SURVEY_SERIES_ID %in% c(9, 11, 68)))) |>
-  dplyr::filter(!grepl("EUL", SURVEY_ABBREV)) |>
-  dplyr::filter(!grepl("Edas", SURVEY_SERIES_DESC, ignore.case = TRUE)) |>
-  dplyr::filter(!grepl("Salmon", SURVEY_SERIES_DESC, ignore.case = TRUE)) |>
-  dplyr::filter(!grepl("Ecosystem", SURVEY_SERIES_DESC, ignore.case = TRUE)) |>
-  dplyr::filter(!grepl("Commercial", SURVEY_SERIES_DESC, ignore.case = TRUE))# |>
+# Load packages ----------------------------------------------------------------
 
-ids <- ssid_table |> dplyr::pull(SURVEY_SERIES_ID)
+library(tidyverse)
+devtools::load_all(".")
 
-# Get species - way way too many
-# TODO: Refine list much much further or take from different source
-spp <- gfdata::get_species() |>
-  dplyr::filter(taxonomic_rank == "species") |>
-  dplyr::filter(species_grouping == "fish") |>
-  dplyr::filter(!is.na(species_common_name)) |>
-  dplyr::filter(!grepl("Salmon", species_common_name, ignore.case = TRUE)) |>
-  dplyr::filter(!grepl("Lamprey", species_common_name, ignore.case = TRUE)) |>
-  dplyr::filter(!grepl("Eel", species_common_name, ignore.case = TRUE)) |>
-  dplyr::filter(!grepl("Shark", species_common_name, ignore.case = TRUE)) |>
-  dplyr::filter(!grepl("Stingray", species_common_name, ignore.case = TRUE)) |>
-  dplyr::filter(!grepl("Sturgeon", species_common_name, ignore.case = TRUE)) |>
-  dplyr::filter(!grepl("Anchovy", species_common_name, ignore.case = TRUE)) |>
-  dplyr::pull(species_code)
+# Get ssids --------------------------------------------------------------------
+
+ssids <- readRDS("compare/ssids.rds")
+ids <- ssids |> dplyr::pull(ssid)
+
+# Get species ------------------------------------------------------------------
+
+spp <- readRDS("compare/species-names.rds")
 
 # Shorter species set
-spp <- "225" # Test with Hake - works okay
-spp <- "044" # dogfish
+spp <- "225" # Hake
+spp <- "044" # Dogfish
+spp <- "009" # Rougheye
 
-# Initialize storage tibbles
+# Get colnames -----------------------------------------------------------------
+
+# saveRDS(colnames(s1), "compare/colnames-samples.rds")
+# saveRDS(colnames(s2), "compare/colnames-samples2.rds")
+
+# Get colnames
+c1 <- readRDS("compare/colnames-samples.rds")
+c2 <- readRDS("compare/colnames-samples2.rds")
+
+# Compare specimens ------------------------------------------------------------
+
+# Extra specimens
 s1 <- tibble::tibble()
 s2 <- tibble::tibble()
+
+# Errors
+e1 <- tibble::tibble()
+e2 <- tibble::tibble()
 
 # Iterate over cases
 for (i in seq_along(spp)) {
   for (j in seq_along(ids)) {
+    # Reset value
+    d1 <- NULL
+    d2 <- NULL
     # Pull data
-    d1 <- gfdata::get_survey_samples(species = spp[i], ssid = ids[j])
-    d2 <- gfdata::get_survey_samples2(species = spp[i], ssid = ids[j])
+    try(d1 <- gfdata::get_survey_samples(species = spp[i], ssid = ids[j]))
+    try(d2 <- gfdata::get_survey_samples2(species = spp[i], ssid = ids[j]))
+    # Check value
+    if (is.null(d1)) {
+      # Document error
+      e1 <- rbind(e1, tibble(spp = spp[i], ssid = ids[j], ssids[j, 2:3]))
+    }
+    if (is.null(d2)) {
+      # Document error
+      e2 <- rbind(e2, tibble(spp = spp[i], ssid = ids[j], ssids[j, 2:3]))
+    }
     # Identify extra specimen_id
     n1 <- setdiff(d1$specimen_id, d2$specimen_id)
     n2 <- setdiff(d2$specimen_id, d1$specimen_id)
-    # Identify extra specimen_id rows
-    r1 <- which(d1$specimen_id %in% n1)
-    r2 <- which(d2$specimen_id %in% n2)
-    # Store extra specimen_id rows
-    s1 <- rbind(s1, tibble::tibble(spp = spp[i], ssid = ids[j], d1[r1, ]))
-    s2 <- rbind(s2, tibble::tibble(spp = spp[i], ssid = ids[j], d2[r2, ]))
+    # Identify and store extra specimen_id rows
+    if (length(n1) > 0) {
+      r1 <- which(d1$specimen_id %in% n1)
+      s1 <- rbind(s1, tibble::tibble(spp = spp[i], ssid = ids[j], d1[r1, ]))
+    }
+    if (length(n2 > 0)) {
+      r2 <- which(d2$specimen_id %in% n2)
+      s2 <- rbind(s2, tibble::tibble(spp = spp[i], ssid = ids[j], d2[r2, ]))
+    }
   }
 }
+
+# Remove NAs (known issue)
+s1 <- s1 |> tidyr::drop_na(specimen_id)
+
+# Compare columns --------------------------------------------------------------
+
+# TODO: Compare columns
+# TODO: Store column values that don't match
+
+
+
