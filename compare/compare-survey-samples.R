@@ -12,7 +12,7 @@
 
 library(tidyverse)
 devtools::load_all(".")
-source(here::here("compare", "R", "utils.R"))
+source(here::here("compare", "R", "functions-samples.R"))
 
 # Get ssids --------------------------------------------------------------------
 id_tab <- readRDS("compare/data/ssids.rds")
@@ -23,9 +23,9 @@ ssid <- id_tab |> dplyr::pull(ssid)
 spp <- readRDS("compare/data/species-names.rds")
 
 # Shorter species set
-spp <- "225" # Hake
-spp <- "044" # Dogfish
-spp <- "009" # Rougheye
+# spp <- "225" # Hake
+# spp <- "044" # Dogfish
+# spp <- "009" # Rougheye
 
 # Compare specimens ------------------------------------------------------------
 
@@ -47,15 +47,19 @@ s1 |> nrow()
 s2 <- cs$s2
 s2 |> nrow()
 
-
-
-# TODO Continue from here
+# Write results
+saveRDS(e1, file = "compare/data/errors-samples.rds")
+saveRDS(e2, file = "compare/data/errors-samples2.rds")
+saveRDS(s1, file = "compare/data/extras-samples.rds")
+saveRDS(s2, file = "compare/data/extras-samples2.rds")
 
 
 # Compare columns --------------------------------------------------------------
 
-cd <- compare_values(spp = spp, ssid = ssid)
+cd <- compare_specimen_values(spp = spp, ssid = ssid)
 
 # Rows that don't match identified by specimen_id and fn (d1 or d2)
 cd
 
+# Write results
+saveRDS(cd, file = "compare/data/unlike-samples.rds")
