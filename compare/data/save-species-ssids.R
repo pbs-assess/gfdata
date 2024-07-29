@@ -51,7 +51,7 @@ species_names <- c(
   "Sand Sole"
 )
 
-saveRDS(species_names, file = "compare/species-names.rds")
+saveRDS(species_names, file = "compare/data/species-names.rds")
 
 # Save ssids -------------------------------------------------------------------
 
@@ -64,10 +64,10 @@ ssids <- gfdata::get_ssids() |>
   dplyr::filter(!grepl("Salmon", SURVEY_SERIES_DESC, ignore.case = TRUE)) |>
   dplyr::filter(!grepl("Ecosystem", SURVEY_SERIES_DESC, ignore.case = TRUE)) |>
   dplyr::filter(!grepl("Commercial", SURVEY_SERIES_DESC, ignore.case = TRUE)) |>
-  dplyr::filter(SURVEY_ABBREV != "SABLE") |>
+  # dplyr::filter(SURVEY_ABBREV != "SABLE") |>
   dplyr::rename_with(tolower) |>
   dplyr::rename(ssid = survey_series_id)
 
-saveRDS(ssids, file = "compare/ssids.rds")
+saveRDS(ssids, file = "compare/data/ssids.rds")
 
 # End --------------------------------------------------------------------------
