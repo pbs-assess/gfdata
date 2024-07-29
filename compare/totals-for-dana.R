@@ -11,6 +11,17 @@ ids <- ssids |>
   filter(!(survey_abbrev %in% c("SABLE INLET", "SABLE OFF", "SABLE RAND"))) |>
   pull(ssid)
 
+# Get grouping codes --------------------------------------------------------------------
+sg <- get_table("Survey_Grouping")
+sid <- get_table("Survey")
+
+sg2 <- left_join(sg, sid, by = "SURVEY_ID") |> rename_with(tolower) |> group_by(survey_series_id) |>
+  summarise(
+    grouping_codes = as.character(paste0(unique(grouping_code), collapse = ", "))
+    )
+
+saveRDS(sg2, "compare/data/grouping_codes.rds")
+
 spp <- c("Quillback Rockfish", "Yelloweye Rockfish", "Lingcod", "North Pacific Spiny Dogfish")
 
 # Initialize storage tibbles
@@ -20,8 +31,8 @@ s2 <- tibble::tibble()
 # Iterate over cases
 for (i in seq_along(spp)) {
   for (j in seq_along(ids)) {
-    d1 <- NULL
-    d2 <- NULL
+    d1 <- tibble::tibble()
+    d2 <- tibble::tibble()
     # Pull data
     try(d1 <- gfdata::get_survey_samples(species = spp[i], ssid = ids[j]))
     try(d2 <- gfdata::get_survey_samples2(species = spp[i], ssid = ids[j]))
@@ -51,7 +62,7 @@ s2b <- bind_rows(dd1, dd2)
 dd2 <- s2b[duplicated(s2b$specimen_id),]
 
 # summarize what was missed
-ss <- bind_rows(dd1, dd2) |> group_by(species_common_name, survey_series_desc) |>
+ss <- bind_rows(dd1, dd2) |> group_by(species_common_name, survey_series_desc, survey_series_id) |>
   summarise(records = n(),
   lengths = sum(!is.na(length)),
   weights = sum(!is.na(weight)),
@@ -61,6 +72,8 @@ ss <- bind_rows(dd1, dd2) |> group_by(species_common_name, survey_series_desc) |
   missing_event_grouping_codes = sum(is.na(event_grouping_code)),
   not_matching_grouping_codes = sum(is.na(survey_grouping_code))
   )
+
+#ss2 <- left_join(ss, sg2)
 
 saveRDS(ss, "compare/data/missing-specimen-counts.rds")
 write.csv(ss, "compare/data/missing-specimen-counts.csv")
