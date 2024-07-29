@@ -1,12 +1,9 @@
 # Overview
-# - Script iterates over species and ssids
-# - Compares specimen_id column for extras in each data frame
-# - Identifies rows indexes for extra specimen_id values
-# - Accumulates extra specimen_id rows for each iteration
+# - Iterates over species and ssid to call both get_survey_samples*()
+# - Identifies which calls led to error/not-error returns (e1 & e2)
+# - Stores extra speciments relative to other function (s1 & s2)
+# - Stores unlike rows/repetitions for same specimen id (cd)
 #
-# Wish list
-# - Update get_survey_samples*() functions to avoid errors when no data
-# - E.g. spp <- "009"; ssid <- 1; returns errors for both functions
 
 # Load packages ----------------------------------------------------------------
 
@@ -54,7 +51,7 @@ saveRDS(s1, file = "compare/data/extras-samples.rds")
 saveRDS(s2, file = "compare/data/extras-samples2.rds")
 
 
-# Compare columns --------------------------------------------------------------
+# Compare specimen values ------------------------------------------------------
 
 cd <- compare_specimen_values(spp = spp, ssid = ssid)
 
