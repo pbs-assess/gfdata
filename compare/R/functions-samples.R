@@ -58,7 +58,7 @@ compare_specimens <- function (spp, ssid) {
   list(e1 = e1, e2 = e2, s1 = s1, s2 = s2)
 }
 
-compare_values <- function (spp, ssid) {
+compare_specimen_values <- function (spp, ssid) {
 
   # Initialize results
   d <- tibble::tibble()
@@ -73,19 +73,25 @@ compare_values <- function (spp, ssid) {
       # Pull data
       try(d1 <- gfdata::get_survey_samples(species = spp[i], ssid = ssid[j]))
       try(d2 <- gfdata::get_survey_samples2(species = spp[i], ssid = ssid[j]))
-      # Check values
+      # Only compares non-null output for both functions
       if (!is.null(d1) & !is.null(d2)) {
+        # Only compare shared colnames
         cn <- intersect(colnames(d1), colnames(d2))
         # Shared columns
         d1 <- d1 |> select(all_of(cn)) |> mutate(fn = "d1", .before = 1)
         d2 <- d2 |> select(all_of(cn)) |> mutate(fn = "d2", .before = 1)
         # Bind rows
         dd <- bind_rows(d1, d2) |>
+          # Drop dogfish NAs
           tidyr::drop_na(specimen_id) |>
+          # Arrange so same specimen_ids are in sequential rows
           dplyr::arrange(fishing_event_id, sample_id, specimen_id, fn) |>
+          # Hack to fix different value case
           dplyr::mutate(length_type = tolower(length_type)) |>
+          # Collapse to one row if equal (except in fn column)
           dplyr::distinct(dplyr::across(-fn), .keep_all = TRUE) |>
           dplyr::group_by(specimen_id) |>
+          # Keep only groups with more than one row (the inconsistent groups)
           dplyr::filter(n() > 1) |>
           dplyr::ungroup()
       } # End if
