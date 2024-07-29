@@ -12,39 +12,54 @@
 
 library(tidyverse)
 devtools::load_all(".")
+source(here::here("compare", "R", "utils.R"))
 
 # Get ssids --------------------------------------------------------------------
-
-ssids <- readRDS("compare/ssids.rds")
-ids <- ssids |> dplyr::pull(ssid)
+id_tab <- readRDS("compare/data/ssids.rds")
+ssid <- id_tab |> dplyr::pull(ssid)
 
 # Get species ------------------------------------------------------------------
 
-spp <- readRDS("compare/species-names.rds")
+spp <- readRDS("compare/data/species-names.rds")
 
 # Shorter species set
 spp <- "225" # Hake
 spp <- "044" # Dogfish
 spp <- "009" # Rougheye
 
-# Get colnames -----------------------------------------------------------------
-
-# saveRDS(colnames(s1), "compare/colnames-samples.rds")
-# saveRDS(colnames(s2), "compare/colnames-samples2.rds")
-
-# Get colnames
-c1 <- readRDS("compare/colnames-samples.rds")
-c2 <- readRDS("compare/colnames-samples2.rds")
-
 # Compare specimens ------------------------------------------------------------
 
-# Extra specimens
-s1 <- tibble::tibble()
-s2 <- tibble::tibble()
+cs <- compare_specimens(spp = spp, ssid = ssid)
 
-# Errors
-e1 <- tibble::tibble()
-e2 <- tibble::tibble()
+# Errored calls
+e1 <- cs$e1 |> left_join(id_tab, by = "ssid")
+e1 |> view()
+e1 |> dplyr::filter(returned == "no")
+
+e2 <- cs$e2 |> left_join(id_tab, by = "ssid")
+e2 |> view()
+e2 |> dplyr::filter(returned == "no")
+
+# Extra specimens
+s1 <- cs$s1
+s1 |> nrow()
+
+s2 <- cs$s2
+s2 |> nrow()
+
+
+
+# TODO Continue from here
+
+
+# Compare columns --------------------------------------------------------------
+
+# TODO: Compare columns
+# TODO: Store column values that don't match
+
+
+
+
 
 # Iterate over cases
 for (i in seq_along(spp)) {
@@ -79,13 +94,20 @@ for (i in seq_along(spp)) {
   }
 }
 
-# Remove NAs (known issue)
-s1 <- s1 |> tidyr::drop_na(specimen_id)
 
-# Compare columns --------------------------------------------------------------
 
-# TODO: Compare columns
-# TODO: Store column values that don't match
+# Get colnames -----------------------------------------------------------------
+
+# saveRDS(colnames(s1), "compare/data/colnames-samples.rds")
+# saveRDS(colnames(s2), "compare/data/colnames-samples2.rds")
+
+# Get colnames
+# c1 <- readRDS("compare/data/colnames-samples.rds")
+# c2 <- readRDS("compare/data/colnames-samples2.rds")
+
+
+
+
 
 
 
