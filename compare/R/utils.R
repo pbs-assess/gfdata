@@ -57,3 +57,42 @@ compare_specimens <- function (spp, ssid) {
   # Return
   list(e1 = e1, e2 = e2, s1 = s1, s2 = s2)
 }
+
+compare_values <- function (spp, ssid) {
+
+  # Initialize results
+  d <- tibble::tibble()
+
+  # Iterate over cases
+  for (i in seq_along(spp)) {
+    for (j in seq_along(ssid)) {
+      # Reset value
+      d1 <- NULL
+      d2 <- NULL
+      dd <- NULL
+      # Pull data
+      try(d1 <- gfdata::get_survey_samples(species = spp[i], ssid = ssid[j]))
+      try(d2 <- gfdata::get_survey_samples2(species = spp[i], ssid = ssid[j]))
+      # Check values
+      if (!is.null(d1) & !is.null(d2)) {
+        cn <- intersect(colnames(d1), colnames(d2))
+        # Shared columns
+        d1 <- d1 |> select(all_of(cn)) |> mutate(fn = "d1", .before = 1)
+        d2 <- d2 |> select(all_of(cn)) |> mutate(fn = "d2", .before = 1)
+        # Bind rows
+        dd <- bind_rows(d1, d2) |>
+          tidyr::drop_na(specimen_id) |>
+          dplyr::arrange(fishing_event_id, sample_id, specimen_id, fn) |>
+          dplyr::mutate(length_type = tolower(length_type)) |>
+          dplyr::distinct(dplyr::across(-fn), .keep_all = TRUE) |>
+          dplyr::group_by(specimen_id) |>
+          dplyr::filter(n() > 1) |>
+          dplyr::ungroup()
+      } # End if
+      # Bind rows
+      d <- rbind(d, dd)
+    }
+  }
+  # Return
+  d
+}
