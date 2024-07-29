@@ -54,60 +54,8 @@ s2 |> nrow()
 
 # Compare columns --------------------------------------------------------------
 
-# TODO: Compare columns
-# TODO: Store column values that don't match
+cd <- compare_values(spp = spp, ssid = ssid)
 
-
-
-
-
-# Iterate over cases
-for (i in seq_along(spp)) {
-  for (j in seq_along(ids)) {
-    # Reset value
-    d1 <- NULL
-    d2 <- NULL
-    # Pull data
-    try(d1 <- gfdata::get_survey_samples(species = spp[i], ssid = ids[j]))
-    try(d2 <- gfdata::get_survey_samples2(species = spp[i], ssid = ids[j]))
-    # Check value
-    if (is.null(d1)) {
-      # Document error
-      e1 <- rbind(e1, tibble(spp = spp[i], ssid = ids[j], ssids[j, 2:3]))
-    }
-    if (is.null(d2)) {
-      # Document error
-      e2 <- rbind(e2, tibble(spp = spp[i], ssid = ids[j], ssids[j, 2:3]))
-    }
-    # Identify extra specimen_id
-    n1 <- setdiff(d1$specimen_id, d2$specimen_id)
-    n2 <- setdiff(d2$specimen_id, d1$specimen_id)
-    # Identify and store extra specimen_id rows
-    if (length(n1) > 0) {
-      r1 <- which(d1$specimen_id %in% n1)
-      s1 <- rbind(s1, tibble::tibble(spp = spp[i], ssid = ids[j], d1[r1, ]))
-    }
-    if (length(n2 > 0)) {
-      r2 <- which(d2$specimen_id %in% n2)
-      s2 <- rbind(s2, tibble::tibble(spp = spp[i], ssid = ids[j], d2[r2, ]))
-    }
-  }
-}
-
-
-
-# Get colnames -----------------------------------------------------------------
-
-# saveRDS(colnames(s1), "compare/data/colnames-samples.rds")
-# saveRDS(colnames(s2), "compare/data/colnames-samples2.rds")
-
-# Get colnames
-# c1 <- readRDS("compare/data/colnames-samples.rds")
-# c2 <- readRDS("compare/data/colnames-samples2.rds")
-
-
-
-
-
-
+# Rows that don't match identified by specimen_id and fn (d1 or d2)
+cd
 
