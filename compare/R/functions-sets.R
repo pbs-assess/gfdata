@@ -11,6 +11,8 @@ compare_sets <- function (spp, ssid) {
   # Iterate over cases
   for (i in seq_along(spp)) {
     for (j in seq_along(ssid)) {
+      # Print current pair
+      cat(paste0("spp = ", spp[i], "; ssid = ", ssid[j], "\n"))
       # Reset value
       d1 <- NULL
       d2 <- NULL
@@ -64,6 +66,8 @@ compare_set_values <- function (spp, ssid) {
   # Iterate over cases
   for (i in seq_along(spp)) {
     for (j in seq_along(ssid)) {
+      # Print current pair
+      cat(paste0("spp = ", spp[i], "; ssid = ", ssid[j], "\n"))
       # Reset value
       d1 <- NULL
       d2 <- NULL
