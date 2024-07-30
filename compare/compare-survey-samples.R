@@ -21,7 +21,7 @@ spp <- readRDS("compare/data/species.rds")
 # Shorter species set
 # spp <- "225" # Hake
 # spp <- "044" # Dogfish
-# spp <- "009" # Rougheye
+# spp <- "009" # Rougheye (Not complex) (Note: errors in get_survey_samples())
 
 # Compare specimens ------------------------------------------------------------
 
