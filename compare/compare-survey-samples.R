@@ -44,10 +44,10 @@ s2 <- cs$s2
 s2 |> nrow()
 
 # Write results
-saveRDS(e1, file = "compare/data/errors-samples.rds")
-saveRDS(e2, file = "compare/data/errors-samples2.rds")
-saveRDS(s1, file = "compare/data/extras-samples.rds")
-saveRDS(s2, file = "compare/data/extras-samples2.rds")
+saveRDS(e1, file = "compare/results/errors-samples.rds")
+saveRDS(e2, file = "compare/results/errors-samples2.rds")
+saveRDS(s1, file = "compare/results/extras-samples.rds")
+saveRDS(s2, file = "compare/results/extras-samples2.rds")
 
 
 # Compare specimen values ------------------------------------------------------
@@ -58,4 +58,4 @@ cd <- compare_specimen_values(spp = spp, ssid = ssid)
 cd
 
 # Write results
-saveRDS(cd, file = "compare/data/unlike-samples.rds")
+saveRDS(cd, file = "compare/results/unlike-samples.rds")

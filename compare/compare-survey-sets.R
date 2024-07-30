@@ -44,10 +44,10 @@ s2 <- cs$s2
 s2 |> nrow()
 
 # Write results
-saveRDS(e1, file = "compare/data/errors-sets.rds")
-saveRDS(e2, file = "compare/data/errors-sets2.rds")
-saveRDS(s1, file = "compare/data/extras-sets.rds")
-saveRDS(s2, file = "compare/data/extras-sets2.rds")
+saveRDS(e1, file = "compare/results/errors-sets.rds")
+saveRDS(e2, file = "compare/results/errors-sets2.rds")
+saveRDS(s1, file = "compare/results/extras-sets.rds")
+saveRDS(s2, file = "compare/results/extras-sets2.rds")
 
 # Compare set values ------------------------------------------------------
 
@@ -57,4 +57,4 @@ cd <- compare_set_values(spp = spp, ssid = ssid)
 cd
 
 # Write results
-saveRDS(cd, file = "compare/data/unlike-sets.rds")
+saveRDS(cd, file = "compare/results/unlike-sets.rds")
