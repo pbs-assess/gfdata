@@ -8,6 +8,8 @@
 #'  length or weight values.
 #' @param usability A vector of usability codes to include. Defaults to all.
 #'   IPHC codes may be different to other surveys.
+#' @param random_only Only return randomly sampled specimens.
+#'   If FALSE will return all specimens collected on research trips.
 #' @param include_event_info Logical for whether to append all relevant fishing event info
 #'   (location, timing, effort, catch, etc.). Defaults to false.
 #' @param unsorted_only  Defaults to TRUE.
@@ -20,6 +22,7 @@ get_survey_samples2 <- function(species, ssid = NULL,
                                 remove_bad_data = TRUE,
                                 unsorted_only = TRUE,
                                 usability = NULL,
+                                random_only = TRUE,
                                 include_event_info = FALSE,
                                 return_dna_info = FALSE,
                                 major = NULL) {
@@ -98,6 +101,21 @@ get_survey_samples2 <- function(species, ssid = NULL,
     .d <- filter(.d, usability_code %in% usability)
   }
 
+  .u <- get_table("Usability") |> select(-ROW_VERSION)
+  names(.u) <- tolower(names(.u))
+  .d <- left_join(.d, .u, by = "usability_code")
+
+  if (random_only) {
+    # replaces SQL code
+    # SM.SAMPLE_TYPE_CODE IN (1, 2, 6, 7, 8) AND
+    # (SPECIES_CATEGORY_CODE IS NULL OR SPECIES_CATEGORY_CODE IN (1, 3, 5, 6, 7)) AND
+    # (SAMPLE_SOURCE_CODE IS NULL OR SAMPLE_SOURCE_CODE IN(1, 2)) AND
+
+    .d <- filter(.d, sample_type_code %in% c(1, 2, 6, 7, 8))
+    #.d <- filter(.d, is.na(species_category_code) | species_category_code %in% c(1, 3, 5, 6, 7)) # only 1 makes sense!
+    #.d <- filter(.d, is.na(sample_source_code) | sample_source_code %in% c(1,2)) # only 1 makes sense!
+  }
+
   ## dna_container_id and dna_sample_type can cause duplication for some species with multiple samples collected per individual
   ## Could do something about record duplication with multiple DNA samples like combining or not returning them?
   if(!return_dna_info){
@@ -106,7 +124,18 @@ get_survey_samples2 <- function(species, ssid = NULL,
       distinct()
   }
 
+  # check if there are duplicate specimen ids
   if (length(.d$specimen_id) > length(unique(.d$specimen_id))) {
+
+    # if so, separate original_ind from not
+    .d <- filter(.d, original_ind == "Y")
+    .dd <- filter(.d, original_ind != "Y")
+
+    # and only keep those not original_ind = Y when the specimen id was missing
+    .d <- bind_rows(.d, filter(.dd, !(specimen_id %in% c(unique(.d$specimen_id)))))
+
+    # check if there is still duplication (this seems to be true for SABLE and MSSM surveys)
+    if (length(.d$specimen_id) > length(unique(.d$specimen_id))) {
     warning(
       "Duplicate specimen IDs are present because of overlapping survey ",
       "stratifications, or multiple DNA samples from the same specimen. ",
@@ -114,6 +143,7 @@ get_survey_samples2 <- function(species, ssid = NULL,
       "surveys. For example, `dat <- dat[!duplicated(dat$specimen_id), ]`. ",
       "The tidying and plotting functions within gfplot will do this for you."
     )
+    }
   }
 
   # remove ages from unaccepted ageing methods:
@@ -143,6 +173,8 @@ get_survey_samples2 <- function(species, ssid = NULL,
       )
     )
 
+  # removes known data problems
+  # if FALSE, specimens could be reported and corrected in the database
   if (remove_bad_data) {
     .d <- .d[!(.d$length > 600 &
       .d$species_common_name == "north pacific spiny dogfish"), ]

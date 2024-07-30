@@ -2,7 +2,7 @@
 #'
 #' @description An R package to facilitate extracting ground fish data at PBS
 #'
-#' @docType package
+#' @docType _PACKAGE
 #' @name gfdata
 
 #' @importFrom dplyr filter mutate summarise select group_by n arrange ungroup

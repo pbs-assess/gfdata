@@ -146,6 +146,7 @@ get_survey_samples2(
   remove_bad_data = TRUE,
   unsorted_only = TRUE,
   usability = NULL,
+  random_only = TRUE,
   include_event_info = FALSE,
   return_dna_info = FALSE,
   major = NULL
@@ -249,6 +250,9 @@ extracted. You might set this to \code{FALSE} if you don't need these data and
 you want to substantially speed up data extraction.}
 
 \item{end_date}{A string representing the date. Must be of the format dd/mm/yyyy}
+
+\item{random_only}{Only return randomly sampled specimens.
+If FALSE will return all specimens collected on research trips.}
 
 \item{years}{If NULL, returns all years.}
 }
