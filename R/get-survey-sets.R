@@ -35,6 +35,7 @@ get_survey_sets2 <- function(species,
                              join_sample_ids = FALSE, verbose = FALSE,
                              remove_false_zeros = FALSE,
                              usability = c(0, 1, 2, 6)) {
+
   .q <- read_sql("get-survey-sets.sql")
 
   if (!is.null(species)) {
@@ -134,6 +135,8 @@ get_survey_sets2 <- function(species,
     )
   } else {
     # if ssid is NULL, get only events from surveys that have recorded any of the species selected
+    .d <- filter(.d, catch_count > 0|catch_weight > 0) # shouldn't be needed but there were some
+
     ssid <- unique(.d$survey_series_id)
     .fe <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid,
       sql_code = .fe,
@@ -157,8 +160,6 @@ get_survey_sets2 <- function(species,
   # if (is.null(ssid)) {
   #   fe <- filter(fe, SURVEY_SERIES_ID > 0)
   # }
-
-  # browser()
 
   if (all(ssid %in% trawl)) {
 
