@@ -22,6 +22,11 @@ sg2 <- left_join(sg, sid, by = "SURVEY_ID") |> rename_with(tolower) |> group_by(
 
 saveRDS(sg2, "compare/data/grouping_codes.rds")
 
+# Get usability codes --------------------------------------------------------------------
+u <- get_table("Usability")
+saveRDS(u, "compare/data/usability_codes.rds")
+
+# Set species of interest ---------------------------------------------------------------
 spp <- c("Quillback Rockfish", "Yelloweye Rockfish", "Lingcod", "North Pacific Spiny Dogfish")
 
 # Initialize storage tibbles
@@ -48,34 +53,43 @@ for (i in seq_along(spp)) {
   }
 }
 
-
 # saveRDS(s2, "compare/data/missing-specimens-all-data.rds")
-s2 <- readRDS("compare/data/missing-specimens-all-data.rds")
+s2 <- readRDS("compare/data/missing-specimens-all-data2.rds")
 
 # remove duplicated specimens
 dd <- s2[duplicated(s2$specimen_id),]
 dd1 <- filter(s2, !(specimen_id %in% c(dd$specimen_id)))
-dd2 <- filter(s2, (specimen_id %in% c(dd$specimen_id)), survey_abbrev != "MSSM WCVI")
+dd2 <- filter(s2, (specimen_id %in% c(dd$specimen_id)), !(survey_abbrev %in% c("MSSM WCVI", "DOG")))
 
 # confirm that it worked
 s2b <- bind_rows(dd1, dd2)
 dd2 <- s2b[duplicated(s2b$specimen_id),]
 
 # summarize what was missed
-ss <- bind_rows(dd1, dd2) |> group_by(species_common_name, survey_series_desc, survey_series_id) |>
-  summarise(records = n(),
-  lengths = sum(!is.na(length)),
-  weights = sum(!is.na(weight)),
-  ages = sum(!is.na(age)),
-  years = as.character(paste0(unique(year), collapse = ", ")),
-  missing_sample_grouping_codes = sum(is.na(sample_grouping_code)),
-  missing_event_grouping_codes = sum(is.na(event_grouping_code)),
-  not_matching_grouping_codes = sum(is.na(survey_grouping_code))
-  )
+ss <- bind_rows(dd1, dd2) |>
+  group_by(species_common_name, survey_series_desc, survey_series_id) |>
+  summarise(
+            lengths = sum(!is.na(length)),
+            weights = sum(!is.na(weight)),
+            ages = sum(!is.na(age)),
+            years = as.character(paste0(unique(year), collapse = ", ")),
+            records = n(),
+            event_gc_not_expected = sum(is.na(survey_grouping_code)),
+            missing_sample_gc = sum(is.na(sample_grouping_code)),
+            missing_event_gc = sum(is.na(event_grouping_code)),
+            grouping_codes = as.character(paste0(sort(unique(c(event_grouping_code, sample_grouping_code))), collapse = ", ")),
+            usability_codes = as.character(paste0(unique(usability_code), collapse = ", ")),
+            dominant_usability = names(which.max(table(usability_desc)))
+            )
 
-#ss2 <- left_join(ss, sg2)
+# ss <- left_join(ss, u) |> select(-usability_code)
 
-saveRDS(ss, "compare/data/missing-specimen-counts.rds")
-write.csv(ss, "compare/data/missing-specimen-counts.csv")
+sg2 <- readRDS("compare/data/grouping_codes.rds") |> rename(expected_gcs = grouping_codes)
 
-ss <- readRDS("compare/data/missing-specimen-counts.rds")
+ss2 <- left_join(ss, sg2) |> mutate(assigned_gcs = grouping_codes) |> select(-grouping_codes)
+# note: cases where an assigned gc matches the expected, it was always from the gc assigned to the specimen, not the event.
+
+saveRDS(ss2, "compare/data/missing-specimen-counts.rds")
+write.csv(ss2, "compare/data/missing-specimen-counts.csv")
+
+# ss <- readRDS("compare/data/missing-specimen-counts.rds")
