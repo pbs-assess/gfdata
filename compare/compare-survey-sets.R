@@ -16,7 +16,7 @@ ssid <- id_tab |> dplyr::pull(ssid)
 
 # Get species ------------------------------------------------------------------
 
-spp <- readRDS("compare/data/species-names.rds")
+spp <- readRDS("compare/data/species.rds")
 
 # Shorter species set
 # spp <- "225" # Hake

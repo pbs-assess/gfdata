@@ -3,7 +3,6 @@
 # - Identifies which calls led to error/not-error returns (e1 & e2)
 # - Stores extra speciments relative to other function (s1 & s2)
 # - Stores unlike rows/repetitions for same specimen id (cd)
-#
 
 # Load packages ----------------------------------------------------------------
 
@@ -17,7 +16,7 @@ ssid <- id_tab |> dplyr::pull(ssid)
 
 # Get species ------------------------------------------------------------------
 
-spp <- readRDS("compare/data/species-names.rds")
+spp <- readRDS("compare/data/species.rds")
 
 # Shorter species set
 # spp <- "225" # Hake
