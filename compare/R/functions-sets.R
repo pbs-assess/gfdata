@@ -42,11 +42,19 @@ compare_sets <- function (spp, ssid) {
       # Identify and store extra fishing_event_id rows
       if (length(n1) > 0) {
         r1 <- which(d1$fishing_event_id %in% n1)
-        s1 <- rbind(s1, tibble::tibble(spp = spp[i], ssid = ssid[j], d1[r1, ]))
+        # Bind rows - Should accept different sets of columns
+        s1 <- dplyr::bind_rows(
+          s1,
+          tibble::tibble(spp = spp[i], ssid = ssid[j], d1[r1, ])
+        )
       }
       if (length(n2 > 0)) {
         r2 <- which(d2$fishing_event_id %in% n2)
-        s2 <- rbind(s2, tibble::tibble(spp = spp[i], ssid = ssid[j], d2[r2, ]))
+        # Bind rows - Should accept different sets of columns
+        s2 <- dplyr::bind_rows(
+          s2,
+          tibble::tibble(spp = spp[i], ssid = ssid[j], d2[r2, ])
+        )
       }
     }
   }
@@ -83,7 +91,7 @@ compare_set_values <- function (spp, ssid) {
         d1 <- d1 |> select(all_of(cn)) |> mutate(fn = "d1", .before = 1)
         d2 <- d2 |> select(all_of(cn)) |> mutate(fn = "d2", .before = 1)
         # Bind rows
-        dd <- bind_rows(d1, d2) |>
+        dd <- dplyr::bind_rows(d1, d2) |>
           # Drop NAs
           tidyr::drop_na(fishing_event_id) |>
           # Arrange so same fishing_event_id are in sequential rows
@@ -98,7 +106,7 @@ compare_set_values <- function (spp, ssid) {
           dplyr::ungroup()
       } # End if
       # Bind rows
-      d <- rbind(d, dd)
+      d <- dplyr::bind_rows(d, dd)
     }
   }
   # Return
