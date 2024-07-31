@@ -36,6 +36,7 @@ get_survey_samples2 <- function(species, ssid = NULL,
     if (include_activity_matches){
         ## draft approach that gets all samples collected using the same activities as the ssid(s) of interest
         .a <- read_sql("get-activity-code.sql")
+        .a <- run_sql("GFBioSQL", .a)
 
         .a <-  filter(.a, SURVEY_SERIES_ID %in% ssid)
 
