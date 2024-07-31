@@ -128,11 +128,11 @@ get_survey_samples2 <- function(species, ssid = NULL,
   if (length(.d$specimen_id) > length(unique(.d$specimen_id))) {
 
     # if so, separate original_ind from not
-    .d <- filter(.d, original_ind == "Y")
-    .dd <- filter(.d, original_ind != "Y")
+    .dy <- filter(.d, original_ind == "Y")
+    .dn <- filter(.d, original_ind != "Y")
 
     # and only keep those not original_ind = Y when the specimen id was missing
-    .d <- bind_rows(.d, filter(.dd, !(specimen_id %in% c(unique(.d$specimen_id)))))
+    .d <- bind_rows(.dy, filter(.dn, !(specimen_id %in% c(unique(.dy$specimen_id)))))
 
     # check if there is still duplication (this seems to be true for SABLE and MSSM surveys)
     if (length(.d$specimen_id) > length(unique(.d$specimen_id))) {
