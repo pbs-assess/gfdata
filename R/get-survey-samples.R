@@ -10,6 +10,7 @@
 #'   IPHC codes may be different to other surveys.
 #' @param random_only Only return randomly sampled specimens.
 #'   If FALSE will return all specimens collected on research trips.
+#' @param include_activity_matches Get all records collected with activity codes that match chosen ssids.
 #' @param include_event_info Logical for whether to append all relevant fishing event info
 #'   (location, timing, effort, catch, etc.). Defaults to false.
 #' @param unsorted_only  Defaults to TRUE.
@@ -23,18 +24,34 @@ get_survey_samples2 <- function(species, ssid = NULL,
                                 unsorted_only = TRUE,
                                 usability = NULL,
                                 random_only = TRUE,
+                                include_activity_matches = FALSE,
                                 include_event_info = FALSE,
                                 return_dna_info = FALSE,
                                 major = NULL) {
+
   .q <- read_sql("get-survey-samples2.sql")
   .q <- inject_filter("AND SP.SPECIES_CODE IN", species, sql_code = .q)
 
   if (!is.null(ssid)) {
+    if (include_activity_matches){
+        ## draft approach that gets all samples collected using the same activities as the ssid(s) of interest
+        .a <- read_sql("get-activity-code.sql")
+
+        .a <-  filter(.a, SURVEY_SERIES_ID %in% ssid)
+
+        activities <- unique(.a$ACTIVITY_CODE)
+        .q <- inject_filter("AND TA.ACTIVITY_CODE IN", activities,
+                            sql_code = .q,
+                            search_flag = "-- insert ssid here", conversion_func = I
+        )
+    } else {
     .q <- inject_filter("AND SS.SURVEY_SERIES_ID IN", ssid,
       sql_code = .q,
       search_flag = "-- insert ssid here", conversion_func = I
     )
+    }
   }
+
   if (!is.null(major)) {
     .q <- inject_filter("AND SM.MAJOR_STAT_AREA_CODE =", major, .q,
       search_flag = "-- insert major here", conversion_func = I
@@ -52,6 +69,10 @@ get_survey_samples2 <- function(species, ssid = NULL,
 
   .d <- run_sql("GFBioSQL", .q)
 
+  ## if wanting a different behavior with activity matches
+  # if (!include_activity_matches & !is.null(ssid)) {
+  # .d <- filter(.d, (SURVEY_SERIES_ID %in% c(ssid, NA)))
+  # }
 
   surveys <- get_ssids()
 
