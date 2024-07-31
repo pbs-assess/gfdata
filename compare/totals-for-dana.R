@@ -28,6 +28,8 @@ saveRDS(u, "compare/data/usability_codes.rds")
 
 # Set species of interest ---------------------------------------------------------------
 spp <- c("Quillback Rockfish", "Yelloweye Rockfish", "Lingcod", "North Pacific Spiny Dogfish")
+spp <- c("North Pacific Spiny Dogfish")
+
 
 # Initialize storage tibbles
 s1 <- tibble::tibble()
@@ -53,17 +55,24 @@ for (i in seq_along(spp)) {
   }
 }
 
-# saveRDS(s2, "compare/data/missing-specimens-all-data.rds")
-s2 <- readRDS("compare/data/missing-specimens-all-data2.rds")
+
+s2 <- select(s2, -ssid)
+
+s2 <- s2 |> distinct()
+
+saveRDS(s2, "compare/data/missing-specimens-all-data-overhaul-dog.rds")
+s2 <- readRDS("compare/data/missing-specimens-all-data3.rds")
 
 # remove duplicated specimens
 dd <- s2[duplicated(s2$specimen_id),]
 dd1 <- filter(s2, !(specimen_id %in% c(dd$specimen_id)))
-dd2 <- filter(s2, (specimen_id %in% c(dd$specimen_id)), !(survey_abbrev %in% c("MSSM WCVI", "DOG")))
+dd2 <- filter(s2, (specimen_id %in% c(unique(dd$specimen_id)) & !(survey_abbrev %in% c("MSSM WCVI", "DOG"))))
 
 # confirm that it worked
 s2b <- bind_rows(dd1, dd2)
 dd2 <- s2b[duplicated(s2b$specimen_id),]
+unique(dd2$survey_series_id)
+
 
 # summarize what was missed
 ss <- bind_rows(dd1, dd2) |>
