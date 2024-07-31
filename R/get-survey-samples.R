@@ -30,7 +30,7 @@ get_survey_samples2 <- function(species, ssid = NULL,
   .q <- inject_filter("AND SP.SPECIES_CODE IN", species, sql_code = .q)
 
   if (!is.null(ssid)) {
-    .q <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid,
+    .q <- inject_filter("AND SS.SURVEY_SERIES_ID IN", ssid,
       sql_code = .q,
       search_flag = "-- insert ssid here", conversion_func = I
     )
@@ -223,7 +223,7 @@ get_survey_samples2 <- function(species, ssid = NULL,
     .fe <- read_sql("get-event-data.sql")
 
     ssid <- unique(.d$survey_series_id)
-    .fe <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid,
+    .fe <- inject_filter("AND SS.SURVEY_SERIES_ID IN", ssid,
       sql_code = .fe,
       search_flag = "-- insert ssid here", conversion_func = I
     )
