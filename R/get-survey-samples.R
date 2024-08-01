@@ -38,7 +38,7 @@ get_survey_samples2 <- function(species, ssid = NULL,
         .a <- read_sql("get-activity-code.sql")
         .a <- run_sql("GFBioSQL", .a)
 
-        .a <-  filter(.a, SURVEY_SERIES_ID %in% ssid)
+        .a <-  filter(.a, SURVEY_SERIES_ID %in% ssid) |> distinct()
 
         activities <- unique(.a$ACTIVITY_CODE)
         .q <- inject_filter("AND TA.ACTIVITY_CODE IN", activities,
