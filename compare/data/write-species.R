@@ -14,7 +14,7 @@ species_names <- c(
   # "Walleye Pollock",
   "Sablefish",
   "Lingcod",
-  "Pacific Hake",
+  # "Pacific Hake",
   # "Pacific Tomcod",
   # "Bocaccio",
   # "Canary Rockfish",
@@ -45,10 +45,10 @@ species_names <- c(
   # "Pacific Halibut",
   # "Pacific Sanddab",
   "Petrale Sole",
-  # "Rex Sole",
-  # "Southern Rock Sole",
-  # "Slender Sole",
-  "Sand Sole"
+  # "Rex Sole",,
+  # "Sand Sole",
+  "Slender Sole",
+  "Southern Rock Sole"
 )
 
 # Write
