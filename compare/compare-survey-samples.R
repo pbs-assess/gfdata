@@ -29,19 +29,19 @@ cs <- compare_specimens(spp = spp, ssid = ssid)
 
 # Errored calls
 e1 <- cs$e1 |> left_join(id_tab, by = "ssid")
-e1 |> view()
-e1 |> dplyr::filter(returned == "no")
+# e1 |> view()
+# e1 |> dplyr::filter(returned == "no")
 
 e2 <- cs$e2 |> left_join(id_tab, by = "ssid")
-e2 |> view()
-e2 |> dplyr::filter(returned == "no")
+# e2 |> view()
+# e2 |> dplyr::filter(returned == "no")
 
 # Extra specimens
 s1 <- cs$s1
-s1 |> nrow()
+# s1 |> nrow()
 
 s2 <- cs$s2
-s2 |> nrow()
+# s2 |> nrow()
 
 # Write results
 saveRDS(e1, file = "compare/results/errors-samples.rds")
