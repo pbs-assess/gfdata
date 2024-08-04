@@ -128,7 +128,7 @@ compare_set_values <- function (spp, ssid) {
           # Arrange so same fishing_event_id are in sequential rows
           dplyr::arrange(species_code, fishing_event_id, fn) |>
           # Remove small differences in density (<< 1e-03)
-          dplyr::mutate(density_ppkm2 = round(density_ppkm2, 3)) |>
+          mutate(across(starts_with("density_"), \(x) round(x, 3))) |>
           # Collapse to one row if equal (except in fn column)
           dplyr::distinct(dplyr::across(-fn), .keep_all = TRUE) |>
           dplyr::group_by(comparison_id) |>
