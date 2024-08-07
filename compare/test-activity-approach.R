@@ -25,28 +25,7 @@ ids <- c(6,7,67)
 spp <- c("North Pacific Spiny Dogfish")
 ids <- c(48,76,92,93)
 
-# if used together as intended and much faster!
-# # Initialize storage tibbles
-# s1 <- tibble::tibble()
-# s2 <- tibble::tibble()
-#
-# d1 <- tibble::tibble()
-# d2 <- tibble::tibble()
-# # Pull data
-# try(d1 <- gfdata::get_survey_samples2(species = spp, ssid = ids))
-# try(d2 <- gfdata::get_survey_samples2(species = spp, ssid = ids, include_activity_matches = TRUE))
-# # Identify extra specimen_id
-# n1 <- setdiff(d1$specimen_id, d2$specimen_id)
-# n2 <- setdiff(d2$specimen_id, d1$specimen_id)
-# # Identify extra specimen_id rows
-# r1 <- which(d1$specimen_id %in% n1)
-# r2 <- which(d2$specimen_id %in% n2)
-# # Store extra specimen_id rows
-# s1 <- rbind(s1, tibble::tibble(ssid = ids[j], d1[r1, ]))
-# s2 <- rbind(s2, tibble::tibble(ssid = ids[j], d2[r2, ]))
-# # result is identical for both with ssids 6,7,67
-# saveRDS(d1, "compare/data/ssid-based-records-smms.rds")
-# saveRDS(d2, "compare/data/activity-based-records-smms.rds")
+
 
 # # Iterate over cases
 # s1 <- tibble::tibble()
@@ -77,6 +56,7 @@ ids <- c(48,76,92,93)
 
 
 # Iterate over species for original only
+# All at once is much faster for samples2
 
 d1 <- d2 <- d3 <- tibble::tibble()
 n1 <- n2 <- n3 <- n4 <- NULL
@@ -97,9 +77,20 @@ try(d3 <- gfdata::get_survey_samples2(species = spp, ssid = ids, include_activit
 # saveRDS(d2, "compare/data/d2-ssid-based-records-smms.rds")
 # saveRDS(d3, "compare/data/d3-activity-based-records-smms.rds")
 
-saveRDS(d1, "compare/data/d1-original-records-dog.rds")
-saveRDS(d2, "compare/data/d2-ssid-based-records-dog.rds")
-saveRDS(d3, "compare/data/d3-activity-based-records-dog.rds")
+d1<-readRDS("compare/data/d1-original-records-smms.rds")
+d2<-readRDS("compare/data/d2-ssid-based-records-smms.rds")
+d3<-readRDS("compare/data/d3-activity-based-records-smms.rds")
+
+
+# remove duplicated specimens
+dd <- d2[duplicated(d2$specimen_id),]
+dd1 <- filter(d2, !(specimen_id %in% c(dd$specimen_id)))
+dd2 <- filter(d2, (specimen_id %in% c(unique(dd$specimen_id)) #& !(survey_abbrev %in% c("MSSM WCVI", "DOG"))
+))
+
+# saveRDS(d1, "compare/data/d1-original-records-dog.rds")
+# saveRDS(d2, "compare/data/d2-ssid-based-records-dog.rds")
+# saveRDS(d3, "compare/data/d3-activity-based-records-dog.rds")
 
 # Identify extra specimen_id
 n1 <- setdiff(d1$specimen_id, d2$specimen_id) # in function 1 relative to function 2
@@ -118,15 +109,20 @@ s4 <- d3[which(d3$specimen_id %in% n4), ]
 
 
 # remove duplicated specimens
-dd <- d2[duplicated(d2$specimen_id),]
-dd1 <- filter(d2, !(specimen_id %in% c(dd$specimen_id)))
-dd2 <- filter(d2, (specimen_id %in% c(unique(dd$specimen_id)) #& !(survey_abbrev %in% c("MSSM WCVI", "DOG"))
+dd <- s2[duplicated(s2$specimen_id),]
+.d <- d2
+.d <- .d[which(!(.d$survey_series_id == 6 & .d$major_stat_area_code %in% c("03", "04"))),]
+.d <- .d[which(!(.d$survey_series_id == 7 & .d$major_stat_area_code %in% c("05", "06"))),]
+d2b <-.d
+
+dd1 <- filter(s2, !(specimen_id %in% c(dd$specimen_id)))
+dd2 <- filter(s2, (specimen_id %in% c(unique(dd$specimen_id)) & !(survey_abbrev %in% c("MSSM WCVI", "DOG"))
                    ))
 
-# # confirm that it worked
-# s2b <- bind_rows(dd1, dd2)
-# dd2 <- s2b[duplicated(s2b$specimen_id),]
-# unique(dd2$survey_series_id)
+# confirm that it worked
+s2b <- bind_rows(dd1, dd2)
+dd2 <- s2b[duplicated(s2b$specimen_id),]
+unique(dd2$survey_series_id)
 
 
 # summarize what was missed
@@ -136,13 +132,12 @@ ss <- bind_rows(dd1, dd2) |>
             lengths = sum(!is.na(length)),
             weights = sum(!is.na(weight)),
             ages = sum(!is.na(age)),
-            years = as.character(paste0(unique(year), collapse = ", ")),
+            years = as.character(paste0(sort(unique(year)), collapse = ", ")),
             records = n(),
-            event_gc_not_expected = sum(is.na(survey_grouping_code)),
+            gc_not_expected = sum(is.na(survey_grouping_code)),
             missing_sample_gc = sum(is.na(sample_grouping_code)),
-            missing_event_gc = sum(is.na(event_grouping_code)),
-            grouping_codes = as.character(paste0(sort(unique(c(event_grouping_code, sample_grouping_code))), collapse = ", ")),
-            usability_codes = as.character(paste0(unique(usability_code), collapse = ", ")),
+            grouping_codes = as.character(paste0(sort(unique(c(sample_grouping_code))), collapse = ", ")),
+            usability_codes = as.character(paste0(sort(unique(usability_code)), collapse = ", ")),
             dominant_usability = names(which.max(table(usability_desc)))
             )
 
