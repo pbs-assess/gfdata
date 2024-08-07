@@ -7,30 +7,12 @@
 
 library(tidyverse)
 
-# Read specimen files
-e1 <- readRDS("compare/results/errors-samples.rds")
-e2 <- readRDS("compare/results/errors-samples2.rds")
-s1 <- readRDS("compare/results/extras-samples.rds")
-s2 <- readRDS("compare/results/extras-samples2.rds")
-u12 <- readRDS("compare/results/unlike-samples.rds")
+# Read samples files
+xa <- readRDS("compare/results/samples-extras.rds")
+va <- readRDS("compare/results/samples-unlike.rds")
+sa <- readRDS("compare/results/samples-summary.rds")
 
-# View
-view(e1)
-view(e2)
-view(s1)
-view(s2)
-view(u12)
-
-# Read specimen files
-r1 <- readRDS("compare/results/errors-sets.rds")
-r2 <- readRDS("compare/results/errors-sets2.rds")
-x1 <- readRDS("compare/results/extras-sets.rds")
-x2 <- readRDS("compare/results/extras-sets2.rds")
-v12 <- readRDS("compare/results/unlike-sets.rds")
-
-# View
-view(r1)
-view(r2)
-view(x1)
-view(x2)
-view(v12)
+# Read sets files
+xe <- readRDS("compare/results/sets-extras.rds")
+ve <- readRDS("compare/results/sets-unlike.rds")
+se <- readRDS("compare/results/sets-summary.rds")
