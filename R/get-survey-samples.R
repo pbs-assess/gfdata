@@ -84,6 +84,18 @@ get_survey_samples2 <- function(species, ssid = NULL,
       distinct()
   }
 
+  # whenever ssid is included, but not activity matches
+  # we need to drop duplicated records from trips that include multiple surveys
+  if (!include_activity_matches & !is.null(ssid)) {
+    .d <- filter(.d, (survey_series_id %in% c(ssid)))
+  }
+
+  # if using include_activity_matches = TRU`then remove_duplicates = TRUE
+  if (include_activity_matches & !is.null(ssid)) {
+    remove_duplicates <- TRUE
+  }
+
+
   # check if there are duplicate specimen ids
   if (length(.d$specimen_id) > length(unique(.d$specimen_id))) {
 
@@ -97,6 +109,7 @@ get_survey_samples2 <- function(species, ssid = NULL,
 
     # then only applying fixes to duplicated specimens in case some are miss-assigned but not duplicated cases
     # for shrimp survey sets in both qcs and wcvi that were done on the same trip they get duplicated by the sql call
+    # note: getting some that violate these rules but aren't duplicated... eg. fe 1720260, 1720263
     dd2 <- dd2[which(!(dd2$survey_series_id == 6 & dd2$major_stat_area_code %in% c("03", "04"))),]
     dd2 <- dd2[which(!(dd2$survey_series_id == 7 & dd2$major_stat_area_code %in% c("05", "06"))),]
 
@@ -144,14 +157,6 @@ get_survey_samples2 <- function(species, ssid = NULL,
     }
     }
   }
-
-
-  ## if wanting a different behavior with activity matches
-  # if (!include_activity_matches & !is.null(ssid)) {
-  # .d <- filter(.d, (SURVEY_SERIES_ID %in% c(ssid, NA)))
-  # }
-
-
 
 
   surveys <- get_ssids()
