@@ -1,89 +1,102 @@
+# Source utils-compare.R
+source(here::here("compare", "R", "utils-compare.R"))
 
+# Compare survey samples
+compare_survey_samples <- function (spp, ssid) {
 
-compare_specimens <- function (spp, ssid) {
-
-  # Extra specimens
-  s1 <- tibble::tibble()
-  s2 <- tibble::tibble()
-
-  # Error tibbles
-  e1 <- tibble(returned = character(0), spp = character(0), ssid = numeric(0))
-  e2 <- tibble(returned = character(0), spp = character(0), ssid = numeric(0))
-
-  # Iterate over cases
-  for (i in seq_along(spp)) {
-    for (j in seq_along(ssid)) {
-      # Print current pair
-      cat(paste0("spp = ", spp[i], "; ssid = ", ssid[j], "\n"))
-      # Reset value
-      d1 <- NULL
-      d2 <- NULL
-      # Pull data
-      try(d1 <- gfdata::get_survey_samples(species = spp[i], ssid = ssid[j]))
-      try(d2 <- gfdata::get_survey_samples2(species = spp[i], ssid = ssid[j]))
-      # Check value
-      e1 <- rbind(
-        e1,
-        tibble(
-          returned = ifelse(!is.null(d1), "yes", "no"),
-          spp = spp[i],
-          ssid = ssid[j]
-        )
-      )
-      e2 <- rbind(
-        e2,
-        tibble(
-          returned = ifelse(!is.null(d2), "yes", "no"),
-          spp = spp[i],
-          ssid = ssid[j]
-        )
-      )
-      # Identify extra specimen_id
-      n1 <- setdiff(d1$specimen_id, d2$specimen_id)
-      n2 <- setdiff(d2$specimen_id, d1$specimen_id)
-      # Identify and store extra specimen_id rows
-      if (length(n1) > 0) {
-        r1 <- which(d1$specimen_id %in% n1)
-        s1 <- rbind(s1, tibble::tibble(spp = spp[i], ssid = ssid[j], d1[r1, ]))
-      }
-      if (length(n2 > 0)) {
-        r2 <- which(d2$specimen_id %in% n2)
-        s2 <- rbind(s2, tibble::tibble(spp = spp[i], ssid = ssid[j], d2[r2, ]))
-      }
-    }
-  }
-
-  # Remove NAs (known issue)
-  s1 <- s1 |> tidyr::drop_na(specimen_id)
-
-  # Return
-  list(e1 = e1, e2 = e2, s1 = s1, s2 = s2)
-}
-
-compare_specimen_values <- function (spp, ssid) {
-
-  # Initialize results
-  d <- tibble::tibble()
+  # Initialize tibbles
+  x <- tibble::tibble() # Extra specimens
+  u <- tibble::tibble() # Unlike values
+  s <- tibble::tibble() # Summary of returned
 
   # Iterate over cases
   for (i in seq_along(spp)) {
     for (j in seq_along(ssid)) {
       # Print current pair
       cat(paste0("spp = ", spp[i], "; ssid = ", ssid[j], "\n"))
-      # Reset value
+      # Reset tibbles
       d1 <- NULL
       d2 <- NULL
       dd <- NULL
+      s1 <- NULL
+      s2 <- NULL
+      x1 <- NULL
+      x2 <- NULL
+      # Resent vectors
+      b <- NULL
+      n1 <- NULL
+      n2 <- NULL
+      r1 <- NULL
+      r2 <- NULL
       # Pull data
       try(d1 <- gfdata::get_survey_samples(species = spp[i], ssid = ssid[j]))
       try(d2 <- gfdata::get_survey_samples2(species = spp[i], ssid = ssid[j]))
+      # Drop NA specimen_id
+      if (!is.null(d1)) {
+        d1 <- d1 |> tidyr::drop_na(specimen_id)
+      }
+      if (!is.null(d2)) {
+        d2 <- d2 |> tidyr::drop_na(specimen_id)
+      }
+      # Identify extra specimen_id
+      n1 <- setdiff(d1$specimen_id, d2$specimen_id)
+      n2 <- setdiff(d2$specimen_id, d1$specimen_id)
+      # Identify shared specimen_id
+      b <- dplyr::intersect(d1$specimen_id, d2$specimen_id)
+      # New summary rows
+      s1 <- tibble::tibble(
+        fn = 1L,
+        species = spp[i],
+        ssid = ssid[j],
+        survey = survey(ssid),
+        count_ids = ifelse(is.null(d1), NA, length(unique(d1$specimen_id))),
+        extra_ids = ifelse(is.null(d1), NA, length(n1)),
+        shared_ids = ifelse(is.null(d1), NA, length(b))
+      )
+      s2 <- tibble::tibble(
+        fn = 2L,
+        species = spp[i],
+        ssid = ssid[j],
+        survey = survey(ssid),
+        count_ids = ifelse(is.null(d2), NA, length(unique(d2$specimen_id))),
+        extra_ids = ifelse(is.null(d2), NA, length(n2)),
+        shared_ids = ifelse(is.null(d2), NA, length(b))
+      )
+      # Augment summary
+      s <- dplyr::bind_rows(s, s1, s2)
+
+      # New extra specimen rows
+      if (length(n1) > 0) {
+        # Extra specimen rows numbers
+        r1 <- which(d1$specimen_id %in% n1)
+        # Extra specimen tibbles
+        x1 <- tibble::tibble(
+          fn = 1L,
+          species = spp[i],
+          ssid = ssid[j],
+          d1[r1, ]
+        )
+      }
+      if (length(n2) > 0) {
+        # Extra specimen rows numbers
+        r2 <- which(d2$specimen_id %in% n2)
+        x2 <- tibble::tibble(
+          fn = 2L,
+          species = spp[i],
+          ssid = ssid[j],
+          d2[r2, ]
+        )
+      }
+      # Augment extra specimens
+      x <- dplyr::bind_rows(x, x1, x2)
+
       # Only compares non-null output for both functions
       if (!is.null(d1) & !is.null(d2)) {
         # Only compare shared colnames
         cn <- intersect(colnames(d1), colnames(d2))
         # Shared columns
-        d1 <- d1 |> select(all_of(cn)) |> mutate(fn = "d1", .before = 1)
-        d2 <- d2 |> select(all_of(cn)) |> mutate(fn = "d2", .before = 1)
+        d1 <- d1 |> select(all_of(cn)) |> mutate(fn = 1L, .before = 1)
+        d2 <- d2 |> select(all_of(cn)) |> mutate(fn = 2L, .before = 1)
         # Bind rows
         dd <- bind_rows(d1, d2) |>
           # Drop dogfish NAs
@@ -100,9 +113,14 @@ compare_specimen_values <- function (spp, ssid) {
           dplyr::ungroup()
       } # End if
       # Bind rows
-      d <- rbind(d, dd)
+      u <- dplyr::bind_rows(u, dd)
     }
   }
+
+  # Arrange
+  x <- dplyr::arrange(x, species, ssid, fn)
+  s <- dplyr::arrange(s, species, ssid, fn)
+
   # Return
-  d
+  list(x = x, u = u, s = s)
 }
