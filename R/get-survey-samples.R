@@ -18,16 +18,15 @@
 #'   stratifications when original_ind = 'N', or from known issues with MSSM trips including both survey areas.
 #' @param return_dna_info Should DNA container ids and sample type be returned?
 #'    This can create duplication of specimen ids for some species.  Defaults to FALSE.
-
 #'
 #' @export
 #' @rdname get_data
-get_survey_samples2 <- function(species, ssid = NULL,
+get_all_survey_samples <- function(species, ssid = NULL,
                                 unsorted_only = TRUE,
                                 usability = NULL,
                                 random_only = TRUE,
                                 include_activity_matches = FALSE,
-                                include_event_info = FALSE,
+                                include_event_info = TRUE,
                                 remove_bad_data = TRUE,
                                 remove_duplicates = FALSE,
                                 return_dna_info = FALSE,
@@ -305,6 +304,11 @@ get_survey_samples2 <- function(species, ssid = NULL,
       sql_code = .fe,
       search_flag = "-- insert ssid here", conversion_func = I
     )
+    .fe <- inject_filter("AND FE.FISHING_EVENT_ID IN", fe_vector,
+                         sql_code = .fe,
+                         search_flag = "-- insert fe vector here", conversion_func = I
+    )
+
 
     fe <- run_sql("GFBioSQL", .fe) %>% select(-USABILITY_CODE, -GROUPING_CODE) # avoid classing with values for samples
 
