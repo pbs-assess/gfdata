@@ -143,11 +143,13 @@ get_sablefish_surveys()
 get_survey_samples2(
   species,
   ssid = NULL,
-  remove_bad_data = TRUE,
   unsorted_only = TRUE,
   usability = NULL,
   random_only = TRUE,
+  include_activity_matches = FALSE,
   include_event_info = FALSE,
+  remove_bad_data = TRUE,
+  remove_duplicates = FALSE,
   return_dna_info = FALSE,
   major = NULL
 )
@@ -253,6 +255,11 @@ you want to substantially speed up data extraction.}
 
 \item{random_only}{Only return randomly sampled specimens.
 If FALSE will return all specimens collected on research trips.}
+
+\item{include_activity_matches}{Get all records collected with activity codes that match chosen ssids.}
+
+\item{remove_duplicates}{Remove duplicated specimen records due to overlapping survey
+stratifications when original_ind = 'N', or from known issues with MSSM trips including both survey areas.}
 
 \item{years}{If NULL, returns all years.}
 }

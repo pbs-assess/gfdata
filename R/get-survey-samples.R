@@ -4,8 +4,6 @@
 #' @param major Character string (or vector, though doesn't work yet with
 #'  `cache_pbs_data`) of major stat area code to include (characters). Use
 #'  get_major_areas() to lookup area codes with descriptions.
-#' @param remove_bad_data Remove known bad data, such as unrealistic
-#'  length or weight values.
 #' @param usability A vector of usability codes to include. Defaults to all.
 #'   IPHC codes may be different to other surveys.
 #' @param random_only Only return randomly sampled specimens.
@@ -14,18 +12,24 @@
 #' @param include_event_info Logical for whether to append all relevant fishing event info
 #'   (location, timing, effort, catch, etc.). Defaults to false.
 #' @param unsorted_only  Defaults to TRUE.
+#' @param remove_bad_data Remove known bad data, such as unrealistic
+#'  length or weight values.
+#' @param remove_duplicates Remove duplicated specimen records due to overlapping survey
+#'   stratifications when original_ind = 'N', or from known issues with MSSM trips including both survey areas.
 #' @param return_dna_info Should DNA container ids and sample type be returned?
 #'    This can create duplication of specimen ids for some species.  Defaults to FALSE.
+
 #'
 #' @export
 #' @rdname get_data
 get_survey_samples2 <- function(species, ssid = NULL,
-                                remove_bad_data = TRUE,
                                 unsorted_only = TRUE,
                                 usability = NULL,
                                 random_only = TRUE,
                                 include_activity_matches = FALSE,
                                 include_event_info = FALSE,
+                                remove_bad_data = TRUE,
+                                remove_duplicates = FALSE,
                                 return_dna_info = FALSE,
                                 major = NULL) {
 
@@ -70,24 +74,99 @@ get_survey_samples2 <- function(species, ssid = NULL,
 
   .d <- run_sql("GFBioSQL", .q)
 
+  names(.d) <- tolower(names(.d))
+
+  ## dna_container_id and dna_sample_type can cause duplication for some species with multiple samples collected per individual
+  ## Could do something about record duplication with multiple DNA samples like combining or not returning them?
+  if(!return_dna_info){
+    .d <- .d |>
+      select(-dna_container_id, -dna_sample_type) |>
+      distinct()
+  }
+
+  # check if there are duplicate specimen ids
+  if (length(.d$specimen_id) > length(unique(.d$specimen_id))) {
+
+    if (remove_duplicates) {
+    # add custom fixes for problem surveys here:
+    # first split data into unique specimens (dd1) and ones with duplicates (dd2)
+
+    .dd <- .d[duplicated(.d$specimen_id),]
+    dd1 <- filter(.d, !(specimen_id %in% c(unique(.dd$specimen_id))))
+    dd2 <- filter(.d, (specimen_id %in% c(unique(.dd$specimen_id))))
+
+    # then only applying fixes to duplicated specimens in case some are miss-assigned but not duplicated cases
+    # for shrimp survey sets in both qcs and wcvi that were done on the same trip they get duplicated by the sql call
+    dd2 <- dd2[which(!(dd2$survey_series_id == 6 & dd2$major_stat_area_code %in% c("03", "04"))),]
+    dd2 <- dd2[which(!(dd2$survey_series_id == 7 & dd2$major_stat_area_code %in% c("05", "06"))),]
+
+    # for sablefish sets with inlets and offshore on same trip ???
+    # dd2 <- dd2[which(!(dd2$survey_series_id == ## & dd2$reason %in% c(""))),]
+    # dd2 <- dd2[which(!(dd2$survey_series_id == ## & dd2$reason %in% c(""))),]
+
+    # for dogfish and HBLL sets on same trip ???
+
+    .d <- bind_rows(dd1, dd2)
+
+
+    # if so, separate original_ind from not
+    .dy <- filter(.d, original_ind == "Y")
+    .dn <- filter(.d, original_ind != "Y")
+
+    # and only keep those not original_ind = Y when the specimen id was missing
+    .d <- bind_rows(.dy, filter(.dn, !(specimen_id %in% c(unique(.dy$specimen_id)))))
+
+    # check if there are still duplicated specimen ids
+    if (length(.d$specimen_id) > length(unique(.d$specimen_id))) {
+      warning(
+        "Duplicate specimen IDs are still present despite `remove_duplicates = TRUE`. ",
+        "This is potentially because of overlapping survey stratifications, or multiple ",
+        "DNA samples from the same specimen. If working with the data yourself, ",
+        "you should filter them after selecting specific survey stratifications. ",
+        "For example, `dat <- dat[!duplicated(dat$specimen_id), ]`. ",
+        "Tidying and plotting functions within gfplot will do this for you."
+      )
+    }
+
+    } else {
+
+    # check if there are duplicated specimen ids (this often true for SABLE and MSSM surveys)
+    if (length(.d$specimen_id) > length(unique(.d$specimen_id))) {
+      warning(
+        "Duplicate specimen IDs are present. This is usually because of multiple ",
+        "DNA samples from the same specimen, overlapping survey stratifications, ",
+        "or trips that include more than one type of survey. Some cases of the ",
+        "latter two case can be resolved by setting 'remove_duplicates = TRUE'. ",
+        "If working with the data yourself, filter them after selecting specific ",
+        "surveys. For example, `dat <- dat[!duplicated(dat$specimen_id), ]`. ",
+        "The tidying and plotting functions within gfplot will do this for you."
+      )
+    }
+    }
+  }
+
+
   ## if wanting a different behavior with activity matches
   # if (!include_activity_matches & !is.null(ssid)) {
   # .d <- filter(.d, (SURVEY_SERIES_ID %in% c(ssid, NA)))
   # }
 
+
+
+
   surveys <- get_ssids()
+
+  names(surveys) <- tolower(names(surveys))
 
   .d <- inner_join(.d,
     unique(select(
       surveys,
-      SURVEY_SERIES_ID,
-      SURVEY_SERIES_DESC,
-      SURVEY_ABBREV
+      survey_series_id,
+      survey_series_desc,
+      survey_abbrev
     )),
-    by = "SURVEY_SERIES_ID"
+    by = "survey_series_id"
   )
-
-  names(.d) <- tolower(names(.d))
 
   .d$species_common_name <- tolower(.d$species_common_name)
   .d$species_science_name <- tolower(.d$species_science_name)
@@ -138,35 +217,7 @@ get_survey_samples2 <- function(species, ssid = NULL,
     #.d <- filter(.d, is.na(sample_source_code) | sample_source_code %in% c(1,2)) # only 1 makes sense!
   }
 
-  ## dna_container_id and dna_sample_type can cause duplication for some species with multiple samples collected per individual
-  ## Could do something about record duplication with multiple DNA samples like combining or not returning them?
-  if(!return_dna_info){
-    .d <- .d |>
-      select(-dna_container_id, -dna_sample_type) |>
-      distinct()
-  }
 
-  # check if there are duplicate specimen ids
-  if (length(.d$specimen_id) > length(unique(.d$specimen_id))) {
-
-    # if so, separate original_ind from not
-    .dy <- filter(.d, original_ind == "Y")
-    .dn <- filter(.d, original_ind != "Y")
-
-    # and only keep those not original_ind = Y when the specimen id was missing
-    .d <- bind_rows(.dy, filter(.dn, !(specimen_id %in% c(unique(.dy$specimen_id)))))
-
-    # check if there is still duplication (this seems to be true for SABLE and MSSM surveys)
-    if (length(.d$specimen_id) > length(unique(.d$specimen_id))) {
-    warning(
-      "Duplicate specimen IDs are present because of overlapping survey ",
-      "stratifications, or multiple DNA samples from the same specimen. ",
-      "If working with the data yourself, filter them after selecting specific ",
-      "surveys. For example, `dat <- dat[!duplicated(dat$specimen_id), ]`. ",
-      "The tidying and plotting functions within gfplot will do this for you."
-    )
-    }
-  }
 
   # remove ages from unaccepted ageing methods:
   file <- system.file("extdata", "ageing_methods.csv", package = "gfdata")
