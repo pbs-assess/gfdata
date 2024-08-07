@@ -1,44 +1,36 @@
-compare_sets <- function (spp, ssid) {
+# Source utils-compare.R
+source(here::here("compare", "R", "utils-compare.R"))
 
-  # Extra specimens
-  s1 <- tibble::tibble()
-  s2 <- tibble::tibble()
+# Compare survey sets
+compare_survey_sets <- function (spp, ssid) {
 
-  # Error tibbles
-  e1 <- tibble(returned = character(0), spp = character(0), ssid = numeric(0))
-  e2 <- tibble(returned = character(0), spp = character(0), ssid = numeric(0))
+  # Initialize tibbles
+  x <- tibble::tibble() # Extra sets
+  u <- tibble::tibble() # Unlike values
+  s <- tibble::tibble() # Summary of returned
 
   # Iterate over cases
   for (i in seq_along(spp)) {
     for (j in seq_along(ssid)) {
       # Print current pair
       cat(paste0("spp = ", spp[i], "; ssid = ", ssid[j], "\n"))
-      # Reset value
+      # Reset tibbles
       d1 <- NULL
       d2 <- NULL
+      dd <- NULL
+      s1 <- NULL
+      s2 <- NULL
+      x1 <- NULL
+      x2 <- NULL
+      # Resent vectors
+      b <- NULL
+      n1 <- NULL
+      n2 <- NULL
+      r1 <- NULL
+      r2 <- NULL
       # Pull data
       try(d1 <- gfdata::get_survey_sets(species = spp[i], ssid = ssid[j]))
       try(d2 <- gfdata::get_survey_sets2(species = spp[i], ssid = ssid[j]))
-      # Check value
-      e1 <- rbind(
-        e1,
-        tibble(
-          returned = ifelse(!is.null(d1), "yes", "no"),
-          spp = spp[i],
-          ssid = ssid[j]
-        )
-      )
-      e2 <- rbind(
-        e2,
-        tibble(
-          returned = ifelse(!is.null(d2), "yes", "no"),
-          spp = spp[i],
-          ssid = ssid[j]
-        )
-      )
-      # Reset value
-      n1 <- NULL
-      n2 <- NULL
       # Create comparison columns
       if (!is.null(d1)) {
         d1 <- d1 |>
@@ -59,76 +51,69 @@ compare_sets <- function (spp, ssid) {
       # Identify extra comparison_id
       n1 <- setdiff(d1$comparison_id, d2$comparison_id)
       n2 <- setdiff(d2$comparison_id, d1$comparison_id)
-      # Identify and store extra comparison_id rows
+      # Identify shared comparison_id
+      b <- dplyr::intersect(d1$comparison_id, d2$comparison_id)
+      # New summary rows
+      s1 <- tibble::tibble(
+        fn = 1L,
+        species = spp[i],
+        ssid = ssid[j],
+        survey = survey(ssid),
+        count_ids = ifelse(is.null(d1), NA, length(unique(d1$comparison_id))),
+        extra_ids = ifelse(is.null(d1), NA, length(n1)),
+        shared_ids = ifelse(is.null(d1), NA, length(b))
+      )
+      s2 <- tibble::tibble(
+        fn = 2L,
+        species = spp[i],
+        ssid = ssid[j],
+        survey = survey(ssid),
+        count_ids = ifelse(is.null(d2), NA, length(unique(d2$comparison_id))),
+        extra_ids = ifelse(is.null(d2), NA, length(n2)),
+        shared_ids = ifelse(is.null(d2), NA, length(b))
+      )
+      # Augment summary
+      s <- dplyr::bind_rows(s, s1, s2)
+
+      # New extra set rows
       if (length(n1) > 0) {
+        # Extra set rows numbers
         r1 <- which(d1$comparison_id %in% n1)
-        # Bind rows - Should accept different sets of columns
-        s1 <- dplyr::bind_rows(
-          s1,
-          tibble::tibble(spp = spp[i], ssid = ssid[j], d1[r1, ])
+        # Extra set tibble
+        x1 <- tibble::tibble(
+          fn = 1L,
+          species = spp[i],
+          ssid = ssid[j],
+          d1[r1, ]
         )
       }
-      if (length(n2 > 0)) {
+      if (length(n2) > 0) {
+        # Extra set rows numbers
         r2 <- which(d2$comparison_id %in% n2)
-        # Bind rows - Should accept different sets of columns
-        s2 <- dplyr::bind_rows(
-          s2,
-          tibble::tibble(spp = spp[i], ssid = ssid[j], d2[r2, ])
+        # Extra set tibble
+        x2 <- tibble::tibble(
+          fn = 2L,
+          species = spp[i],
+          ssid = ssid[j],
+          d2[r2, ]
         )
       }
-    }
-  }
+      # Augment extra sets
+      x <- dplyr::bind_rows(x, x1, x2)
 
-  # Remove NAs (known issue)
-  # s1 <- s1 |> tidyr::drop_na(comparison_id)
-
-  # Return
-  list(e1 = e1, e2 = e2, s1 = s1, s2 = s2)
-}
-
-compare_set_values <- function (spp, ssid) {
-
-  # Initialize results
-  d <- tibble::tibble()
-
-  # Iterate over cases
-  for (i in seq_along(spp)) {
-    for (j in seq_along(ssid)) {
-      # Print current pair
-      cat(paste0("spp = ", spp[i], "; ssid = ", ssid[j], "\n"))
-      # Reset value
-      d1 <- NULL
-      d2 <- NULL
-      dd <- NULL
-      # Pull data
-      try(d1 <- gfdata::get_survey_sets(species = spp[i], ssid = ssid[j]))
-      try(d2 <- gfdata::get_survey_sets2(species = spp[i], ssid = ssid[j]))
       # Only compares non-null output for both functions
       if (!is.null(d1) & !is.null(d2)) {
-        # Create comparison columns
-        d1 <- d1 |>
-          dplyr::mutate(
-            comparison_id = paste0(species_code, fishing_event_id),
-            .before = 1
-          )
-        d2 <- d2 |>
-          dplyr::mutate(
-            comparison_id = paste0(species_code, fishing_event_id),
-            .before = 1
-          )
         # Only compare shared colnames
         cn <- intersect(colnames(d1), colnames(d2))
         # Shared columns
-        d1 <- d1 |> select(all_of(cn)) |> mutate(fn = "d1", .before = 1)
-        d2 <- d2 |> select(all_of(cn)) |> mutate(fn = "d2", .before = 1)
+        d1 <- d1 |> select(all_of(cn)) |> mutate(fn = 1L, .before = 1)
+        d2 <- d2 |> select(all_of(cn)) |> mutate(fn = 2L, .before = 1)
         # Bind rows
-        dd <- dplyr::bind_rows(d1, d2) |>
+        dd <- bind_rows(d1, d2) |>
           # Drop NAs
           tidyr::drop_na(species_code, fishing_event_id) |>
           # Arrange so same fishing_event_id are in sequential rows
           dplyr::arrange(species_code, fishing_event_id, fn) |>
-          # Remove small differences in density (<< 1e-03)
-          mutate(across(starts_with("density_"), \(x) round(x, 3))) |>
           # Collapse to one row if equal (except in fn column)
           dplyr::distinct(dplyr::across(-fn), .keep_all = TRUE) |>
           dplyr::group_by(comparison_id) |>
@@ -137,9 +122,14 @@ compare_set_values <- function (spp, ssid) {
           dplyr::ungroup()
       } # End if
       # Bind rows
-      d <- dplyr::bind_rows(d, dd)
+      u <- dplyr::bind_rows(u, dd)
     }
   }
+
+  # Arrange
+  x <- dplyr::arrange(x, species, ssid, fn)
+  s <- dplyr::arrange(s, species, ssid, fn)
+
   # Return
-  d
+  list(x = x, u = u, s = s)
 }
