@@ -29,8 +29,8 @@
 \alias{get_hake_survey_samples}
 \alias{get_hake_catch}
 \alias{get_sablefish_surveys}
-\alias{get_survey_samples2}
-\alias{get_survey_sets2}
+\alias{get_all_survey_samples}
+\alias{get_all_survey_sets}
 \title{Get PBS data}
 \usage{
 get_commercial_samples2(
@@ -140,27 +140,29 @@ get_hake_catch(end_date = format(Sys.Date(), "\%d/\%m/\%Y"))
 
 get_sablefish_surveys()
 
-get_survey_samples2(
+get_all_survey_samples(
   species,
   ssid = NULL,
   unsorted_only = TRUE,
   usability = NULL,
   random_only = TRUE,
   include_activity_matches = FALSE,
-  include_event_info = FALSE,
+  include_event_info = TRUE,
   remove_bad_data = TRUE,
   remove_duplicates = FALSE,
   return_dna_info = FALSE,
   major = NULL
 )
 
-get_survey_sets2(
+get_all_survey_sets(
   species,
   ssid = c(1, 3, 4, 16, 2, 14, 22, 35, 36, 39, 40),
   years = NULL,
   join_sample_ids = FALSE,
   verbose = FALSE,
   remove_false_zeros = FALSE,
+  remove_duplicates = FALSE,
+  include_activity_matches = FALSE,
   usability = c(0, 1, 2, 6)
 )
 }
@@ -193,12 +195,9 @@ IPHC codes may be different to other surveys.}
 
 \item{ssid}{Default is to return all survey samples.}
 
-\item{join_sample_ids}{If \code{TRUE} then the sample IDs will be joined in. This
-may result in repeated rows of data if the same sample ID is part of
-different survey stratifications.}
+\item{join_sample_ids}{This option was problematic, so now reverts to FALSE.}
 
-\item{verbose}{If \code{TRUE} then extra messages were reprinted during data
-extraction. Useful to monitor progress.}
+\item{verbose}{Doesn't do anything in this version.}
 
 \item{remove_false_zeros}{If \code{TRUE} will make sure weights > 0 don't have
 associated counts of 0 and vice versa. Only applies to trawl data where
@@ -256,9 +255,9 @@ you want to substantially speed up data extraction.}
 \item{random_only}{Only return randomly sampled specimens.
 If FALSE will return all specimens collected on research trips.}
 
-\item{include_activity_matches}{Get all records collected with activity codes that match chosen ssids.}
+\item{include_activity_matches}{Get all surveys with activity codes that match chosen ssids.}
 
-\item{remove_duplicates}{Remove duplicated specimen records due to overlapping survey
+\item{remove_duplicates}{Remove duplicated event records due to overlapping survey
 stratifications when original_ind = 'N', or from known issues with MSSM trips including both survey areas.}
 
 \item{years}{If NULL, returns all years.}
