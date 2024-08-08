@@ -2,13 +2,33 @@ get_skate_level_counts <- function(fe) {
   fe_A_no_parent <- filter(fe, is.na(FE_PARENT_EVENT_ID), is.na(FE_MINOR_LEVEL_ID), is.na(FE_SUB_LEVEL_ID)) # just actual events
 
   # get sub events (known as skates)
+  # when present hook data is stored at this level, while other event info tends to be stored at the parent event level
   fe_B_no_minor <- filter(fe, !is.na(FE_PARENT_EVENT_ID), is.na(FE_MINOR_LEVEL_ID)) %>%
     group_by(FE_PARENT_EVENT_ID, FE_MAJOR_LEVEL_ID, SURVEY_ID, SURVEY_SERIES_ID) %>%
     mutate(SKATE_COUNT = n()) %>%
-    select(FE_PARENT_EVENT_ID, FISHING_EVENT_ID, FE_MAJOR_LEVEL_ID, YEAR, TRIP_ID, SURVEY_ID, SURVEY_SERIES_ID, SKATE_COUNT) %>%
+    select(FE_PARENT_EVENT_ID, FISHING_EVENT_ID, FE_MAJOR_LEVEL_ID,
+           YEAR, TRIP_ID, SURVEY_ID, SURVEY_SERIES_ID,
+           SKATE_COUNT,
+           HOOK_CODE, LGLSP_HOOK_COUNT, HOOK_DESC, HOOKSIZE_DESC) %>%
     dplyr::distinct() %>%
     rename(skate_id = FISHING_EVENT_ID, fishing_event_id = FE_PARENT_EVENT_ID) %>%
     ungroup()
+
+  # select all actual events that lack sub levels
+  fe_without_B <- fe_A_no_parent |> rename(fishing_event_id = FISHING_EVENT_ID) |>
+    anti_join(fe_B_no_minor, by = "fishing_event_id")
+
+  # select all sublevel events and add on variables
+  fe_A_data_for_B <- fe_A_no_parent |> rename(fishing_event_id = FISHING_EVENT_ID) |>
+    select(
+      -FE_PARENT_EVENT_ID, -FE_MAJOR_LEVEL_ID,
+      -YEAR, -TRIP_ID, -SURVEY_ID, -SURVEY_SERIES_ID,
+      -HOOK_CODE, -LGLSP_HOOK_COUNT, -HOOK_DESC, -HOOKSIZE_DESC
+      )
+
+  fe_with_B <- fe_B_no_minor |> left_join(fe_A_data_for_B)
+
+  fe_by_event_or_skate <- bind_rows(fe_without_B, fe_with_B)
 
   # get sub-sub events (usually hooks)
   # fe_C <- filter(fe_w_parent_events, !is.na(FE_MINOR_LEVEL_ID))
@@ -85,11 +105,8 @@ get_skate_level_counts <- function(fe) {
     select(-SURVEY_ID, -SURVEY_SERIES_ID) %>%
     dplyr::distinct()
 
-  fe_by_event_or_skate <- filter(fe, is.na(FE_MINOR_LEVEL_ID))  |>
-    rename(fishing_event_id = FISHING_EVENT_ID) |> select(-FE_MINOR_LEVEL_ID)
-
-  fe2 <- final_event_counts %>%
-    left_join(fe_by_event_or_skate)
+  fe2 <- fe_by_event_or_skate |>
+    left_join(final_event_counts)
 
   fe2
 }
