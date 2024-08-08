@@ -268,7 +268,10 @@ get_all_survey_sets <- function(species,
       ))
     ) %>% left_join(.d)
   } else {
-    fe2 <- get_sub_level_counts(fe)
+
+    # for other survey types, further wrangling is required
+    # fe2 <- get_sub_level_counts(fe)
+    fe2 <- get_skate_level_counts(fe)
     names(fe2) <- tolower(names(fe2))
 
     .h <- read_sql("get-ll-hook-data2.sql")
