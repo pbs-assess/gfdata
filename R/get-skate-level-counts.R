@@ -18,6 +18,11 @@ get_skate_level_counts <- function(fe) {
   fe_without_B <- fe_A_no_parent |> rename(fishing_event_id = FISHING_EVENT_ID) |>
     anti_join(fe_B_no_minor, by = "fishing_event_id")
 
+
+
+  fe_with_hook <- fe |> rename(fishing_event_id = FISHING_EVENT_ID) |>
+    filter(!is.na(HOOK_CODE))
+
   # # select all sublevel events and add on variables
   # fe_A_data_for_B <- fe_A_no_parent |> rename(fishing_event_id = FISHING_EVENT_ID) |>
   #   select(
@@ -34,9 +39,18 @@ get_skate_level_counts <- function(fe) {
       -HOOK_CODE, -LGLSP_HOOK_COUNT, -HOOK_DESC, -HOOKSIZE_DESC
       )
 
-  fe_with_B <- fe_B_no_minor |> left_join(fe_A_data_for_B)
+  fe_with_B_and_hook <- fe_B_no_minor |> left_join(fe_A_data_for_B) |> filter(!is.na(HOOK_CODE))
 
-  fe_by_event_or_skate <- bind_rows(fe_without_B, fe_with_B)
+  fe_with_B_no_hook <- fe_B_no_minor |> filter(is.na(HOOK_CODE))|>
+    select(
+      -FE_PARENT_EVENT_ID, -FE_MAJOR_LEVEL_ID, -FE_SUB_LEVEL_ID,
+      -YEAR, -TRIP_ID, -SURVEY_ID, -SURVEY_SERIES_ID,
+      -HOOK_CODE, -LGLSP_HOOK_COUNT, -HOOK_DESC, -HOOKSIZE_DESC
+    ) |> left_join(fe_with_hook)
+
+
+  fe_by_event_or_skate <- bind_rows(fe_without_B, fe_with_B_and_hook) |>
+    bind_rows(fe_with_B_no_hook)
 
   # get sub-sub events (usually hooks)
   # fe_C <- filter(fe_w_parent_events, !is.na(FE_MINOR_LEVEL_ID))
