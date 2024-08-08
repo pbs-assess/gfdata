@@ -85,10 +85,10 @@ get_skate_level_counts <- function(fe) {
     select(-SURVEY_ID, -SURVEY_SERIES_ID) %>%
     dplyr::distinct()
 
-  fe <- fe |> rename(fishing_event_id = FISHING_EVENT_ID)
+  fe_A_no_parent <- fe_A_no_parent |> rename(fishing_event_id = FISHING_EVENT_ID)
 
   fe2 <- final_event_counts %>%
-    left_join(fe) %>%
+    left_join(fe_A_no_parent) %>%
     select(-FE_MINOR_LEVEL_ID)
 
   fe2
