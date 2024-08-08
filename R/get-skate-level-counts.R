@@ -6,7 +6,7 @@ get_skate_level_counts <- function(fe) {
   fe_B_no_minor <- filter(fe, !is.na(FE_PARENT_EVENT_ID), is.na(FE_MINOR_LEVEL_ID)) %>%
     group_by(FE_PARENT_EVENT_ID, FE_MAJOR_LEVEL_ID, SURVEY_ID, SURVEY_SERIES_ID) %>%
     mutate(SKATE_COUNT = n()) %>%
-    select(FE_PARENT_EVENT_ID, FISHING_EVENT_ID, FE_MAJOR_LEVEL_ID,
+    select(FE_PARENT_EVENT_ID, FISHING_EVENT_ID, FE_MAJOR_LEVEL_ID, FE_SUB_LEVEL_ID,
            YEAR, TRIP_ID, SURVEY_ID, SURVEY_SERIES_ID,
            SKATE_COUNT,
            HOOK_CODE, LGLSP_HOOK_COUNT, HOOK_DESC, HOOKSIZE_DESC) %>%
@@ -21,7 +21,7 @@ get_skate_level_counts <- function(fe) {
   # select all sublevel events and add on variables
   fe_A_data_for_B <- fe_A_no_parent |> rename(fishing_event_id = FISHING_EVENT_ID) |>
     select(
-      -FE_PARENT_EVENT_ID, -FE_MAJOR_LEVEL_ID,
+      -FE_PARENT_EVENT_ID, -FE_MAJOR_LEVEL_ID, -FE_SUB_LEVEL_ID,
       -YEAR, -TRIP_ID, -SURVEY_ID, -SURVEY_SERIES_ID,
       -HOOK_CODE, -LGLSP_HOOK_COUNT, -HOOK_DESC, -HOOKSIZE_DESC
       )
