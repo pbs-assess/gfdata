@@ -291,15 +291,16 @@ get_all_survey_sets <- function(species,
 
       .d <- left_join(
         exdat,
-        dplyr::distinct(select(
-          fe2,
-          #-survey_id,
-          #-survey_series_id,
-          -tow_length_m,
-          -mouth_width_m,
-          -doorspread_m,
-          -speed_mpm
-        ))
+        fe2
+        # dplyr::distinct(select(
+        #   fe2,
+        #   #-survey_id,
+        #   #-survey_series_id,
+        #   -tow_length_m,
+        #   -mouth_width_m,
+        #   -doorspread_m,
+        #   -speed_mpm
+        # ))
       ) %>% left_join(.d)
     } else {
       exdat <- expand.grid(fishing_event_id = unique(fe2$fishing_event_id), species_code = unique(.d$species_code))
