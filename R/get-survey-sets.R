@@ -234,7 +234,7 @@ get_all_survey_sets <- function(species,
   )
   }
 
-  fe <- run_sql("GFBioSQL", .fe)
+  fe <- run_sql("GFBioSQL", .fe) |> filter(FE_MAJOR_LEVEL_ID < 700)
 
   if (!is.null(years)) {
     fe <- filter(fe, YEAR %in% years)
