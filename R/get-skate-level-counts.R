@@ -43,7 +43,7 @@ get_skate_level_counts <- function(fe) {
 
   fe_with_B_no_hook <- fe_B_no_minor |> filter(is.na(HOOK_CODE))|>
     select(
-      -FE_PARENT_EVENT_ID, -FE_MAJOR_LEVEL_ID, -FE_SUB_LEVEL_ID,
+      -FE_MAJOR_LEVEL_ID, -FE_SUB_LEVEL_ID,
       -YEAR, -TRIP_ID, -SURVEY_ID, -SURVEY_SERIES_ID,
       -HOOK_CODE, -LGLSP_HOOK_COUNT, -HOOK_DESC, -HOOKSIZE_DESC
     ) |> left_join(fe_with_hook)
@@ -131,5 +131,4 @@ get_skate_level_counts <- function(fe) {
     left_join(final_event_counts)
 
   fe2
-  browser()
 }
