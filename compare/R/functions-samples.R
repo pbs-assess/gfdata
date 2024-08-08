@@ -30,7 +30,7 @@ compare_survey_samples <- function (spp, ssid) {
       r2 <- NULL
       # Pull data
       try(d1 <- gfdata::get_survey_samples(species = spp[i], ssid = ssid[j]))
-      try(d2 <- gfdata::get_survey_samples2(species = spp[i], ssid = ssid[j]))
+      try(d2 <- gfdata::get_all_survey_samples(species = spp[i], ssid = ssid[j]))
       # Drop NA specimen_id
       if (!is.null(d1)) {
         d1 <- d1 |> tidyr::drop_na(specimen_id)
@@ -87,8 +87,22 @@ compare_survey_samples <- function (spp, ssid) {
           d2[r2, ]
         )
       }
-      # Augment extra specimens
-      x <- dplyr::bind_rows(x, x1, x2)
+      x3 <- NULL
+      r3 <- NULL
+      # If either function had extra, include the ones that were shared as fn = 12
+      if ((length(n1) + length(n2)) > 0 & length(unique(d2$specimen_id)) > 0) {
+        # Shared specimen rows numbers
+        r3 <- which(!(d2$specimen_id %in% n2))
+        x3 <- tibble::tibble(
+          fn = 12L,
+          species = spp[i],
+          # ssid = ssid ,
+          d2[r3, ]
+        )
+      }
+      # Augment return all specimens only when functions differed
+      x <- dplyr::bind_rows(x, x1, x2, x3)
+
 
       # Only compares non-null output for both functions
       if (!is.null(d1) & !is.null(d2)) {
