@@ -289,32 +289,6 @@ get_all_survey_sets <- function(species,
 
     fe2 <- left_join(fe2, .hd)
 
-
-    # get catch for sub levels
-    .f <- fe2 %>% filter(skate_count > 1)
-    fe_vector <- unique(.f$fishing_event_id)
-    spp_codes <- unique(.d$species_code)
-
-    slc_list <- list()
-    for (i in seq_along(spp_codes)){
-    .slc <- read_sql("get-ll-sub-level-catch.sql")
-    .slc <- inject_filter("", spp_codes[i], sql_code = .slc)
-    .slc <- inject_filter("AND C.SPECIES_CODE IN", spp_codes[i],
-                          sql_code = .slc,
-                          search_flag = "-- insert species again here"
-    )
-    # .slc <- inject_filter("AND FE.FE_PARENT_EVENT_ID IN", fe_vector,
-    #                      sql_code = .slc,
-    #                      search_flag = "-- insert fe_vector here", conversion_func = I
-    # )
-
-    slc_list[[i]] <- run_sql("GFBioSQL", .slc)
-    }
-
-    slc <- do.call(rbind, slc_list)
-
-    names(slc) <- tolower(names(slc))
-
     # if (!any(ssid %in% trawl)) {
     #   exdat <- expand.grid(fishing_event_id = unique(fe2$fishing_event_id), species_code = unique(.d$species_code))
     #
@@ -346,10 +320,35 @@ get_all_survey_sets <- function(species,
       ) %>% left_join(.d)
     # }
 
+      # get catch for sub levels if skate counts > 1
+      .sl <- fe2 %>% filter(skate_count > 1)
+      fe_vector <- unique(.sl$fishing_event_id)
+      spp_codes <- unique(.d$species_code)
+      if(nrow(.sl)>1 & (length(unique(.sl$hook_code))>1|length(unique(.sl$hooksize_desc))>1)) {
+
+        slc_list <- list()
+        for (i in seq_along(spp_codes)){
+          .slc <- read_sql("get-ll-sub-level-catch.sql")
+          .slc <- inject_filter("", spp_codes[i], sql_code = .slc)
+          .slc <- inject_filter("AND C.SPECIES_CODE IN", spp_codes[i],
+                                sql_code = .slc,
+                                search_flag = "-- insert species again here"
+          )
+          ## this didn't work, not sure why, but suspect it isn't working for get-survey-sets.sql either
+          # .slc <- inject_filter("AND FE.FE_PARENT_EVENT_ID IN", fe_vector,
+          #                      sql_code = .slc,
+          #                      search_flag = "-- insert fe_vector here", conversion_func = I
+          # )
+          slc_list[[i]] <- run_sql("GFBioSQL", .slc)
+        }
+
+      slc <- do.call(rbind, slc_list)
+      names(slc) <- tolower(names(slc))
 
       .d1 <- .d %>% filter(skate_count <= 1)
       .d2 <- .d %>% filter(skate_count > 1) |> select(-catch_count) |> left_join(slc)
       .d <- bind_rows(.d1, .d2)
+      }
 
   }
 
