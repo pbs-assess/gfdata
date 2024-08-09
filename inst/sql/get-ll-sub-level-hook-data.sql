@@ -27,6 +27,7 @@
             SELECT TRIP_ID,
                VESSEL_ID,
                FE_MAJOR_LEVEL_ID,
+               FE_SUB_LEVEL_ID,
                SUM(Nall) AS Nall,
                SUM(Nsp) AS Nsp,
                SUM(Ne) AS Ne,
@@ -37,6 +38,7 @@
                SELECT T.TRIP_ID,
                   T.VESSEL_ID,
                   FE.FE_MAJOR_LEVEL_ID,
+                  FE.FE_SUB_LEVEL_ID,
                   FE.FISHING_EVENT_ID,
                   SUM(CASE WHEN SPECIES_CODE IS NOT NULL THEN 1 ELSE 0 END) AS Nsp, -- all species recorded
                   SUM(CASE WHEN HOOK_YIELD_CODE IN (3,4,5,8) THEN 1 ELSE 0 END) AS Nall, -- all animals
@@ -63,8 +65,9 @@
                WHERE FE_PARENT_EVENT_ID IS NOT NULL AND
                   FE_MINOR_LEVEL_ID IS NOT NULL
                   -- insert ssid here
-               GROUP BY T.TRIP_ID, T.VESSEL_ID, FE.FE_MAJOR_LEVEL_ID, FE.FISHING_EVENT_ID) T
-            GROUP BY TRIP_ID, VESSEL_ID, FE_MAJOR_LEVEL_ID) C ON
+               GROUP BY T.TRIP_ID, T.VESSEL_ID, FE.FE_MAJOR_LEVEL_ID, FE.FISHING_EVENT_ID, FE.FE_SUB_LEVEL_ID) T
+            GROUP BY TRIP_ID, VESSEL_ID, FE_MAJOR_LEVEL_ID, FE_SUB_LEVEL_ID) C ON
       T.TRIP_ID = C.TRIP_ID AND T.VESSEL_ID = C.VESSEL_ID AND FE.FE_MAJOR_LEVEL_ID = C.FE_MAJOR_LEVEL_ID
-   WHERE FE_PARENT_EVENT_ID IS NULL
+      AND FE.FE_SUB_LEVEL_ID = C.FE_SUB_LEVEL_ID
+   WHERE FE_MINOR_LEVEL_ID IS NULL
       -- insert ssid here
