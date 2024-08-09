@@ -286,23 +286,43 @@ get_all_survey_sets <- function(species,
 
     fe2 <- left_join(fe2, dplyr::distinct(.hd))
 
-    if (!any(ssid %in% trawl)) {
-      exdat <- expand.grid(fishing_event_id = unique(fe2$fishing_event_id), species_code = unique(.d$species_code))
+    browser()
+    # get catch for sub levels
+    .f <- fe2 %>% filter(skate_count > 1)
+    fe_vector <- unique(.f$fishing_event_id)
+    spp_codes <- unique(.d$species_code)
 
-      .d <- left_join(
-        exdat,
-        fe2
-        # dplyr::distinct(select(
-        #   fe2,
-        #   #-survey_id,
-        #   #-survey_series_id,
-        #   -tow_length_m,
-        #   -mouth_width_m,
-        #   -doorspread_m,
-        #   -speed_mpm
-        # ))
-      ) %>% left_join(.d)
-    } else {
+    slc_list <- list()
+    for (i in seq_along(spp_codes)){
+    .slc <- read_sql("get-ll-sub-level-catch.sql")
+    .slc <- inject_filter("", spp_codes[i], sql_code = .slc)
+    .slc <- inject_filter("AND FE.FISHING_EVENT_ID IN", fe_vector,
+                         sql_code = .slc,
+                         search_flag = "-- insert fe vector here", conversion_func = I
+    )
+
+    slc_list[i] <- run_sql("GFBioSQL", .slc)
+    }
+
+    slc <- do.call(rbind, slc_list)
+
+    # if (!any(ssid %in% trawl)) {
+    #   exdat <- expand.grid(fishing_event_id = unique(fe2$fishing_event_id), species_code = unique(.d$species_code))
+    #
+    #   .d <- left_join(
+    #     exdat,
+    #     fe2
+    #     # dplyr::distinct(select(
+    #     #   fe2,
+    #     #   #-survey_id,
+    #     #   #-survey_series_id,
+    #     #   -tow_length_m,
+    #     #   -mouth_width_m,
+    #     #   -doorspread_m,
+    #     #   -speed_mpm
+    #     # ))
+    #   ) %>% left_join(.d)
+    # } else {
       exdat <- expand.grid(fishing_event_id = unique(fe2$fishing_event_id), species_code = unique(.d$species_code))
       .d <- left_join(
         exdat,
@@ -315,7 +335,13 @@ get_all_survey_sets <- function(species,
         #    -fe_minor_level_id
         # ))
       ) %>% left_join(.d)
-    }
+    # }
+
+
+      .d1 <- .d %>% filter(skate_count <= 1)
+      .d2 <- .d %>% filter(skate_count > 1) |> select(-catch_count) |> left_join(slc)
+      # .d <- bind_rows(.d1, .d2)
+
   }
 
   surveys <- get_ssids()
