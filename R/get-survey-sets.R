@@ -305,7 +305,7 @@ get_all_survey_sets <- function(species,
     )
     .slc <- inject_filter("AND FE.PARENT_EVENT_ID IN", fe_vector,
                          sql_code = .slc,
-                         search_flag = "-- insert fe vector here", conversion_func = I
+                         search_flag = "-- insert fe_vector here", conversion_func = I
     )
 
     slc_list[i] <- run_sql("GFBioSQL", .slc)
