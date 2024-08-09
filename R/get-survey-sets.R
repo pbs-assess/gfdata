@@ -274,7 +274,8 @@ get_all_survey_sets <- function(species,
     fe2 <- get_skate_level_counts(fe)
     names(fe2) <- tolower(names(fe2))
 
-    .h <- read_sql("get-ll-hook-data2.sql")
+    # .h <- read_sql("get-ll-hook-data2.sql")
+    .h <- read_sql("get-ll-sub-level-hook-data.sql")
 
     .h <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid,
       sql_code = .h,
@@ -284,7 +285,9 @@ get_all_survey_sets <- function(species,
     .hd <- run_sql("GFBioSQL", .h)
     names(.hd) <- tolower(names(.hd))
 
-    fe2 <- left_join(fe2, dplyr::distinct(.hd))
+    .hd <- dplyr::distinct(.hd) #%>% select(-fishing_event_id, -survey_id, -survey_series_id)
+
+    fe2 <- left_join(fe2, .hd)
 
     browser()
     # get catch for sub levels
