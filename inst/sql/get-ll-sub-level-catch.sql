@@ -28,8 +28,8 @@
                   C.SPECIES_CODE,
                   SUM(ISNULL(CATCH_COUNT,0)) AS CATCH_COUNT, -- count target
                   SUM(CASE SPECIES_CODE WHEN
-				          -- insert species here
-				          THEN 1 ELSE 0 END) AS CODE_COUNT -- count target
+				 -- insert species here
+				   THEN 1 ELSE 0 END) AS CODE_COUNT -- count target
                FROM TRIP T
                   INNER JOIN FISHING_EVENT FE ON
                   T.TRIP_ID = FE.TRIP_ID
@@ -43,7 +43,7 @@
                   ON FE.FISHING_EVENT_ID = LS.FISHING_EVENT_ID
                WHERE FE_PARENT_EVENT_ID IS NOT NULL AND
                   FE_MINOR_LEVEL_ID IS NOT NULL
-                  -- insert species here
+                  -- insert species again here
                   -- insert fe_vector here
                GROUP BY FE.FISHING_EVENT_ID, FE.PARENT_EVENT_ID, FE.FE_MAJOR_LEVEL_ID, FE.FE_SUB_LEVEL_ID, T.TRIP_ID, T.VESSEL_ID, C.SPECIES_CODE) T
             GROUP BY FE_MAJOR_LEVEL_ID, PARENT_EVENT_ID, FE_SUB_LEVEL_ID, TRIP_ID, VESSEL_ID, SPECIES_CODE) C ON
