@@ -299,6 +299,10 @@ get_all_survey_sets <- function(species,
     for (i in seq_along(spp_codes)){
     .slc <- read_sql("get-ll-sub-level-catch.sql")
     .slc <- inject_filter("", spp_codes[i], sql_code = .slc)
+    .slc <- inject_filter("AND C.SPECIES_CODE IN", species,
+                          sql_code = .slc,
+                          search_flag = "-- insert species here"
+    )
     .slc <- inject_filter("AND FE.FISHING_EVENT_ID IN", fe_vector,
                          sql_code = .slc,
                          search_flag = "-- insert fe vector here", conversion_func = I
