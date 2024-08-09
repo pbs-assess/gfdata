@@ -345,7 +345,7 @@ get_all_survey_sets <- function(species,
       slc <- do.call(rbind, slc_list)
       names(slc) <- tolower(names(slc))
 
-      .d1 <- .d %>% filter(skate_count <= 1)
+      .d1 <- .d %>% filter(!(skate_count > 1))
       .d2 <- .d %>% filter(skate_count > 1) |> select(-catch_count) |> left_join(slc)
       .d <- bind_rows(.d1, .d2)
       }
