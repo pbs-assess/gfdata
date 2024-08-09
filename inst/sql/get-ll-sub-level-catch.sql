@@ -1,5 +1,5 @@
 -- Adapted from query written by Norm Olsen for Marie-Pierre Etienne (Yelloweye Rockfish outside hbll and iphc surveys)
-   SELECT FE.FISHING_EVENT_ID,
+   SELECT
     FE.FE_MAJOR_LEVEL_ID,
     FE.FE_SUB_LEVEL_ID,
     T.TRIP_ID,
@@ -7,8 +7,7 @@
     C.CATCH_COUNT,
     C.CODE_COUNT
    FROM TRIP T
-      INNER JOIN FISHING_EVENT FE ON
-      T.TRIP_ID = FE.TRIP_ID
+      INNER JOIN FISHING_EVENT FE ON T.TRIP_ID = FE.TRIP_ID
       INNER JOIN (
             SELECT
                FISHING_EVENT_ID,
@@ -46,8 +45,8 @@
                   FE_MINOR_LEVEL_ID IS NOT NULL
                   -- insert species here
                   -- insert fe_vector here
-               GROUP BY T.TRIP_ID, T.VESSEL_ID, FE.FE_MAJOR_LEVEL_ID, FE.FISHING_EVENT_ID, FE.FE_SUB_LEVEL_ID) T
-            GROUP BY TRIP_ID, VESSEL_ID, FISHING_EVENT_ID, FE_MAJOR_LEVEL_ID, FE_SUB_LEVEL_ID) C ON
+               GROUP BY FE.FISHING_EVENT_ID, FE.FE_MAJOR_LEVEL_ID, FE.FE_SUB_LEVEL_ID, T.TRIP_ID, T.VESSEL_ID, C.SPECIES_CODE) T
+            GROUP BY FE_MAJOR_LEVEL_ID, FE_SUB_LEVEL_ID, TRIP_ID, VESSEL_ID, SPECIES_CODE) C ON
       T.TRIP_ID = C.TRIP_ID AND T.VESSEL_ID = C.VESSEL_ID AND FE.FE_MAJOR_LEVEL_ID = C.FE_MAJOR_LEVEL_ID
       AND FE.FE_SUB_LEVEL_ID = C.FE_SUB_LEVEL_ID
    WHERE FE_MINOR_LEVEL_ID IS NULL
