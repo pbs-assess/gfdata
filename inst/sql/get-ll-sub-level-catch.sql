@@ -9,8 +9,7 @@
    FROM TRIP T
       INNER JOIN FISHING_EVENT FE ON T.TRIP_ID = FE.TRIP_ID
       INNER JOIN (
-            SELECT T.FISHING_EVENT_ID,
-               T.FE_PARENT_EVENT_ID,
+            SELECT T.FE_PARENT_EVENT_ID,
                T.FE_MAJOR_LEVEL_ID,
                T.FE_SUB_LEVEL_ID,
                T.TRIP_ID,
@@ -19,8 +18,7 @@
                SUM(CATCH_COUNT) AS CATCH_COUNT,
                SUM(CODE_COUNT) AS CODE_COUNT
             FROM (
-               SELECT FE.FISHING_EVENT_ID,
-                  FE.FE_PARENT_EVENT_ID,
+               SELECT FE.FE_PARENT_EVENT_ID,
                   FE.FE_MAJOR_LEVEL_ID,
                   FE.FE_SUB_LEVEL_ID,
                   T.TRIP_ID,
@@ -45,7 +43,7 @@
                   FE_MINOR_LEVEL_ID IS NOT NULL
                   -- insert species again here
                   -- insert fe_vector here
-               GROUP BY FE.FISHING_EVENT_ID, FE.FE_PARENT_EVENT_ID, FE.FE_MAJOR_LEVEL_ID, FE.FE_SUB_LEVEL_ID, T.TRIP_ID, T.VESSEL_ID, C.SPECIES_CODE) T
+               GROUP BY FE.FE_PARENT_EVENT_ID, FE.FE_MAJOR_LEVEL_ID, FE.FE_SUB_LEVEL_ID, T.TRIP_ID, T.VESSEL_ID, C.SPECIES_CODE) T
             GROUP BY FE_MAJOR_LEVEL_ID, FE_PARENT_EVENT_ID, FE_SUB_LEVEL_ID, TRIP_ID, VESSEL_ID, SPECIES_CODE) C ON
       T.TRIP_ID = C.TRIP_ID AND T.VESSEL_ID = C.VESSEL_ID AND FE.FE_MAJOR_LEVEL_ID = C.FE_MAJOR_LEVEL_ID
       AND FE.FE_SUB_LEVEL_ID = C.FE_SUB_LEVEL_ID
