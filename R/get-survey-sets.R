@@ -303,17 +303,17 @@ get_all_survey_sets <- function(species,
                           sql_code = .slc,
                           search_flag = "-- insert species again here"
     )
-    .slc <- inject_filter("AND FE.FE_PARENT_EVENT_ID IN", fe_vector,
-                         sql_code = .slc,
-                         search_flag = "-- insert fe_vector here", conversion_func = I
-    )
+    # .slc <- inject_filter("AND FE.FE_PARENT_EVENT_ID IN", fe_vector,
+    #                      sql_code = .slc,
+    #                      search_flag = "-- insert fe_vector here", conversion_func = I
+    # )
 
-    browser()
-
-    slc_list[i] <- run_sql("GFBioSQL", .slc)
+    slc_list[[i]] <- run_sql("GFBioSQL", .slc)
     }
 
     slc <- do.call(rbind, slc_list)
+
+    names(slc) <- tolower(names(slc))
 
     # if (!any(ssid %in% trawl)) {
     #   exdat <- expand.grid(fishing_event_id = unique(fe2$fishing_event_id), species_code = unique(.d$species_code))
@@ -349,7 +349,7 @@ get_all_survey_sets <- function(species,
 
       .d1 <- .d %>% filter(skate_count <= 1)
       .d2 <- .d %>% filter(skate_count > 1) |> select(-catch_count) |> left_join(slc)
-      # .d <- bind_rows(.d1, .d2)
+      .d <- bind_rows(.d1, .d2)
 
   }
 
