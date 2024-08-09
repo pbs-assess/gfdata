@@ -4,7 +4,7 @@
     FE.FE_SUB_LEVEL_ID,
     T.TRIP_ID,
     SPECIES_CODE,
-    NT AS catch_count,
+    NT AS catch_count
    FROM SURVEY S
       INNER JOIN TRIP_SURVEY TS ON
       S.SURVEY_ID = TS.SURVEY_ID
