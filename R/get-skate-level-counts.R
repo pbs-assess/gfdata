@@ -116,7 +116,7 @@ get_skate_level_counts <- function(fe) {
     bind_rows(missing_event_ids) %>%
     group_by(skate_id, FE_SUB_LEVEL_ID, fishing_event_id, FE_MAJOR_LEVEL_ID, YEAR, SURVEY_ID, SURVEY_SERIES_ID) %>%
     dplyr::summarise(
-      skate_count = mean(SKATE_COUNT, na.rm = T),
+      # skate_count = mean(SKATE_COUNT, na.rm = T),
       mean_per_skate = mean(MINOR_ID_COUNT, na.rm = T),
       minor_id_count = sum(MINOR_ID_COUNT, na.rm = T),
       # minor_id_max = max(MINOR_ID_MAX, na.rm = T)
@@ -128,7 +128,8 @@ get_skate_level_counts <- function(fe) {
     dplyr::distinct()
 
   fe2 <- fe_by_event_or_skate |>
-    left_join(final_event_counts)
+    left_join(final_event_counts) |>
+    select(-FE_PARENT_EVENT_ID, -FE_MINOR_LEVEL_ID)
 
   fe2
 }
