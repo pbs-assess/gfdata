@@ -101,9 +101,9 @@ compare_survey_sets <- function (spp, ssid) {
       x3 <- NULL
       r3 <- NULL
       # If either function had extra, include the ones that were shared as fn = 12
-      if ((length(n1) + length(n2)) > 0 & length(unique(d2$fishing_event_id)) > 0) {
-        # Shared specimen rows numbers
-        r3 <- which(!(d2$fishing_event_id %in% n2))
+      if ((length(n1) + length(n2)) > 0 & length(unique(d2$comparison_id)) > 0 & length(unique(d1$comparison_id)) > 0) {
+        # Shared event row numbers
+        r3 <- which(!(d2$comparison_id %in% n2))
         x3 <- tibble::tibble(
           fn = 12L,
           species = spp[i],
