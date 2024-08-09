@@ -303,7 +303,7 @@ get_all_survey_sets <- function(species,
                           sql_code = .slc,
                           search_flag = "-- insert species here"
     )
-    .slc <- inject_filter("AND FE.FISHING_EVENT_ID IN", fe_vector,
+    .slc <- inject_filter("AND FE.PARENT_EVENT_ID IN", fe_vector,
                          sql_code = .slc,
                          search_flag = "-- insert fe vector here", conversion_func = I
     )
