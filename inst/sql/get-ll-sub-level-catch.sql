@@ -9,13 +9,13 @@
    FROM TRIP T
       INNER JOIN FISHING_EVENT FE ON T.TRIP_ID = FE.TRIP_ID
       INNER JOIN (
-            SELECT FISHING_EVENT_ID,
-               PARENT_EVENT_ID,
-               FE_MAJOR_LEVEL_ID,
-               FE_SUB_LEVEL_ID,
-               TRIP_ID,
-               VESSEL_ID,
-               SPECIES_CODE,
+            SELECT T.FISHING_EVENT_ID,
+               T.PARENT_EVENT_ID,
+               T.FE_MAJOR_LEVEL_ID,
+               T.FE_SUB_LEVEL_ID,
+               T.TRIP_ID,
+               T.VESSEL_ID,
+               T.SPECIES_CODE,
                SUM(CATCH_COUNT) AS CATCH_COUNT,
                SUM(CODE_COUNT) AS CODE_COUNT
             FROM (
@@ -28,8 +28,8 @@
                   C.SPECIES_CODE,
                   SUM(ISNULL(CATCH_COUNT,0)) AS CATCH_COUNT, -- count target
                   SUM(CASE SPECIES_CODE WHEN
-				 -- insert species here
-				   THEN 1 ELSE 0 END) AS CODE_COUNT -- count target
+                  -- insert species here
+                  THEN 1 ELSE 0 END) AS CODE_COUNT -- count target
                FROM TRIP T
                   INNER JOIN FISHING_EVENT FE ON
                   T.TRIP_ID = FE.TRIP_ID
