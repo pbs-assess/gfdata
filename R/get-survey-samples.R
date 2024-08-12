@@ -320,7 +320,9 @@ get_all_survey_samples <- function(species, ssid = NULL,
       )
     }
 
-    fe <- run_sql("GFBioSQL", .fe) %>% select(-USABILITY_CODE, -GROUPING_CODE) # avoid classing with values for samples
+    fe <- run_sql("GFBioSQL", .fe) %>% select(-USABILITY_CODE,
+                                              -GROUPING_CODE_ORIGINAL, -GROUPING_DESC_ORIGINAL,
+                                              -GROUPING_CODE) # avoid classing with values for samples
 
     fe2 <- get_sub_level_counts(fe)
     names(fe2) <- tolower(names(fe2))
