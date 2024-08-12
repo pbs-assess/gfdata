@@ -57,7 +57,7 @@ get_all_survey_samples <- function(species, ssid = NULL,
   }
 
   if (!is.null(major)) {
-    .q <- inject_filter("AND SM.MAJOR_STAT_AREA_CODE =", major, .q,
+    .q <- inject_filter("AND SM.MAJOR_STAT_AREA_CODE IN", major, .q,
       search_flag = "-- insert major here", conversion_func = I
     )
   }
@@ -282,7 +282,7 @@ get_all_survey_samples <- function(species, ssid = NULL,
     )
 
     if (!is.null(major)) {
-      .q2 <- inject_filter("AND FE.MAJOR_STAT_AREA_CODE =", major, .q2,
+      .q2 <- inject_filter("AND FE.MAJOR_STAT_AREA_CODE IN", major, .q2,
                           search_flag = "-- insert major here", conversion_func = I
       )
     }
@@ -315,7 +315,7 @@ get_all_survey_samples <- function(species, ssid = NULL,
                          search_flag = "-- insert fe_vector here", conversion_func = I
     )
     if (!is.null(major)) {
-      .fe <- inject_filter("AND FE.MAJOR_STAT_AREA_CODE =", major, .fe,
+      .fe <- inject_filter("AND FE.MAJOR_STAT_AREA_CODE IN", major, .fe,
                            search_flag = "-- insert major here", conversion_func = I
       )
     }

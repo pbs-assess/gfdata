@@ -375,7 +375,7 @@ get_survey_samples <- function(species, ssid = NULL,
     )
   }
   if (!is.null(major)) {
-    .q <- inject_filter("AND SM.MAJOR_STAT_AREA_CODE =", major, .q,
+    .q <- inject_filter("AND SM.MAJOR_STAT_AREA_CODE IN", major, .q,
       search_flag = "-- insert major here", conversion_func = I
     )
   }

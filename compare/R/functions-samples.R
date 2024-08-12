@@ -29,8 +29,8 @@ compare_survey_samples <- function (spp, ssid, areas = NULL) {
       r1 <- NULL
       r2 <- NULL
       # Pull data
-      try(d1 <- gfdata::get_survey_samples(species = spp[i], ssid = ssid[j]), major = areas)
-      try(d2 <- gfdata::get_all_survey_samples(species = spp[i], ssid = ssid[j]), major = areas)
+      try(d1 <- gfdata::get_survey_samples(species = spp[i], ssid = ssid[j], major = areas))
+      try(d2 <- gfdata::get_all_survey_samples(species = spp[i], ssid = ssid[j], major = areas))
       # Drop NA specimen_id
       if (!is.null(d1)) {
         d1 <- d1 |> tidyr::drop_na(specimen_id)
