@@ -2,7 +2,7 @@
 source(here::here("compare", "R", "utils-compare.R"))
 
 # Compare survey samples
-compare_survey_samples <- function (spp, ssid) {
+compare_survey_samples <- function (spp, ssid, areas = NULL) {
 
   # Initialize tibbles
   x <- tibble::tibble() # Extra specimens
@@ -29,8 +29,8 @@ compare_survey_samples <- function (spp, ssid) {
       r1 <- NULL
       r2 <- NULL
       # Pull data
-      try(d1 <- gfdata::get_survey_samples(species = spp[i], ssid = ssid[j]))
-      try(d2 <- gfdata::get_all_survey_samples(species = spp[i], ssid = ssid[j]))
+      try(d1 <- gfdata::get_survey_samples(species = spp[i], ssid = ssid[j]), major = areas)
+      try(d2 <- gfdata::get_all_survey_samples(species = spp[i], ssid = ssid[j]), major = areas)
       # Drop NA specimen_id
       if (!is.null(d1)) {
         d1 <- d1 |> tidyr::drop_na(specimen_id)
@@ -96,7 +96,7 @@ compare_survey_samples <- function (spp, ssid) {
         x3 <- tibble::tibble(
           fn = 12L,
           species = spp[i],
-          # ssid = ssid ,
+          ssid = ssid[j],
           d2[r3, ]
         )
       }
