@@ -5,17 +5,12 @@
     T.TRIP_ID,
     S.SURVEY_ID,
     S.SURVEY_SERIES_ID,
-    YEAR(T.TRIP_START_DATE) AS TRIP_YEAR,
-      CAST(MAJOR_STAT_AREA_CODE AS SMALLINT) AS major,
     Nall count_all_animals,
     Nsp count_all_species,
     Nb count_bait_only,
     Ne count_empty_hooks,
     Nnf count_not_fishing,
-    Nbr count_bent_broken,
-    CASE MAJOR_STAT_AREA_CODE WHEN '01' THEN '4B' WHEN '03' THEN '3C'
-         WHEN '04' THEN '3D' WHEN '05' THEN '5A/B' WHEN '06' THEN '5A/B'
-         WHEN '07' THEN '5C/D/E' WHEN '08' THEN '5C/D/E' WHEN '09' THEN '5C/D/E' ELSE NULL END AS areagrp
+    Nbr count_bent_broken
    FROM SURVEY S
       INNER JOIN TRIP_SURVEY TS ON
       S.SURVEY_ID = TS.SURVEY_ID
