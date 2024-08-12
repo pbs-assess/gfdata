@@ -75,3 +75,5 @@ SELECT
     WHERE FE.FISHING_EVENT_ID IS NOT NULL
       -- insert ssid here
       -- insert fe_vector here
+      -- insert major here
+

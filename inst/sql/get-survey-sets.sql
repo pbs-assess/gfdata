@@ -36,6 +36,7 @@
       -- insert species here
       -- insert ssid here
       -- insert fe_vector here
+      -- insert major here
    GROUP BY C.SPECIES_CODE, FE.GEAR_CODE, A.ACTIVITY_DESC, TA.ACTIVITY_CODE,
       S.SURVEY_SERIES_ID, S.SURVEY_ID, T.TRIP_ID, FE.FISHING_EVENT_ID,
       FE.FE_PARENT_EVENT_ID, FE.FE_MAJOR_LEVEL_ID,

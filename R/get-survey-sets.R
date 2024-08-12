@@ -1,6 +1,9 @@
 #' Get survey set data faster and more comprehensively
 #'
 #' @param years If NULL, returns all years.
+#' @param major Character string (or vector, though doesn't work yet with
+#'  `cache_pbs_data`) of major stat area code to include (characters). Use
+#'  get_major_areas() to lookup area codes with descriptions.
 #' @param join_sample_ids This option was problematic, so now reverts to FALSE.
 #' @param verbose Doesn't do anything in this version.
 #' @param remove_false_zeros If `TRUE` will make sure weights > 0 don't have
@@ -29,6 +32,7 @@
 #'
 get_all_survey_sets <- function(species,
                              ssid = c(1, 3, 4, 16, 2, 14, 22, 35, 36, 39, 40),
+                             major = NULL,
                              years = NULL,
                              join_sample_ids = FALSE, verbose = FALSE,
                              remove_false_zeros = FALSE,
@@ -63,14 +67,13 @@ get_all_survey_sets <- function(species,
       search_flag = "-- insert ssid here", conversion_func = I
     )
   }
- }
-  # if (!is.null(major)) {
+  }
 
-  #   .q <- inject_filter("AND SM.MAJOR_STAT_AREA_CODE =", major, .q,
-  #                       search_flag = "-- insert major here", conversion_func = I
-  #   )
-  # }
-
+  if (!is.null(major)) {
+    .q <- inject_filter("AND FE.MAJOR_STAT_AREA_CODE =", major, .q,
+                         search_flag = "-- insert major here", conversion_func = I
+    )
+  }
 
   .d <- run_sql("GFBioSQL", .q)
 
@@ -224,6 +227,12 @@ get_all_survey_sets <- function(species,
     search_flag = "-- insert ssid here", conversion_func = I
   )
 
+  if (!is.null(major)) {
+    .fe <- inject_filter("AND FE.MAJOR_STAT_AREA_CODE =", major, .fe,
+                        search_flag = "-- insert major here", conversion_func = I
+    )
+  }
+
   if (is.null(ssid)) {
   # something to address replicated events across different survey series
   warning(
@@ -234,7 +243,8 @@ get_all_survey_sets <- function(species,
   )
   }
 
-  fe <- run_sql("GFBioSQL", .fe) |> filter(FE_MAJOR_LEVEL_ID < 700)
+  fe <- run_sql("GFBioSQL", .fe)
+  fe <- fe |> filter(FE_MAJOR_LEVEL_ID < 700) # removes CTD drops
 
   if (!is.null(years)) {
     fe <- filter(fe, YEAR %in% years)
