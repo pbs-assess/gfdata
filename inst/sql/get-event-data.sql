@@ -74,4 +74,3 @@ SELECT
       -- insert ssid here
       -- insert fe_vector here
       -- insert major here
-
