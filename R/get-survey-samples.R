@@ -22,15 +22,15 @@
 #' @export
 #' @rdname get_data
 get_all_survey_samples <- function(species, ssid = NULL,
-                                unsorted_only = TRUE,
-                                usability = NULL,
-                                random_only = TRUE,
-                                include_activity_matches = FALSE,
-                                include_event_info = TRUE,
-                                remove_bad_data = TRUE,
-                                remove_duplicates = FALSE,
-                                return_dna_info = FALSE,
-                                major = NULL) {
+                                   major = NULL,
+                                   unsorted_only = TRUE,
+                                   usability = NULL,
+                                   random_only = TRUE,
+                                   include_activity_matches = FALSE,
+                                   include_event_info = TRUE,
+                                   remove_bad_data = TRUE,
+                                   remove_duplicates = FALSE,
+                                   return_dna_info = FALSE) {
 
   .q <- read_sql("get-survey-samples2.sql")
   .q <- inject_filter("AND SP.SPECIES_CODE IN", species, sql_code = .q)
@@ -278,8 +278,14 @@ get_all_survey_samples <- function(species, ssid = NULL,
     .q2 <- inject_filter("AND SP.SPECIES_CODE IN", species, sql_code = .q2)
     .q2 <- inject_filter("AND FE.FISHING_EVENT_ID IN", fe_vector,
       sql_code = .q2,
-      search_flag = "-- insert fe vector here", conversion_func = I
+      search_flag = "-- insert fe_vector here", conversion_func = I
     )
+
+    if (!is.null(major)) {
+      .q2 <- inject_filter("AND FE.MAJOR_STAT_AREA_CODE =", major, .q2,
+                          search_flag = "-- insert major here", conversion_func = I
+      )
+    }
 
     .c <- run_sql("GFBioSQL", .q2)
 
@@ -306,9 +312,13 @@ get_all_survey_samples <- function(species, ssid = NULL,
     )
     .fe <- inject_filter("AND FE.FISHING_EVENT_ID IN", fe_vector,
                          sql_code = .fe,
-                         search_flag = "-- insert fe vector here", conversion_func = I
+                         search_flag = "-- insert fe_vector here", conversion_func = I
     )
-
+    if (!is.null(major)) {
+      .fe <- inject_filter("AND FE.MAJOR_STAT_AREA_CODE =", major, .fe,
+                           search_flag = "-- insert major here", conversion_func = I
+      )
+    }
 
     fe <- run_sql("GFBioSQL", .fe) %>% select(-USABILITY_CODE, -GROUPING_CODE) # avoid classing with values for samples
 
