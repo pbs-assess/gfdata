@@ -13,8 +13,8 @@
 #'   stratifications when original_ind = 'N', or from known issues with MSSM trips including both survey areas.
 #'   Defaults to FALSE when ssids are supplied and activity matches aren't included. Otherwise turns on automatically.
 #' @param include_activity_matches Get all surveys with activity codes that match chosen ssids.
-#' @param usability A vector of usability codes to include. Defaults to `c(0, 1, 2, 6)`.
-#'   IPHC codes may be different to other surveys.
+#' @param usability A vector of usability codes to include. Defaults to NULL, but typical set for trawl is`c(0, 1, 2, 6)`.
+#'   IPHC codes may be different to other surveys and the modern Sablefish survey doesn't seem to assign usabilities.
 #' @export
 #' @rdname get_data
 #' @examples
@@ -41,7 +41,7 @@ get_all_survey_sets <- function(species,
                              remove_false_zeros = FALSE,
                              remove_duplicates = FALSE,
                              include_activity_matches = FALSE,
-                             usability = c(0, 1, 2, 6)) {
+                             usability = NULL) {
 
   .q <- read_sql("get-survey-sets.sql")
 
@@ -144,7 +144,6 @@ get_all_survey_sets <- function(species,
 
   names(.d) <- tolower(names(.d))
 
-
   # whenever ssid is included, but not activity matches
   # we need to drop duplicated records from trips that include multiple surveys
   if (!include_activity_matches & !is.null(ssid)) {
@@ -202,11 +201,9 @@ get_all_survey_sets <- function(species,
     # uses raw fe dataframe to save time because sub event counts not need for trawl
     names(fe) <- tolower(names(fe))
 
-    exdat <- expand.grid(fishing_event_id = unique(fe$fishing_event_id), species_code = unique(.d$species_code))
-
-    .d <- left_join(
-      exdat,
-      dplyr::distinct(select(
+    .d <- expand.grid(fishing_event_id = unique(fe$fishing_event_id),
+                      species_code = unique(.d$species_code))|>
+      left_join(dplyr::distinct(select(
         fe,
         #-survey_id,
         #-survey_series_id,
@@ -220,14 +217,21 @@ get_all_survey_sets <- function(species,
         -hooksize_desc
       ))
     ) %>% left_join(.d)
+
   } else {
 
     # for other survey types, further wrangling is required
-    # fe2 <- get_sub_level_counts(fe)
     fe2 <- get_skate_level_counts(fe)
     names(fe2) <- tolower(names(fe2))
 
-    # .h <- read_sql("get-ll-hook-data2.sql")
+
+
+    # get catch for sub levels if skate counts > 1 and gear differs between skates
+    .sl <- fe2 %>% filter(skate_count > 1)
+    fe_vector <- unique(.sl$fishing_event_id)
+    spp_codes <- unique(.d$species_code)
+    if(nrow(.sl)>1 ) {
+      if ((length(unique(.sl$hook_code))>1|length(unique(.sl$hooksize_desc))>1)) {
     .h <- read_sql("get-ll-sub-level-hook-data.sql")
 
     .h <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid,
@@ -242,27 +246,9 @@ get_all_survey_sets <- function(species,
 
     fe2 <- left_join(fe2, .hd)
 
-    # if (!any(ssid %in% trawl)) {
-    #   exdat <- expand.grid(fishing_event_id = unique(fe2$fishing_event_id), species_code = unique(.d$species_code))
-    #
-    #   .d <- left_join(
-    #     exdat,
-    #     fe2
-    #     # dplyr::distinct(select(
-    #     #   fe2,
-    #     #   #-survey_id,
-    #     #   #-survey_series_id,
-    #     #   -tow_length_m,
-    #     #   -mouth_width_m,
-    #     #   -doorspread_m,
-    #     #   -speed_mpm
-    #     # ))
-    #   ) %>% left_join(.d)
-    # } else {
-      exdat <- expand.grid(fishing_event_id = unique(fe2$fishing_event_id), species_code = unique(.d$species_code))
-      .d <- left_join(
-        exdat,
-        fe2
+    .d <- expand.grid(fishing_event_id = unique(fe2$fishing_event_id),
+                      species_code = unique(.d$species_code)
+    ) |> left_join(fe2
         # dplyr::distinct(select(
         #    fe2,
         # #  -survey_id,
@@ -270,14 +256,7 @@ get_all_survey_sets <- function(species,
         #    -fe_parent_event_id,
         #    -fe_minor_level_id
         # ))
-      ) %>% left_join(.d)
-    # }
-
-      # get catch for sub levels if skate counts > 1
-      .sl <- fe2 %>% filter(skate_count > 1)
-      fe_vector <- unique(.sl$fishing_event_id)
-      spp_codes <- unique(.d$species_code)
-      if(nrow(.sl)>1 & (length(unique(.sl$hook_code))>1|length(unique(.sl$hooksize_desc))>1)) {
+      )  |> left_join(.d)
 
         slc_list <- list()
         for (i in seq_along(spp_codes)){
@@ -301,8 +280,38 @@ get_all_survey_sets <- function(species,
       .d1 <- .d %>% filter(!(skate_count > 1)|is.na(skate_count))
       .d2 <- .d %>% filter(skate_count > 1) |> select(-catch_count) |> left_join(slc)
       .d <- bind_rows(.d1, .d2)
-      }
+        } else {
 
+          # fe2 <- get_sub_level_counts(fe)
+          # names(fe2) <- tolower(names(fe2))
+
+          .h <- read_sql("get-ll-hook-data2.sql")
+
+          .h <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid,
+                              sql_code = .h,
+                              search_flag = "-- insert ssid here", conversion_func = I
+          )
+
+          .hd <- run_sql("GFBioSQL", .h)
+          names(.hd) <- tolower(names(.hd))
+
+          .hd <- dplyr::distinct(.hd) #%>% select(-fishing_event_id, -survey_id, -survey_series_id)
+
+          fe3 <- filter(fe, is.na(FE_PARENT_EVENT_ID), is.na(FE_MINOR_LEVEL_ID), is.na(FE_SUB_LEVEL_ID))
+          names(fe3) <- tolower(names(fe3))
+          fe3 <- left_join(dplyr::distinct(select(
+            fe3,
+            -fe_parent_event_id,
+            -fe_minor_level_id,
+            -fe_sub_level_id
+          )), .hd)
+
+          .d <- expand.grid(fishing_event_id = unique(fe3$fishing_event_id),
+                            species_code = unique(.d$species_code)
+          ) |> left_join(fe3) |> left_join(.d)
+
+      }
+    }
   }
 
   # check if there are duplicate fishing_event ids
@@ -470,6 +479,7 @@ get_all_survey_sets <- function(species,
 
   # not sure where things are getting duplicated, but this will get rid of any complete duplication
   .d <- dplyr::distinct(.d)
+  .d <- .d %>% select(where(~!all(is.na(.x))))
 
   species_codes <- common2codes(species)
   missing_species <- setdiff(species_codes, .d$species_code)
