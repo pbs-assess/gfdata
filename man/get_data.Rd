@@ -143,27 +143,28 @@ get_sablefish_surveys()
 get_all_survey_samples(
   species,
   ssid = NULL,
-  unsorted_only = TRUE,
+  major = NULL,
   usability = NULL,
+  unsorted_only = TRUE,
   random_only = TRUE,
-  include_activity_matches = FALSE,
   include_event_info = TRUE,
+  include_activity_matches = FALSE,
   remove_bad_data = TRUE,
   remove_duplicates = FALSE,
-  return_dna_info = FALSE,
-  major = NULL
+  return_dna_info = FALSE
 )
 
 get_all_survey_sets(
   species,
   ssid = c(1, 3, 4, 16, 2, 14, 22, 35, 36, 39, 40),
+  major = NULL,
   years = NULL,
   join_sample_ids = FALSE,
   verbose = FALSE,
   remove_false_zeros = FALSE,
   remove_duplicates = FALSE,
   include_activity_matches = FALSE,
-  usability = c(0, 1, 2, 6)
+  usability = NULL
 )
 }
 \arguments{
@@ -190,8 +191,8 @@ This can create duplication of specimen ids for some species.  Defaults to FALSE
 \code{cache_pbs_data}) of major stat area code to include (characters). Use
 get_major_areas() to lookup area codes with descriptions.}
 
-\item{usability}{A vector of usability codes to include. Defaults to all.
-IPHC codes may be different to other surveys.}
+\item{usability}{A vector of usability codes to include. Defaults to NULL, but typical set for trawl is\code{c(0, 1, 2, 6)}.
+IPHC codes may be different to other surveys and the modern Sablefish survey doesn't seem to assign usabilities.}
 
 \item{ssid}{Default is to return all survey samples.}
 
@@ -257,8 +258,9 @@ If FALSE will return all specimens collected on research trips.}
 
 \item{include_activity_matches}{Get all surveys with activity codes that match chosen ssids.}
 
-\item{remove_duplicates}{Remove duplicated event records due to overlapping survey
-stratifications when original_ind = 'N', or from known issues with MSSM trips including both survey areas.}
+\item{remove_duplicates}{Logical for whether to remove duplicated event records due to overlapping survey
+stratifications when original_ind = 'N', or from known issues with MSSM trips including both survey areas.
+Defaults to FALSE when ssids are supplied and activity matches aren't included. Otherwise turns on automatically.}
 
 \item{years}{If NULL, returns all years.}
 }

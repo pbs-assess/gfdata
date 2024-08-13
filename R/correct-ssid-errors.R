@@ -3,7 +3,6 @@
 #' @param dat df containing these columns: fishing_event_ids, survey_series_id, survey_id,
 #'  major_stat_area_code, minor_stat_area_code
 #'
-#' @export
 correct_ssid_errors <- function(dat){
   # first split data into unique fishing_events (dd1) and ones with duplicates (dd2)
 .d <- dat
