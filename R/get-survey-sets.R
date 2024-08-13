@@ -68,12 +68,6 @@ get_all_survey_sets <- function(species,
       search_flag = "-- insert ssid here", conversion_func = I
     )
   }
-  } else {
-    survey_ids <- get_survey_ids(ssid)
-    .q <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid,
-                        sql_code = .q,
-                        search_flag = "-- insert ssid here", conversion_func = I
-    )
   }
 
   if (!is.null(major)) {
