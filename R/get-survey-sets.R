@@ -12,6 +12,8 @@
 #' @param remove_duplicates Remove duplicated event records due to overlapping survey
 #'   stratifications when original_ind = 'N', or from known issues with MSSM trips including both survey areas.
 #' @param include_activity_matches Get all surveys with activity codes that match chosen ssids.
+#' @param usability A vector of usability codes to include. Defaults to `c(0, 1, 2, 6)`.
+#'   IPHC codes may be different to other surveys.
 #' @export
 #' @rdname get_data
 #' @examples
@@ -61,12 +63,17 @@ get_all_survey_sets <- function(species,
                           search_flag = "-- insert ssid here", conversion_func = I
       )
     } else {
-    survey_ids <- get_survey_ids(ssid)
     .q <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid,
       sql_code = .q,
       search_flag = "-- insert ssid here", conversion_func = I
     )
   }
+  } else {
+    survey_ids <- get_survey_ids(ssid)
+    .q <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid,
+                        sql_code = .q,
+                        search_flag = "-- insert ssid here", conversion_func = I
+    )
   }
 
   if (!is.null(major)) {
