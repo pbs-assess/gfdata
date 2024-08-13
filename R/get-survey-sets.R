@@ -341,7 +341,7 @@ get_all_survey_sets <- function(species,
 
       # if so, separate original_ind from not
       .dy <- filter(.d, original_ind == "Y")
-      .dn <- filter(.d, original_ind != "Y")
+      .dn <- filter(.d, original_ind != "Y" | is.na(original_ind))
 
       # and only keep those not original_ind = Y when the fishing_event id was missing
       .d <- bind_rows(.dy, filter(.dn, !(fishing_event_id %in% c(unique(.dy$fishing_event_id)))))
