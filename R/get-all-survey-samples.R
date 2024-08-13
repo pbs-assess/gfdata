@@ -100,27 +100,6 @@ get_all_survey_samples <- function(species, ssid = NULL,
   if (length(.d$specimen_id) > length(unique(.d$specimen_id))) {
 
     if (remove_duplicates) {
-    # add custom fixes for problem surveys here:
-    # first split data into unique specimens (dd1) and ones with duplicates (dd2)
-
-    .dd <- .d[duplicated(.d$specimen_id),]
-    dd1 <- filter(.d, !(specimen_id %in% c(unique(.dd$specimen_id))))
-    dd2 <- filter(.d, (specimen_id %in% c(unique(.dd$specimen_id))))
-
-    # then only applying fixes to duplicated specimens in case some are miss-assigned but not duplicated cases
-    # for shrimp survey sets in both qcs and wcvi that were done on the same trip they get duplicated by the sql call
-    # note: getting some that violate these rules but aren't duplicated... eg. fe 1720260, 1720263
-    dd2 <- dd2[which(!(dd2$survey_series_id == 6 & dd2$major_stat_area_code %in% c("03", "04"))),]
-    dd2 <- dd2[which(!(dd2$survey_series_id == 7 & dd2$major_stat_area_code %in% c("05", "06"))),]
-
-    # for sablefish sets with inlets and offshore on same trip ???
-    # dd2 <- dd2[which(!(dd2$survey_series_id == ## & dd2$reason %in% c(""))),]
-    # dd2 <- dd2[which(!(dd2$survey_series_id == ## & dd2$reason %in% c(""))),]
-
-    # for dogfish and HBLL sets on same trip ???
-
-    .d <- bind_rows(dd1, dd2)
-
 
     # if so, separate original_ind from not
     .dy <- filter(.d, original_ind == "Y")
