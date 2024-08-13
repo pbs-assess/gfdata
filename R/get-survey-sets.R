@@ -9,8 +9,9 @@
 #' @param remove_false_zeros If `TRUE` will make sure weights > 0 don't have
 #'   associated counts of 0 and vice versa. Only applies to trawl data where
 #'   counts are only taken for small catches.
-#' @param remove_duplicates Remove duplicated event records due to overlapping survey
+#' @param remove_duplicates Logical for whether to remove duplicated event records due to overlapping survey
 #'   stratifications when original_ind = 'N', or from known issues with MSSM trips including both survey areas.
+#'   Defaults to FALSE when ssids are supplied and activity matches aren't included. Otherwise turns on automatically.
 #' @param include_activity_matches Get all surveys with activity codes that match chosen ssids.
 #' @param usability A vector of usability codes to include. Defaults to `c(0, 1, 2, 6)`.
 #'   IPHC codes may be different to other surveys.
@@ -68,6 +69,8 @@ get_all_survey_sets <- function(species,
       search_flag = "-- insert ssid here", conversion_func = I
     )
   }
+  } else {
+    remove_duplicates <- TRUE
   }
 
   if (!is.null(major)) {
@@ -148,7 +151,7 @@ get_all_survey_sets <- function(species,
     .d <- filter(.d, (survey_series_id %in% c(ssid)))
   }
 
-  # if using include_activity_matches = TRU`then remove_duplicates = TRUE
+  # if using include_activity_matches = TRUE then remove_duplicates = TRUE
   if (include_activity_matches & !is.null(ssid)) {
     remove_duplicates <- TRUE
   }
@@ -176,6 +179,15 @@ get_all_survey_sets <- function(species,
       # dd2 <- dd2[which(!(dd2$survey_series_id == ## & dd2$reason %in% c(""))),]
 
       # for dogfish and HBLL sets on same trip ???
+
+
+      # Jig surveys
+      dd2 <- dd2[which(!(dd2$survey_series_id == 82 & !(dd2$minor_stat_area_code %in% c("12")))),]
+      dd2 <- dd2[which(!(dd2$survey_series_id == 83 & !(dd2$minor_stat_area_code %in% c("13")))),]
+      dd2 <- dd2[which(!(dd2$survey_series_id == 84 & !(dd2$minor_stat_area_code %in% c("15")))),]
+      dd2 <- dd2[which(!(dd2$survey_series_id == 85 & !(dd2$minor_stat_area_code %in% c("16")))),]
+      dd2 <- dd2[which(!(dd2$survey_series_id == 86 & !(dd2$minor_stat_area_code %in% c("18")))),]
+      dd2 <- dd2[which(!(dd2$survey_series_id == 87 & !(dd2$minor_stat_area_code %in% c("19")))),]
 
       .d <- bind_rows(dd1, dd2)
 
