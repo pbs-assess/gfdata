@@ -228,7 +228,7 @@ get_all_survey_sets <- function(species,
   )
 
   if (!is.null(major)) {
-    .fe <- inject_filter("AND FE.MAJOR_STAT_AREA_CODE =", major, .fe,
+    .fe <- inject_filter("AND FE.MAJOR_STAT_AREA_CODE IN", major, .fe,
                         search_flag = "-- insert major here", conversion_func = I
     )
   }
