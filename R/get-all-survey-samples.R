@@ -196,7 +196,14 @@ get_all_survey_samples <- function(species, ssid = NULL,
   ### ----
 
   if (unsorted_only) {
-    .d <- filter(.d, sampling_desc == "UNSORTED")
+    # .d <- filter(.d, sampling_desc == "UNSORTED")
+    # replaces SQL code
+    # (SPECIES_CATEGORY_CODE IS NULL OR SPECIES_CATEGORY_CODE IN (1, 3, 5, 6, 7)) AND
+    # (SAMPLE_SOURCE_CODE IS NULL OR SAMPLE_SOURCE_CODE IN(1, 2)) AND
+    .d <- filter(.d, is.na(species_category_code) | species_category_code %in% c(1))
+    # # only 1 = unsorted makes sense! 3 = keepers, 5 = remains, = 6 head only, 7 doesn't exist?
+    .d <- filter(.d, is.na(sample_source_code) | sample_source_code %in% c(1))
+    # # only 1 = unsorted makes sense! 2 = keepers, 3 = discards
   }
 
   if (!is.null(usability)) {
@@ -210,14 +217,8 @@ get_all_survey_samples <- function(species, ssid = NULL,
   if (random_only) {
     # replaces SQL code
     # SM.SAMPLE_TYPE_CODE IN (1, 2, 6, 7, 8) AND
-    # (SPECIES_CATEGORY_CODE IS NULL OR SPECIES_CATEGORY_CODE IN (1, 3, 5, 6, 7)) AND
-    # (SAMPLE_SOURCE_CODE IS NULL OR SAMPLE_SOURCE_CODE IN(1, 2)) AND
-
     .d <- filter(.d, sample_type_code %in% c(1, 2, 6, 7, 8)) # 8 = random from set requested by vessel master
-    #.d <- filter(.d, is.na(species_category_code) | species_category_code %in% c(1, 3, 5, 6, 7))
-    # # only 1 = unsorted makes sense! 3 = keepers, 5 = remains, = 6 head only, 7 doesn't exist?
-    #.d <- filter(.d, is.na(sample_source_code) | sample_source_code %in% c(1,2))
-    # # only 1 = unsorted makes sense! 2 = keepers, 3 = discards
+
   } else {
 
     .st <- get_table("Sample_Type") |> select(-ROW_VERSION)
