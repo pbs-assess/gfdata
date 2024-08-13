@@ -2,13 +2,21 @@
 #'
 #' @param dat df containing these columns: fishing_event_ids, survey_series_id, survey_id,
 #'  major_stat_area_code, minor_stat_area_code
+#' @param specimens Defaults to FALSE where checks for duplication of fishing_event_ids
 #'
-correct_ssid_errors <- function(dat){
+correct_ssid_errors <- function(dat, specimens = FALSE){
   # first split data into unique fishing_events (dd1) and ones with duplicates (dd2)
 .d <- dat
+
+if(!specimens) {
 .dd <- .d[duplicated(.d$fishing_event_id), ]
 dd1 <- filter(.d, !(fishing_event_id %in% c(unique(.dd$fishing_event_id))))
 dd2 <- filter(.d, (fishing_event_id %in% c(unique(.dd$fishing_event_id))))
+} else {
+  .dd <- .d[duplicated(.d$specimen_id), ]
+  dd1 <- filter(.d, !(specimen_id %in% c(unique(.dd$specimen_id))))
+  dd2 <- filter(.d, (specimen_id %in% c(unique(.dd$specimen_id))))
+}
 
 # then only applying fixes to duplicated fishing_events in case some are miss-assigned but not duplicated cases
 # for shrimp survey sets in both qcs and wcvi that were done on the same trip they get duplicated by the sql call

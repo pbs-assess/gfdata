@@ -94,7 +94,7 @@ get_all_survey_samples <- function(species, ssid = NULL,
     remove_duplicates <- TRUE
   }
 
-  .d <- correct_ssid_errors(.d)
+  .d <- correct_ssid_errors(.d, specimens = TRUE)
 
   # check if there are duplicate specimen ids
   if (length(.d$specimen_id) > length(unique(.d$specimen_id))) {
