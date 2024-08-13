@@ -32,7 +32,7 @@ get_all_survey_samples <- function(species, ssid = NULL,
                                    remove_duplicates = FALSE,
                                    return_dna_info = FALSE) {
 
-  .q <- read_sql("get-survey-samples2.sql")
+  .q <- read_sql("get-all-survey-samples.sql")
   .q <- inject_filter("AND SP.SPECIES_CODE IN", species, sql_code = .q)
 
   if (!is.null(ssid)) {
@@ -279,7 +279,7 @@ get_all_survey_samples <- function(species, ssid = NULL,
     .f <- .d %>% filter(!is.na(fishing_event_id))
     fe_vector <- unique(.f$fishing_event_id)
 
-    .q2 <- read_sql("get-survey-sets.sql")
+    .q2 <- read_sql("get-all-survey-sets.sql")
     .q2 <- inject_filter("AND SP.SPECIES_CODE IN", species, sql_code = .q2)
     .q2 <- inject_filter("AND FE.FISHING_EVENT_ID IN", fe_vector,
       sql_code = .q2,

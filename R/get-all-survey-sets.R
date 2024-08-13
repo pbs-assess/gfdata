@@ -42,7 +42,7 @@ get_all_survey_sets <- function(species,
                                 remove_duplicates = FALSE,
                                 include_activity_matches = FALSE,
                                 usability = NULL) {
-  .q <- read_sql("get-survey-sets.sql")
+  .q <- read_sql("get-all-survey-sets.sql")
 
   if (!is.null(species)) {
     .q <- inject_filter("AND SP.SPECIES_CODE IN", species, sql_code = .q)
@@ -269,7 +269,7 @@ get_all_survey_sets <- function(species,
             sql_code = .slc,
             search_flag = "-- insert species again here"
           )
-          ## this didn't work, not sure why, but suspect it isn't working for get-survey-sets.sql either
+          ## this didn't work, not sure why, but suspect it isn't working for get-all-survey-sets.sql either
           # .slc <- inject_filter("AND FE.FE_PARENT_EVENT_ID IN", fe_vector,
           #                      sql_code = .slc,
           #                      search_flag = "-- insert fe_vector here", conversion_func = I
