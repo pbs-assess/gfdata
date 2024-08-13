@@ -156,79 +156,6 @@ get_all_survey_sets <- function(species,
     remove_duplicates <- TRUE
   }
 
-
-  # check if there are duplicate fishing_event ids
-  if (length(.d$fishing_event_id) > length(unique(.d$fishing_event_id))) {
-
-    if (remove_duplicates) {
-      # add custom fixes for problem surveys here:
-      # first split data into unique fishing_events (dd1) and ones with duplicates (dd2)
-
-      .dd <- .d[duplicated(.d$fishing_event_id),]
-      dd1 <- filter(.d, !(fishing_event_id %in% c(unique(.dd$fishing_event_id))))
-      dd2 <- filter(.d, (fishing_event_id %in% c(unique(.dd$fishing_event_id))))
-
-      # then only applying fixes to duplicated fishing_events in case some are miss-assigned but not duplicated cases
-      # for shrimp survey sets in both qcs and wcvi that were done on the same trip they get duplicated by the sql call
-      # note: getting some that violate these rules but aren't duplicated... eg. fe 1720260, 1720263
-      dd2 <- dd2[which(!(dd2$survey_series_id == 6 & dd2$major_stat_area_code %in% c("03", "04"))),]
-      dd2 <- dd2[which(!(dd2$survey_series_id == 7 & dd2$major_stat_area_code %in% c("05", "06"))),]
-
-      # for sablefish sets with inlets and offshore on same trip ???
-      # dd2 <- dd2[which(!(dd2$survey_series_id == ## & dd2$reason %in% c(""))),]
-      # dd2 <- dd2[which(!(dd2$survey_series_id == ## & dd2$reason %in% c(""))),]
-
-      # for dogfish and HBLL sets on same trip ???
-
-
-      # Jig surveys
-      dd2 <- dd2[which(!(dd2$survey_series_id == 82 & !(dd2$minor_stat_area_code %in% c("12")))),]
-      dd2 <- dd2[which(!(dd2$survey_series_id == 83 & !(dd2$minor_stat_area_code %in% c("13")))),]
-      dd2 <- dd2[which(!(dd2$survey_series_id == 84 & !(dd2$minor_stat_area_code %in% c("15")))),]
-      dd2 <- dd2[which(!(dd2$survey_series_id == 85 & !(dd2$minor_stat_area_code %in% c("16")))),]
-      dd2 <- dd2[which(!(dd2$survey_series_id == 86 & !(dd2$minor_stat_area_code %in% c("18")))),]
-      dd2 <- dd2[which(!(dd2$survey_series_id == 87 & !(dd2$minor_stat_area_code %in% c("19")))),]
-
-      .d <- bind_rows(dd1, dd2)
-
-      # if so, separate original_ind from not
-      .dy <- filter(.d, original_ind == "Y")
-      .dn <- filter(.d, original_ind != "Y")
-
-      # and only keep those not original_ind = Y when the fishing_event id was missing
-      .d <- bind_rows(.dy, filter(.dn, !(fishing_event_id %in% c(unique(.dy$fishing_event_id)))))
-
-      # check if there are still duplicated fishing_event ids
-      if (length(.d$fishing_event_id) > length(unique(.d$fishing_event_id))) {
-        warning(
-          "Duplicate fishing_event IDs are still present despite ",
-          "`remove_duplicates = TRUE`. This is potentially because of ",
-          "multiple samples from the same event (), overlapping survey ",
-          "stratifications. If working with the data yourself, you should ",
-          "filter them after selecting specific survey stratifications. ",
-          "For example, `dat <- dat[!duplicated(dat$fishing_event_id), ]`. ",
-          "Tidying and plotting functions within gfplot will do this for you."
-        )
-      }
-
-    } else {
-
-      # check if there are duplicated fishing_event ids (this often true for SABLE and MSSM surveys)
-      if (length(.d$fishing_event_id) > length(unique(.d$fishing_event_id))) {
-        warning(
-          "Duplicate fishing_event IDs are present. This is usually because of multiple ",
-          "samples from the same fishing_event, overlapping survey stratifications, ",
-          "or trips that include more than one type of survey. Some cases of the ",
-          "latter two case can be resolved by setting 'remove_duplicates = TRUE'. ",
-          "If working with the data yourself, filter them after selecting specific ",
-          "surveys. For example, `dat <- dat[!duplicated(dat$fishing_event_id), ]`. ",
-          "The tidying and plotting functions within gfplot will do this for you."
-        )
-      }
-    }
-  }
-
-
   if (is.null(ssid)) {
     # something to address replicated events across different survey series
     warning(
@@ -377,6 +304,79 @@ get_all_survey_sets <- function(species,
       }
 
   }
+
+  # check if there are duplicate fishing_event ids
+  if (length(.d$fishing_event_id) > length(unique(.d$fishing_event_id))) {
+
+    if (remove_duplicates) {
+      # add custom fixes for problem surveys here:
+      # first split data into unique fishing_events (dd1) and ones with duplicates (dd2)
+
+      .dd <- .d[duplicated(.d$fishing_event_id),]
+      dd1 <- filter(.d, !(fishing_event_id %in% c(unique(.dd$fishing_event_id))))
+      dd2 <- filter(.d, (fishing_event_id %in% c(unique(.dd$fishing_event_id))))
+
+      # then only applying fixes to duplicated fishing_events in case some are miss-assigned but not duplicated cases
+      # for shrimp survey sets in both qcs and wcvi that were done on the same trip they get duplicated by the sql call
+      # note: getting some that violate these rules but aren't duplicated... eg. fe 1720260, 1720263
+      dd2 <- dd2[which(!(dd2$survey_series_id == 6 & dd2$major_stat_area_code %in% c("03", "04"))),]
+      dd2 <- dd2[which(!(dd2$survey_series_id == 7 & dd2$major_stat_area_code %in% c("05", "06"))),]
+
+      # for sablefish sets with inlets and offshore on same trip ???
+      # dd2 <- dd2[which(!(dd2$survey_series_id == ## & dd2$reason %in% c(""))),]
+      # dd2 <- dd2[which(!(dd2$survey_series_id == ## & dd2$reason %in% c(""))),]
+
+      # for dogfish and HBLL sets on same trip ???
+
+
+      # Jig surveys
+      dd2 <- dd2[which(!(dd2$survey_series_id == 82 & !(dd2$minor_stat_area_code %in% c("12")))),]
+      dd2 <- dd2[which(!(dd2$survey_series_id == 83 & !(dd2$minor_stat_area_code %in% c("13")))),]
+      dd2 <- dd2[which(!(dd2$survey_series_id == 84 & !(dd2$minor_stat_area_code %in% c("15")))),]
+      dd2 <- dd2[which(!(dd2$survey_series_id == 85 & !(dd2$minor_stat_area_code %in% c("16")))),]
+      dd2 <- dd2[which(!(dd2$survey_series_id == 86 & !(dd2$minor_stat_area_code %in% c("18")))),]
+      dd2 <- dd2[which(!(dd2$survey_series_id == 87 & !(dd2$minor_stat_area_code %in% c("19")))),]
+
+      .d <- bind_rows(dd1, dd2)
+
+      # if so, separate original_ind from not
+      .dy <- filter(.d, original_ind == "Y")
+      .dn <- filter(.d, original_ind != "Y")
+
+      # and only keep those not original_ind = Y when the fishing_event id was missing
+      .d <- bind_rows(.dy, filter(.dn, !(fishing_event_id %in% c(unique(.dy$fishing_event_id)))))
+
+      # check if there are still duplicated fishing_event ids
+      if (length(.d$fishing_event_id) > length(unique(.d$fishing_event_id))) {
+        warning(
+          "Duplicate fishing_event IDs are still present despite ",
+          "`remove_duplicates = TRUE`. This is potentially because of ",
+          "multiple samples from the same event (), overlapping survey ",
+          "stratifications. If working with the data yourself, you should ",
+          "filter them after selecting specific survey stratifications. ",
+          "For example, `dat <- dat[!duplicated(dat$fishing_event_id), ]`. ",
+          "Tidying and plotting functions within gfplot will do this for you."
+        )
+      }
+
+    } else {
+
+      # check if there are duplicated fishing_event ids (this often true for SABLE and MSSM surveys)
+      if (length(.d$fishing_event_id) > length(unique(.d$fishing_event_id))) {
+        warning(
+          "Duplicate fishing_event IDs are present. This is usually because of multiple ",
+          "samples from the same fishing_event, overlapping survey stratifications, ",
+          "or trips that include more than one type of survey. Some cases of the ",
+          "latter two case can be resolved by setting 'remove_duplicates = TRUE'. ",
+          "If working with the data yourself, filter them after selecting specific ",
+          "surveys. For example, `dat <- dat[!duplicated(dat$fishing_event_id), ]`. ",
+          "The tidying and plotting functions within gfplot will do this for you."
+        )
+      }
+    }
+  }
+
+
 
   surveys <- get_ssids()
   names(surveys) <- tolower(names(surveys))
