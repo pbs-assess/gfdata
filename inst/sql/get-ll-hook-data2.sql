@@ -9,7 +9,7 @@
     Nb count_bait_only,
     Ne count_empty_hooks,
     Nnf count_not_fishing,
-    Nbr count_bent_broken,
+    Nbr count_bent_broken
    FROM SURVEY S
       INNER JOIN TRIP_SURVEY TS ON
       S.SURVEY_ID = TS.SURVEY_ID
