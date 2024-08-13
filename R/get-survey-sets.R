@@ -169,9 +169,9 @@ get_all_survey_sets <- function(species,
 
   # get only events from surveys that have recorded any of the species selected
   .d <- filter(.d, catch_count > 0 | catch_weight > 0) # shouldn't be needed but there were some
-  ssid <- unique(.d$survey_series_id)
+  ssid_with_catch <- unique(.d$survey_series_id)
 
-  .fe <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid,
+  .fe <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid_with_catch,
     sql_code = .fe,
     search_flag = "-- insert ssid here", conversion_func = I
   )
@@ -195,7 +195,7 @@ get_all_survey_sets <- function(species,
   #   fe <- filter(fe, SURVEY_SERIES_ID > 0)
   # }
 
-  if (all(ssid %in% trawl)) {
+  if (all(ssid_with_catch %in% trawl)) {
     # uses raw fe dataframe to save time because sub event counts not need for trawl
     names(fe) <- tolower(names(fe))
 
@@ -233,7 +233,7 @@ get_all_survey_sets <- function(species,
       if ((length(unique(.sl$hook_code)) > 1 | length(unique(.sl$hooksize_desc)) > 1)) {
         .h <- read_sql("get-ll-sub-level-hook-data.sql")
 
-        .h <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid,
+        .h <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid_with_catch,
           sql_code = .h,
           search_flag = "-- insert ssid here", conversion_func = I
         )
@@ -294,7 +294,7 @@ get_all_survey_sets <- function(species,
 
     .h <- read_sql("get-ll-hook-data2.sql")
 
-    .h <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid,
+    .h <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid_with_catch,
       sql_code = .h,
       search_flag = "-- insert ssid here", conversion_func = I
     )
@@ -357,12 +357,14 @@ get_all_survey_sets <- function(species,
   .d <- bind_rows(dd1, dd2)
 
   ### maybe we should correct remaining miss-assignment surveys here?
-  # .d[ ((.d$survey_series_id == 6 & .d$major_stat_area_code %in% c("03", "04"))), ]$survey_id <- NA
-  # .d[ ((.d$survey_series_id == 7 & .d$major_stat_area_code %in% c("05", "06"))), ]$survey_id <- NA
+  .d[ ((.d$survey_series_id == 6 & .d$major_stat_area_code %in% c("03", "04"))), ]$survey_id <- NA
+  .d[ ((.d$survey_series_id == 7 & .d$major_stat_area_code %in% c("05", "06"))), ]$survey_id <- NA
+  .d[ ((.d$survey_series_id == 6 & .d$major_stat_area_code %in% c("03", "04"))), ]$survey_series_id <- 7
+  .d[ ((.d$survey_series_id == 7 & .d$major_stat_area_code %in% c("05", "06"))), ]$survey_series_id <- 6
 
-  # .d[ ((.d$survey_series_id == 6 & .d$major_stat_area_code %in% c("03", "04"))), ]$survey_series_id <- 7
-  # .d[ ((.d$survey_series_id == 7 & .d$major_stat_area_code %in% c("05", "06"))), ]$survey_series_id <- 6
-
+  if (!is.null(ssid)){
+    .d <- filter(.d, survey_series_id %in% ssid)
+  }
 
   # check if there are duplicate fishing_event ids
   if (length(.d$fishing_event_id) > length(unique(.d$fishing_event_id))) {
@@ -460,7 +462,7 @@ get_all_survey_sets <- function(species,
     )
   }
 
-  if (any(ssid %in% trawl)) {
+  if (any(ssid_with_catch %in% trawl)) {
     # calculate area_swept for trawl exactly as it has been done for the density values in this dataframe
     # note: is NA if doorspread_m is missing and duration_min may be time in water (not just bottom time)
 
@@ -477,7 +479,7 @@ get_all_survey_sets <- function(species,
     .d$density_pcpm2 <- ifelse(!is.na(.d$area_swept2), .d$density_pcpm2, NA) # don't think this is doing anything
   }
 
-  if (any(ssid %in% ll)) {
+  if (any(ssid_with_catch %in% ll)) {
     .d$hook_area_swept_km2 <- ifelse(.d$survey_series_id == 14,
       0.0054864 * 0.009144 * .d$minor_id_count,
       0.0024384 * 0.009144 * .d$minor_id_count
