@@ -216,6 +216,17 @@ get_all_survey_sets <- function(species,
     }
   }
 
+
+  if (is.null(ssid)) {
+    # something to address replicated events across different survey series
+    warning(
+      "Returning all survey series that recorded any of the species saught.",
+      "Probably advisable to call either just one species, or just one survey type at a time.",
+      "If not using default ssids, note that some survey series are nested within eachother.",
+      "This can result in the duplication of fishing events in the dataframe."
+    )
+  }
+
   # get all fishing event info
   .fe <- read_sql("get-event-data.sql")
 
@@ -234,15 +245,7 @@ get_all_survey_sets <- function(species,
     )
   }
 
-  if (is.null(ssid)) {
-  # something to address replicated events across different survey series
-  warning(
-    "Returning all survey series that recorded any of the species saught.",
-    "Probably advisable to call either just one species, or just one survey type at a time.",
-    "If not using default ssids, note that some survey series are nested within eachother.",
-    "This can result in the duplication of fishing events in the dataframe."
-  )
-  }
+
 
   fe <- run_sql("GFBioSQL", .fe)
   fe <- fe |> filter(FE_MAJOR_LEVEL_ID < 700) # removes CTD drops
@@ -356,7 +359,7 @@ get_all_survey_sets <- function(species,
       slc <- do.call(rbind, slc_list)
       names(slc) <- tolower(names(slc))
 
-      .d1 <- .d %>% filter(!(skate_count > 1))
+      .d1 <- .d %>% filter(!(skate_count > 1)|is.na(skate_count))
       .d2 <- .d %>% filter(skate_count > 1) |> select(-catch_count) |> left_join(slc)
       .d <- bind_rows(.d1, .d2)
       }
