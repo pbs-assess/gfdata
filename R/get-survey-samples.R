@@ -6,12 +6,12 @@
 #'  get_major_areas() to lookup area codes with descriptions.
 #' @param usability A vector of usability codes to include. Defaults to all.
 #'   IPHC codes may be different to other surveys.
+#' @param unsorted_only  Defaults to TRUE.
 #' @param random_only Only return randomly sampled specimens.
 #'   If FALSE will return all specimens collected on research trips.
-#' @param include_activity_matches Get all records collected with activity codes that match chosen ssids.
 #' @param include_event_info Logical for whether to append all relevant fishing event info
 #'   (location, timing, effort, catch, etc.). Defaults to false.
-#' @param unsorted_only  Defaults to TRUE.
+#' @param include_activity_matches Get all records collected with activity codes that match chosen ssids.
 #' @param remove_bad_data Remove known bad data, such as unrealistic
 #'  length or weight values.
 #' @param remove_duplicates Remove duplicated specimen records due to overlapping survey
@@ -23,11 +23,11 @@
 #' @rdname get_data
 get_all_survey_samples <- function(species, ssid = NULL,
                                    major = NULL,
-                                   unsorted_only = TRUE,
                                    usability = NULL,
+                                   unsorted_only = TRUE,
                                    random_only = TRUE,
-                                   include_activity_matches = FALSE,
                                    include_event_info = TRUE,
+                                   include_activity_matches = FALSE,
                                    remove_bad_data = TRUE,
                                    remove_duplicates = FALSE,
                                    return_dna_info = FALSE) {
@@ -94,6 +94,7 @@ get_all_survey_samples <- function(species, ssid = NULL,
     remove_duplicates <- TRUE
   }
 
+  .d <- correct_ssid_errors(.d)
 
   # check if there are duplicate specimen ids
   if (length(.d$specimen_id) > length(unique(.d$specimen_id))) {
@@ -157,7 +158,6 @@ get_all_survey_samples <- function(species, ssid = NULL,
     }
   }
 
-
   surveys <- get_ssids()
 
   names(surveys) <- tolower(names(surveys))
@@ -187,15 +187,12 @@ get_all_survey_samples <- function(species, ssid = NULL,
     length_type <- get_spp_sample_length_type(species[i])
     length_type <- tolower(length_type)
 
-    #browser()
-
     species_code[i] <- common2codes(tolower(species[i]))
 
     .d[.d$species_code == tolower(species_code[i]), ]$length <- .d[.d$species_code == species_code[i], length_type]
     .d[.d$species_code == tolower(species_code[i]), ]$length_type <- length_type
   }
 
-  # .d <- .d %>% mutate(length_type = length_type)
   ### ----
 
   if (unsorted_only) {
@@ -216,9 +213,17 @@ get_all_survey_samples <- function(species, ssid = NULL,
     # (SPECIES_CATEGORY_CODE IS NULL OR SPECIES_CATEGORY_CODE IN (1, 3, 5, 6, 7)) AND
     # (SAMPLE_SOURCE_CODE IS NULL OR SAMPLE_SOURCE_CODE IN(1, 2)) AND
 
-    .d <- filter(.d, sample_type_code %in% c(1, 2, 6, 7, 8))
-    #.d <- filter(.d, is.na(species_category_code) | species_category_code %in% c(1, 3, 5, 6, 7)) # only 1 makes sense!
-    #.d <- filter(.d, is.na(sample_source_code) | sample_source_code %in% c(1,2)) # only 1 makes sense!
+    .d <- filter(.d, sample_type_code %in% c(1, 2, 6, 7, 8)) # 8 = random from set requested by vessel master
+    #.d <- filter(.d, is.na(species_category_code) | species_category_code %in% c(1, 3, 5, 6, 7))
+    # # only 1 = unsorted makes sense! 3 = keepers, 5 = remains, = 6 head only, 7 doesn't exist?
+    #.d <- filter(.d, is.na(sample_source_code) | sample_source_code %in% c(1,2))
+    # # only 1 = unsorted makes sense! 2 = keepers, 3 = discards
+  } else {
+
+    .st <- get_table("Sample_Type") |> select(-ROW_VERSION)
+    names(.st) <- tolower(names(.st))
+    .d <- left_join(.d, .st, by = "sample_type_code")
+
   }
 
 
@@ -289,7 +294,6 @@ get_all_survey_samples <- function(species, ssid = NULL,
 
     .c <- run_sql("GFBioSQL", .q2)
 
-
     names(.c) <- tolower(names(.c))
     .d <- left_join(
       .d,
@@ -349,7 +353,6 @@ get_all_survey_samples <- function(species, ssid = NULL,
 
     .d <- unique(.d)
   }
-
 
   add_version(as_tibble(.d))
 }
