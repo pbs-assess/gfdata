@@ -331,6 +331,7 @@ get_all_survey_samples <- function(species, ssid = NULL,
       0.0024384 * 0.009144 * .d$minor_id_count
     )
 
+    .d <- .d %>% select(where(~ !all(is.na(.x))))
     .d <- unique(.d)
   }
 
