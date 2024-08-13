@@ -219,6 +219,8 @@ get_all_survey_sets <- function(species,
       left_join(.d)
   } else {
     # for other survey types, further wrangling is required
+    # TODO: might be improved by making trap surveys a special case but for now this works ok
+    # TODO: could split be survey to see when skate level is needed rather than applying to all
     # start by checking the skate level counts and gear details
     fe2 <- get_skate_level_counts(fe)
     names(fe2) <- tolower(names(fe2))
@@ -324,37 +326,47 @@ get_all_survey_sets <- function(species,
       left_join(.d)
   }
 
+
+  # add custom fixes for problem surveys here:
+  # first split data into unique fishing_events (dd1) and ones with duplicates (dd2)
+
+  .dd <- .d[duplicated(.d$fishing_event_id), ]
+  dd1 <- filter(.d, !(fishing_event_id %in% c(unique(.dd$fishing_event_id))))
+  dd2 <- filter(.d, (fishing_event_id %in% c(unique(.dd$fishing_event_id))))
+
+  # then only applying fixes to duplicated fishing_events in case some are miss-assigned but not duplicated cases
+  # for shrimp survey sets in both qcs and wcvi that were done on the same trip they get duplicated by the sql call
+  # note: getting some that violate these rules but aren't duplicated... eg. fe 1720260, 1720263
+  dd2 <- dd2[ (!(dd2$survey_series_id == 6 & dd2$major_stat_area_code %in% c("03", "04"))), ]
+  dd2 <- dd2[ (!(dd2$survey_series_id == 7 & dd2$major_stat_area_code %in% c("05", "06"))), ]
+
+  # TODO: generate special cases for sablefish sets with inlets and offshore on same trip ???
+  # dd2 <- dd2[ (!(dd2$survey_series_id == ## & dd2$reason %in% c(""))),]
+  # dd2 <- dd2[ (!(dd2$survey_series_id == ## & dd2$reason %in% c(""))),]
+
+  # TODO: generate special cases for removing duplications of dogfish and HBLL on same trip ???
+
+  # Jig surveys
+  dd2 <- dd2[ (!(dd2$survey_series_id == 82 & !(dd2$minor_stat_area_code %in% c("12")))), ]
+  dd2 <- dd2[ (!(dd2$survey_series_id == 83 & !(dd2$minor_stat_area_code %in% c("13")))), ]
+  dd2 <- dd2[ (!(dd2$survey_series_id == 84 & !(dd2$minor_stat_area_code %in% c("15")))), ]
+  dd2 <- dd2[ (!(dd2$survey_series_id == 85 & !(dd2$minor_stat_area_code %in% c("16")))), ]
+  dd2 <- dd2[ (!(dd2$survey_series_id == 86 & !(dd2$minor_stat_area_code %in% c("18")))), ]
+  dd2 <- dd2[ (!(dd2$survey_series_id == 87 & !(dd2$minor_stat_area_code %in% c("19")))), ]
+
+  .d <- bind_rows(dd1, dd2)
+
+  ### maybe we should correct remaining miss-assignment surveys here?
+  # .d[ ((.d$survey_series_id == 6 & .d$major_stat_area_code %in% c("03", "04"))), ]$survey_id <- NA
+  # .d[ ((.d$survey_series_id == 7 & .d$major_stat_area_code %in% c("05", "06"))), ]$survey_id <- NA
+
+  # .d[ ((.d$survey_series_id == 6 & .d$major_stat_area_code %in% c("03", "04"))), ]$survey_series_id <- 7
+  # .d[ ((.d$survey_series_id == 7 & .d$major_stat_area_code %in% c("05", "06"))), ]$survey_series_id <- 6
+
+
   # check if there are duplicate fishing_event ids
   if (length(.d$fishing_event_id) > length(unique(.d$fishing_event_id))) {
     if (remove_duplicates) {
-      # add custom fixes for problem surveys here:
-      # first split data into unique fishing_events (dd1) and ones with duplicates (dd2)
-
-      .dd <- .d[duplicated(.d$fishing_event_id), ]
-      dd1 <- filter(.d, !(fishing_event_id %in% c(unique(.dd$fishing_event_id))))
-      dd2 <- filter(.d, (fishing_event_id %in% c(unique(.dd$fishing_event_id))))
-
-      # then only applying fixes to duplicated fishing_events in case some are miss-assigned but not duplicated cases
-      # for shrimp survey sets in both qcs and wcvi that were done on the same trip they get duplicated by the sql call
-      # note: getting some that violate these rules but aren't duplicated... eg. fe 1720260, 1720263
-      dd2 <- dd2[which(!(dd2$survey_series_id == 6 & dd2$major_stat_area_code %in% c("03", "04"))), ]
-      dd2 <- dd2[which(!(dd2$survey_series_id == 7 & dd2$major_stat_area_code %in% c("05", "06"))), ]
-
-      # TODO: generate special cases for sablefish sets with inlets and offshore on same trip ???
-      # dd2 <- dd2[which(!(dd2$survey_series_id == ## & dd2$reason %in% c(""))),]
-      # dd2 <- dd2[which(!(dd2$survey_series_id == ## & dd2$reason %in% c(""))),]
-
-      # TODO: generate special cases for removing duplications of dogfish and HBLL on same trip ???
-
-      # Jig surveys
-      dd2 <- dd2[which(!(dd2$survey_series_id == 82 & !(dd2$minor_stat_area_code %in% c("12")))), ]
-      dd2 <- dd2[which(!(dd2$survey_series_id == 83 & !(dd2$minor_stat_area_code %in% c("13")))), ]
-      dd2 <- dd2[which(!(dd2$survey_series_id == 84 & !(dd2$minor_stat_area_code %in% c("15")))), ]
-      dd2 <- dd2[which(!(dd2$survey_series_id == 85 & !(dd2$minor_stat_area_code %in% c("16")))), ]
-      dd2 <- dd2[which(!(dd2$survey_series_id == 86 & !(dd2$minor_stat_area_code %in% c("18")))), ]
-      dd2 <- dd2[which(!(dd2$survey_series_id == 87 & !(dd2$minor_stat_area_code %in% c("19")))), ]
-
-      .d <- bind_rows(dd1, dd2)
 
       # if so, separate original_ind from not
       .dy <- filter(.d, original_ind == "Y")
