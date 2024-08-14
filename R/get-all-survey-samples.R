@@ -103,7 +103,7 @@ get_all_survey_samples <- function(species, ssid = NULL,
 
     # if so, separate original_ind from not
     .dy <- filter(.d, original_ind == "Y")
-    .dn <- filter(.d, original_ind != "Y")
+    .dn <- filter(.d, original_ind != "Y"| is.na(original_ind))
 
     # and only keep those not original_ind = Y when the specimen id was missing
     .d <- bind_rows(.dy, filter(.dn, !(specimen_id %in% c(unique(.dy$specimen_id)))))
@@ -205,8 +205,6 @@ get_all_survey_samples <- function(species, ssid = NULL,
     .d <- left_join(.d, .st, by = "sample_type_code")
 
   }
-
-
 
   # remove ages from unaccepted ageing methods:
   file <- system.file("extdata", "ageing_methods.csv", package = "gfdata")
