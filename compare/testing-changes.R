@@ -75,6 +75,9 @@ ssid <- c(
 spp <- "North Pacific Spiny Dogfish"
 dset <- compare_survey_sets(spp = spp, ssid = c(35, 41, 42, 43))
 
+dset <- compare_survey_sets(spp = spp, ssid = c(6,7))
+
+
 spp <- c( # "Lingcod",
          "Yelloweye Rockfish")
 
@@ -83,7 +86,7 @@ major_areas <- c("0","00","01", "02", "03", "04", "05", "06", "07", "08", "09", 
 
 dsam <- compare_survey_samples(spp = spp, ssid = ssid, areas = major_areas)
 
-dsam <- compare_survey_samples(spp = spp, ssid = c(22))
+dsam <- compare_survey_samples(spp = spp, ssid = c(6,7))
 
 dsam <- compare_survey_samples(spp = spp, ssid = ssid)
 
@@ -92,23 +95,29 @@ saveRDS(dsam, "test-yelloweye-outside-samples-all.rds")
 
 x <- dsam$x
 
-check <- x |> filter(ssid == 22)
+check <- x |> filter(fn == 2)
 
 
-xx <- dset$x |> group_by(fn, ssid, species, survey_series_desc, year) |>
+xx <- x |> group_by(fn, ssid, species, survey_series_desc) |>
   summarise(n = n())
 
 dd <- x[duplicated(x$specimen_id),]
 dd1 <- filter(x, (specimen_id %in% c(dd$specimen_id)))
 
 
-xx3 <- d3$x |>
-  group_by(fn, ssid, species, survey_series_id, major_stat_area_code, year, usability_desc) |>
+xx3 <- x |>
+  group_by(fn, ssid, species, survey_series_id, major_stat_area_code
+           #, usability_desc
+           ) |>
   summarise(n = n())
 
 xx4 <- d_feg$x |>
   group_by(fn, ssid, species, survey_abbrev, major_stat_area_code, year, usability_desc) |>
   summarise(n = n())
+
+
+
+check <- dset$x |> filter(fn == 2 & ssid == 7)
 
 # Unlike values
 u <- dset$u

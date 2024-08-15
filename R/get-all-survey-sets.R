@@ -164,6 +164,7 @@ get_all_survey_sets <- function(species,
     )
   }
 
+
   # get all fishing event info
   .fe <- read_sql("get-event-data.sql")
 
@@ -185,7 +186,7 @@ get_all_survey_sets <- function(species,
 
 
   fe <- run_sql("GFBioSQL", .fe)
-  fe <- fe |> filter(FE_MAJOR_LEVEL_ID < 700) # removes CTD drops
+  fe <- fe |> filter(FE_MAJOR_LEVEL_ID < 700| is.na(FE_MAJOR_LEVEL_ID)) # removes CTD drops
 
   if (!is.null(years)) {
     fe <- filter(fe, YEAR %in% years)
@@ -222,15 +223,15 @@ get_all_survey_sets <- function(species,
     # TODO: might be improved by making trap surveys a special case but for now this works ok
     # TODO: could split be survey to see when skate level is needed rather than applying to all
     # start by checking the skate level counts and gear details
-    fe2 <- get_skate_level_counts(fe)
-    names(fe2) <- tolower(names(fe2))
+    sk <- get_skate_level_counts(fe)
+    names(sk) <- tolower(names(sk))
 
     # get catch for sub levels if skate counts > 1 and gear differs between skates
-    .sl <- fe2 %>% filter(skate_count > 1)
-    fe_vector <- unique(.sl$fishing_event_id)
+    sks <- sk %>% filter(skate_count > 1)
+    fe_vector <- unique(sks$fishing_event_id)
     spp_codes <- unique(.d$species_code)
-    if (nrow(.sl) > 1) {
-      if ((length(unique(.sl$hook_code)) > 1 | length(unique(.sl$hooksize_desc)) > 1)) {
+    if (nrow(sks) > 1) {
+      if ((length(unique(sks$hook_code)) > 1 | length(unique(sks$hooksize_desc)) > 1)) {
         .h <- read_sql("get-ll-sub-level-hook-data.sql")
 
         .h <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid_with_catch,
@@ -243,16 +244,16 @@ get_all_survey_sets <- function(species,
 
         .hd <- dplyr::distinct(.hd) # %>% select(-fishing_event_id, -survey_id, -survey_series_id)
 
-        fe2 <- left_join(fe2, .hd)
+        sk <- left_join(sk, .hd)
 
         .d <- expand.grid(
-          fishing_event_id = unique(fe2$fishing_event_id),
+          fishing_event_id = unique(sk$fishing_event_id),
           species_code = unique(.d$species_code)
         ) |>
           left_join(
-            fe2
+            sk
             # dplyr::distinct(select(
-            #    fe2,
+            #    sk,
             # #  -survey_id,
             # #  -survey_series_id,
             #    -fe_parent_event_id,
@@ -302,7 +303,7 @@ get_all_survey_sets <- function(species,
     .hd <- run_sql("GFBioSQL", .h)
     names(.hd) <- tolower(names(.hd))
 
-    .hd <- dplyr::distinct(.hd) # %>% select(-fishing_event_id, -survey_id, -survey_series_id)
+    .hd <- dplyr::distinct(.hd) %>% select(-survey_id, -survey_series_id)
 
     # fe3 <- filter(fe, is.na(FE_PARENT_EVENT_ID), is.na(FE_MINOR_LEVEL_ID), is.na(FE_SUB_LEVEL_ID))
     # names(fe3) <- tolower(names(fe3))
@@ -313,11 +314,12 @@ get_all_survey_sets <- function(species,
     #   -fe_sub_level_id
     # )), .hd)
 
-    ## old sub_level function found in utils.R
+    ## old sub_level function moved from utils.R
     fe3 <- get_sub_level_counts(fe)
     names(fe3) <- tolower(names(fe3))
-    fe3 <- left_join(fe3, .hd)
+    fe3 <- left_join(fe3, .hd) |> dplyr::distinct()
 
+    browser()
     .d <- expand.grid(
       fishing_event_id = unique(fe3$fishing_event_id),
       species_code = unique(.d$species_code)

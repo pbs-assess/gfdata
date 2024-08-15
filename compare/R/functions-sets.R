@@ -30,7 +30,7 @@ compare_survey_sets <- function (spp, ssid) {
       r2 <- NULL
       # Pull data
       try(d1 <- gfdata::get_survey_sets(species = spp[i], ssid = ssid[j]))
-      try(d2 <- gfdata::get_all_survey_sets(species = spp[i], ssid = ssid[j]))
+      try(d2 <- gfdata::get_all_survey_sets(species = spp[i], ssid = ssid[j], remove_duplicates = TRUE))
       # Create comparison columns
       if (!is.null(d1)) {
         d1 <- d1 |>

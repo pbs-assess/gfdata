@@ -32,6 +32,7 @@ compare_survey_samples <- function (spp, ssid, areas = NULL) {
       try(d1 <- gfdata::get_survey_samples(species = spp[i], ssid = ssid[j], major = areas))
       try(d2 <- gfdata::get_all_survey_samples(species = spp[i], ssid = ssid[j], major = areas,
                                                unsorted_only = FALSE, random_only = FALSE,
+                                               remove_duplicates = TRUE,
                                                include_event_info = TRUE))
       # Drop NA specimen_id
       if (!is.null(d1)) {
