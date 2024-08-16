@@ -4,18 +4,32 @@
 #'  major_stat_area_code, minor_stat_area_code
 #' @param specimens Defaults to FALSE where checks for duplication of fishing_event_ids
 #'
-correct_ssid_errors <- function(dat, specimens = FALSE){
+correct_ssids <- function(dat, specimens = FALSE){
   # first split data into unique fishing_events (dd1) and ones with duplicates (dd2)
 .d <- dat
+
+if(nrow(.d[.d$survey_series_id %in% c(35, 41, 42, 43),])> 0){
+  warning("All sablefish research related sets are returned as survey_series_id 35. ",
+          "To separate types of sets, use reason_desc and grouping_code variables.")
+}
 
 if(!specimens) {
 .dd <- .d[duplicated(.d$fishing_event_id), ]
 dd1 <- filter(.d, !(fishing_event_id %in% c(unique(.dd$fishing_event_id))))
 dd2 <- filter(.d, (fishing_event_id %in% c(unique(.dd$fishing_event_id))))
+
+dd2 <- dd2 |> group_by(fishing_event_id) |> mutate(grouping_code = mean(grouping_code, na.rm = TRUE),
+                                              grouping_code = ifelse(is.nan(grouping_code), NA, grouping_code)
+) |> dplyr::distinct() |> ungroup()
+
 } else {
   .dd <- .d[duplicated(.d$specimen_id), ]
   dd1 <- filter(.d, !(specimen_id %in% c(unique(.dd$specimen_id))))
   dd2 <- filter(.d, (specimen_id %in% c(unique(.dd$specimen_id))))
+
+  dd2 <- dd2 |> group_by(specimen_id) |> mutate(grouping_code = mean(grouping_code, na.rm = TRUE),
+                                                grouping_code = ifelse(is.nan(grouping_code), NA, grouping_code)
+                                                ) |> dplyr::distinct() |> ungroup()
 }
 
 # then only applying fixes to duplicated fishing_events in case some are miss-assigned but not duplicated cases
@@ -25,8 +39,11 @@ dd2 <- dd2[ (!(dd2$survey_series_id == 6 & dd2$major_stat_area_code %in% c("03",
 dd2 <- dd2[ (!(dd2$survey_series_id == 7 & dd2$major_stat_area_code %in% c("05", "06"))), ]
 
 # TODO: generate special cases for sablefish sets with inlets and offshore on same trip ???
-# dd2 <- dd2[ (!(dd2$survey_series_id == ## & dd2$reason %in% c(""))),]
-# dd2 <- dd2[ (!(dd2$survey_series_id == ## & dd2$reason %in% c(""))),]
+# dd2 <- dd2[ (!(dd2$survey_series_id == 41 & dd2$reason_desc %in% c("SABLEFISH STANDARDIZED OFFSHORE SURVEY","SABLEFISH RANDOM STRATIFIED SURVEY"))),]
+# dd2 <- dd2[ (!(dd2$survey_series_id %in% c(43) & dd2$reason_desc %in% c("SABLEFISH STANDARDIZED OFFSHORE SURVEY"))),]
+# dd2 <- dd2[ (!(dd2$survey_series_id %in% c(42,43) & dd2$reason_desc %in% c("SABLEFISH STANDARDIZED INLET SURVEY"))),]
+
+
 
 # TODO: generate special cases for removing duplications of dogfish and HBLL on same trip ???
 
@@ -41,10 +58,18 @@ dd2 <- dd2[ (!(dd2$survey_series_id == 87 & !(dd2$minor_stat_area_code %in% c("1
 .d <- bind_rows(dd1, dd2)
 
 ### maybe we should correct remaining miss-assignment surveys here?
+
+# MSSM
 try(.d[ ((.d$survey_series_id == 6 & .d$major_stat_area_code %in% c("03", "04"))), ]$survey_id <- NA, silent = TRUE)
 try(.d[ ((.d$survey_series_id == 7 & .d$major_stat_area_code %in% c("05", "06"))), ]$survey_id <- NA, silent = TRUE)
 try(.d[ ((.d$survey_series_id == 6 & .d$major_stat_area_code %in% c("03", "04"))), ]$survey_series_id <- 7, silent = TRUE)
 try(.d[ ((.d$survey_series_id == 7 & .d$major_stat_area_code %in% c("05", "06"))), ]$survey_series_id <- 6, silent = TRUE)
 
-.d
+# SABLE doesn't work with SSIDs, use reason_desc and or grouping codes instead?
+try(.d[.d$survey_series_id %in% c(35, 41, 42, 43), ]$survey_series_id <- 35, silent = TRUE)
+try(.d[.d$survey_series_id %in% c(35, 41, 42, 43), ]$survey_id <- NA, silent = TRUE)
+# try(.d[ ((.d$survey_series_id %in% c(35, 41, 42, 43) & .d$reason_desc == "EXPLORATORY")), ]$survey_series_id <- 35, silent = TRUE)
+# try(.d[ ((.d$survey_series_id %in% c(35, 41, 42, 43) & .d$reason_desc == "SABLEFISH STANDARDIZED OFFSHORE SURVEY")), ]$survey_series_id <- 42, silent = TRUE)
+
+.d |> dplyr::distinct()
 }
