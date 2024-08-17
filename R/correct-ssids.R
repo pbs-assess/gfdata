@@ -38,6 +38,10 @@ dd2 <- dd2 |> group_by(fishing_event_id) |> mutate(grouping_code = mean(grouping
 dd2 <- dd2[ (!(dd2$survey_series_id == 6 & dd2$major_stat_area_code %in% c("03", "04"))), ]
 dd2 <- dd2[ (!(dd2$survey_series_id == 7 & dd2$major_stat_area_code %in% c("05", "06"))), ]
 
+# and drop all survey_ids because they are unreliable
+try(dd2[dd2$survey_series_id %in% c(6, 7), ]$survey_id <- NA, silent = TRUE)
+
+
 # TODO: generate special cases for sablefish sets with inlets and offshore on same trip ???
 # dd2 <- dd2[ (!(dd2$survey_series_id == 41 & dd2$reason_desc %in% c("SABLEFISH STANDARDIZED OFFSHORE SURVEY","SABLEFISH RANDOM STRATIFIED SURVEY"))),]
 # dd2 <- dd2[ (!(dd2$survey_series_id %in% c(43) & dd2$reason_desc %in% c("SABLEFISH STANDARDIZED OFFSHORE SURVEY"))),]
@@ -70,6 +74,8 @@ try(.d[.d$survey_series_id %in% c(35, 41, 42, 43), ]$survey_series_id <- 35, sil
 try(.d[.d$survey_series_id %in% c(35, 41, 42, 43), ]$survey_id <- NA, silent = TRUE)
 # try(.d[ ((.d$survey_series_id %in% c(35, 41, 42, 43) & .d$reason_desc == "EXPLORATORY")), ]$survey_series_id <- 35, silent = TRUE)
 # try(.d[ ((.d$survey_series_id %in% c(35, 41, 42, 43) & .d$reason_desc == "SABLEFISH STANDARDIZED OFFSHORE SURVEY")), ]$survey_series_id <- 42, silent = TRUE)
+
+
 
 .d |> dplyr::distinct()
 }

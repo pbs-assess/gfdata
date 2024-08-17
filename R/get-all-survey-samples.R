@@ -338,7 +338,7 @@ get_all_survey_samples <- function(species, ssid = NULL,
 
     fe <- run_sql("GFBioSQL", .fe)
 
-
+  if(any(!is.na(fe$FE_SUB_LEVEL_ID))) {
      if(any(fe$FE_SUB_LEVEL_ID > 1)) {
 
        fe2 <- get_skate_level_counts(fe)
@@ -346,7 +346,8 @@ get_all_survey_samples <- function(species, ssid = NULL,
        if (sum(!is.na(unique(fe2$HOOK_CODE))) < 1 | sum(!is.na(unique(fe2$HOOKSIZE_DESC))) < 1) {
        fe2 <- get_skate_count(fe)
        }
-
+     }
+     fe2 <- get_skate_count(fe)
      } else {
      fe2 <- get_skate_count(fe)
      }
