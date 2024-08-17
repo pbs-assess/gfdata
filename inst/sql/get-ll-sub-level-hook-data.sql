@@ -3,8 +3,6 @@
     FE.FE_MAJOR_LEVEL_ID,
     FE.FE_SUB_LEVEL_ID,
     T.TRIP_ID,
-    S.SURVEY_ID,
-    S.SURVEY_SERIES_ID,
     Nall count_all_animals,
     Nsp count_all_species,
     Nb count_bait_only,

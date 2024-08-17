@@ -10,7 +10,7 @@
 #' @param random_only Only return randomly sampled specimens.
 #'   If FALSE will return all specimens collected on research trips.
 #' @param include_event_info Logical for whether to append all relevant fishing event info
-#'   (location, timing, effort, catch, etc.). Defaults to false.
+#'   (location, timing, effort, catch, etc.). Defaults to TRUE.
 #' @param include_activity_matches Get all records collected with activity codes that match chosen ssids.
 #' @param remove_bad_data Remove known bad data, such as unrealistic
 #'  length or weight values.
@@ -49,7 +49,12 @@ get_all_survey_samples <- function(species, ssid = NULL,
                             search_flag = "-- insert ssid here", conversion_func = I
         )
     } else {
-    .q <- inject_filter("AND SS.SURVEY_SERIES_ID IN", ssid,
+
+    if(any(ssid %in% c(35, 41, 42, 43))){
+        ssid <- unique(c(ssid, 35, 41, 42, 43))
+    }
+
+    .q <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid,
       sql_code = .q,
       search_flag = "-- insert ssid here", conversion_func = I
     )
@@ -94,7 +99,8 @@ get_all_survey_samples <- function(species, ssid = NULL,
     remove_duplicates <- TRUE
   }
 
-  .d <- correct_ssid_errors(.d, specimens = TRUE)
+  # browser()
+  .d <- correct_ssids(.d, specimens = TRUE)
 
   # check if there are duplicate specimen ids
   if (length(.d$specimen_id) > length(unique(.d$specimen_id))) {
@@ -136,6 +142,7 @@ get_all_survey_samples <- function(species, ssid = NULL,
     }
     }
   }
+
 
   surveys <- get_ssids()
 
@@ -183,6 +190,12 @@ get_all_survey_samples <- function(species, ssid = NULL,
     # # only 1 = unsorted makes sense! 3 = keepers, 5 = remains, = 6 head only, 7 doesn't exist?
     .d <- filter(.d, is.na(sample_source_code) | sample_source_code %in% c(1))
     # # only 1 = unsorted makes sense! 2 = keepers, 3 = discards
+  } else {
+
+    .ss <- get_table("Sample_Source") |> select(-ROW_VERSION)
+    names(.ss) <- tolower(names(.ss))
+    .d <- left_join(.d, .ss, by = "sample_source_code")
+
   }
 
   if (!is.null(usability)) {
@@ -200,9 +213,10 @@ get_all_survey_samples <- function(species, ssid = NULL,
 
   } else {
 
-    .st <- get_table("Sample_Type") |> select(-ROW_VERSION)
-    names(.st) <- tolower(names(.st))
-    .d <- left_join(.d, .st, by = "sample_type_code")
+    ## added this to sql
+    # .st <- get_table("Sample_Type") |> select(-ROW_VERSION)
+    # names(.st) <- tolower(names(.st))
+    # .d <- left_join(.d, .st, by = "sample_type_code")
 
   }
 
@@ -254,6 +268,8 @@ get_all_survey_samples <- function(species, ssid = NULL,
     options(scipen=999)
     # needed for big skate because of a MSA set with an id that was getting converted
 
+    .d <- select(.d, -minor_stat_area_code) # clashes with wrangled fe data because some sub level events have NAs here
+
     .f <- .d %>% filter(!is.na(fishing_event_id))
     fe_vector <- unique(.f$fishing_event_id)
 
@@ -287,26 +303,58 @@ get_all_survey_samples <- function(species, ssid = NULL,
     # get all fishing event info
     .fe <- read_sql("get-event-data.sql")
 
-    ssid <- unique(.d$survey_series_id)
-    .fe <- inject_filter("AND SS.SURVEY_SERIES_ID IN", ssid,
-      sql_code = .fe,
-      search_flag = "-- insert ssid here", conversion_func = I
+    ssid_with_samples <- unique(.d$survey_series_id)
+
+    .fe <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid_with_samples,
+                         sql_code = .fe,
+                         search_flag = "-- insert ssid here", conversion_func = I
     )
-    .fe <- inject_filter("AND FE.FISHING_EVENT_ID IN", fe_vector,
+
+    ## these don't work if we want all the sub level and minor level ids
+    # .fe <- inject_filter("AND FE.FE_PARENT_EVENT_ID IS NULL OR IN", fe_vector,
+    #                      sql_code = .fe,
+    #                      search_flag = "-- insert fe_vector here", conversion_func = I
+    # )
+    #
+    # .fe <- inject_filter("OR FE.FISHING_EVENT_ID IN", fe_vector,
+    #                      sql_code = .fe,
+    #                      search_flag = "-- insert fe_vector here", conversion_func = I
+    # )
+
+    # so reduce data size using trip ids instead?
+    trip_vector <- unique(.d$trip_id)
+
+    .fe <- inject_filter("AND FE.TRIP_ID IN", trip_vector,
                          sql_code = .fe,
                          search_flag = "-- insert fe_vector here", conversion_func = I
     )
+
+
     if (!is.null(major)) {
       .fe <- inject_filter("AND FE.MAJOR_STAT_AREA_CODE IN", major, .fe,
                            search_flag = "-- insert major here", conversion_func = I
       )
     }
 
-    fe <- run_sql("GFBioSQL", .fe) %>% select(-USABILITY_CODE,
-                                              -GROUPING_CODE_ORIGINAL, -GROUPING_DESC_ORIGINAL,
-                                              -GROUPING_CODE) # avoid classing with values for samples
+    fe <- run_sql("GFBioSQL", .fe)
 
-    fe2 <- get_sub_level_counts(fe)
+
+     if(any(fe$FE_SUB_LEVEL_ID > 1)) {
+
+       fe2 <- get_skate_level_counts(fe)
+
+       if (sum(!is.na(unique(fe2$HOOK_CODE))) < 1 | sum(!is.na(unique(fe2$HOOKSIZE_DESC))) < 1) {
+       fe2 <- get_skate_count(fe)
+       }
+
+     } else {
+     fe2 <- get_skate_count(fe)
+     }
+
+    fe2 <- fe2 %>% select(-REASON_DESC, -USABILITY_CODE,
+                           -GROUPING_CODE_ORIGINAL, -GROUPING_DESC_ORIGINAL,
+                           -GROUPING_CODE, -ORIGINAL_IND) # avoid clashing with values for samples
+
     names(fe2) <- tolower(names(fe2))
 
     .d <- left_join(.d, fe2)

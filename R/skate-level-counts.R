@@ -4,13 +4,12 @@ get_skate_level_counts <- function(fe) {
   # get sub events (known as skates)
   # when present hook data is stored at this level, while other event info tends to be stored at the parent event level
   fe_B_no_minor <- filter(fe, !is.na(FE_PARENT_EVENT_ID), is.na(FE_MINOR_LEVEL_ID)) %>%
-    group_by(FE_PARENT_EVENT_ID, FE_MAJOR_LEVEL_ID, SURVEY_ID, SURVEY_SERIES_ID) %>%
-    mutate(SKATE_COUNT = n()) %>%
     select(FE_PARENT_EVENT_ID, FISHING_EVENT_ID, FE_MAJOR_LEVEL_ID, FE_SUB_LEVEL_ID,
            YEAR, TRIP_ID,
-           SKATE_COUNT,
            HOOK_CODE, LGLSP_HOOK_COUNT, HOOK_DESC, HOOKSIZE_DESC) %>%
     dplyr::distinct() %>%
+    group_by(YEAR, TRIP_ID, FE_PARENT_EVENT_ID, FE_MAJOR_LEVEL_ID) %>%
+    mutate(SKATE_COUNT = n()) %>%
     rename(skate_id = FISHING_EVENT_ID, fishing_event_id = FE_PARENT_EVENT_ID) %>%
     ungroup()
 
@@ -18,9 +17,8 @@ get_skate_level_counts <- function(fe) {
   fe_without_B <- fe_A_no_parent |> rename(fishing_event_id = FISHING_EVENT_ID) |>
     anti_join(fe_B_no_minor, by = "fishing_event_id")
 
-
-
   fe_with_hook <- fe |> rename(fishing_event_id = FISHING_EVENT_ID) |>
+    select(-SURVEY_SERIES_ID)|>
     filter(!is.na(HOOK_CODE))
 
   # # select all sublevel events and add on variables
@@ -35,7 +33,7 @@ get_skate_level_counts <- function(fe) {
     filter(is.na(HOOK_CODE)) |>
     select(
       -FE_PARENT_EVENT_ID, -FE_MAJOR_LEVEL_ID, -FE_SUB_LEVEL_ID,
-      -YEAR, -TRIP_ID, -SURVEY_ID, -SURVEY_SERIES_ID,
+      -YEAR, -TRIP_ID, -SURVEY_SERIES_ID,
       -HOOK_CODE, -LGLSP_HOOK_COUNT, -HOOK_DESC, -HOOKSIZE_DESC
       )
 
@@ -44,7 +42,8 @@ get_skate_level_counts <- function(fe) {
   fe_with_B_no_hook <- fe_B_no_minor |> filter(is.na(HOOK_CODE))|>
     select(
       -FE_MAJOR_LEVEL_ID, -FE_SUB_LEVEL_ID,
-      -YEAR, -TRIP_ID,
+      # -YEAR, -TRIP_ID,
+      # -SURVEY_SERIES_ID,
       -HOOK_CODE, -LGLSP_HOOK_COUNT, -HOOK_DESC, -HOOKSIZE_DESC
     ) |> left_join(fe_with_hook)
 
@@ -76,22 +75,6 @@ get_skate_level_counts <- function(fe) {
 
   # fe_C_w_minor["FE_PARENT_EVENT_ID"][fe_C_w_minor["FE_PARENT_EVENT_ID"]== 502596]
 
-  ## experimented with using FE_SUB_LEVEL_ID, but it gives same skate counts.
-  # fe_D_w_sub <- filter(fe, !is.na(FE_PARENT_EVENT_ID), is.na(FE_MINOR_LEVEL_ID), !is.na(FE_SUB_LEVEL_ID)) %>%
-  #   group_by(FE_PARENT_EVENT_ID, FE_MAJOR_LEVEL_ID, SURVEY_ID, SURVEY_SERIES_ID) %>%
-  #   mutate(SUB_ID_COUNT = n(),
-  #          SUB_ID_MAX = max(FE_SUB_LEVEL_ID, na.rm = TRUE)) %>%
-  #   select(FE_PARENT_EVENT_ID, FISHING_EVENT_ID, FE_MAJOR_LEVEL_ID, YEAR, SURVEY_ID, SURVEY_SERIES_ID, SUB_ID_COUNT, SUB_ID_MAX) %>%
-  #   dplyr::distinct() %>%
-  #   rename(skate_id = FISHING_EVENT_ID, fishing_event_id = FE_PARENT_EVENT_ID) %>% ungroup()
-  #
-  # fe_B_no_minor <- full_join(
-  #   fe_B_no_minor,
-  #   fe_D_w_sub
-  # )
-  #
-  # anti_join(..., by = "fishing_event_id") %>% view() # no matches
-
   sub_event_counts <- full_join(
     fe_B_no_minor,
     fe_C
@@ -115,6 +98,7 @@ get_skate_level_counts <- function(fe) {
   final_event_counts <- sub_event_counts %>%
     filter(!is.na(fishing_event_id)) %>%
     bind_rows(missing_event_ids) %>%
+    dplyr::distinct() %>%
     group_by(skate_id, FE_SUB_LEVEL_ID, fishing_event_id, FE_MAJOR_LEVEL_ID, YEAR) %>%
     dplyr::summarise(
       # skate_count = mean(SKATE_COUNT, na.rm = T),
@@ -124,14 +108,13 @@ get_skate_level_counts <- function(fe) {
       minor_id_max = ifelse(all(is.na(MINOR_ID_MAX)), NA, max(MINOR_ID_MAX, na.rm = TRUE))
     ) %>%
     dplyr::distinct() %>%
-    mutate(diff = ifelse(minor_id_max > 0, minor_id_max - minor_id_count, NA)) %>%
-    # select(-SURVEY_ID, -SURVEY_SERIES_ID) %>%
-    dplyr::distinct()
+    mutate(diff = ifelse(minor_id_max > 0, minor_id_max - minor_id_count, NA))
 
   fe2 <- fe_by_event_or_skate |>
     left_join(final_event_counts) |>
-    select(-SURVEY_ID, -SURVEY_SERIES_ID)|>
-    select(-FE_PARENT_EVENT_ID, -FE_MINOR_LEVEL_ID)
+    select(-SURVEY_SERIES_ID)|>
+    select(-FE_PARENT_EVENT_ID, -FE_MINOR_LEVEL_ID) %>%
+    dplyr::distinct()
 
   fe2
 }

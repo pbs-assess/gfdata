@@ -4,8 +4,10 @@
 #'
 #' @param fe df retrieved with get-event-data.sql
 #'
-get_sub_level_counts <- function(fe) {
+get_skate_count <- function(fe) {
   fe_A_no_parent <- filter(fe, is.na(FE_PARENT_EVENT_ID), is.na(FE_MINOR_LEVEL_ID), is.na(FE_SUB_LEVEL_ID)) # just actual events
+
+  # browser()
 
   # get sub events (known as skates)
   fe_B_no_minor <- filter(fe, !is.na(FE_PARENT_EVENT_ID), is.na(FE_MINOR_LEVEL_ID)) %>%
