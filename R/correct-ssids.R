@@ -13,23 +13,27 @@ if(nrow(.d[.d$survey_series_id %in% c(35, 41, 42, 43),])> 0){
           "To separate types of sets, use reason_desc and grouping_code variables.")
 }
 
+# browser()
+
 if(!specimens) {
 .dd <- .d[duplicated(.d$fishing_event_id), ]
 dd1 <- filter(.d, !(fishing_event_id %in% c(unique(.dd$fishing_event_id))))
 dd2 <- filter(.d, (fishing_event_id %in% c(unique(.dd$fishing_event_id))))
 
-dd2 <- dd2 |> group_by(fishing_event_id) |> mutate(grouping_code = mean(grouping_code, na.rm = TRUE),
-                                              grouping_code = ifelse(is.nan(grouping_code), NA, grouping_code)
-) |> dplyr::distinct() |> ungroup()
+dd2 <- dd2 |> group_by(fishing_event_id) |>
+  mutate(grouping_code = mean(grouping_code, na.rm = TRUE),
+         grouping_code = ifelse(is.nan(grouping_code), NA, grouping_code)
+         ) |> dplyr::distinct() |> ungroup()
 
 } else {
   .dd <- .d[duplicated(.d$specimen_id), ]
   dd1 <- filter(.d, !(specimen_id %in% c(unique(.dd$specimen_id))))
   dd2 <- filter(.d, (specimen_id %in% c(unique(.dd$specimen_id))))
 
-  dd2 <- dd2 |> group_by(specimen_id) |> mutate(grouping_code = mean(grouping_code, na.rm = TRUE),
-                                                grouping_code = ifelse(is.nan(grouping_code), NA, grouping_code)
-                                                ) |> dplyr::distinct() |> ungroup()
+  dd2 <- dd2 |> group_by(specimen_id) |>
+    mutate(grouping_code = mean(grouping_code, na.rm = TRUE),
+           grouping_code = ifelse(is.nan(grouping_code), NA, grouping_code)
+           ) |> dplyr::distinct() |> ungroup()
 }
 
 # then only applying fixes to duplicated fishing_events in case some are miss-assigned but not duplicated cases

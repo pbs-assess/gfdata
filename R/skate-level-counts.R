@@ -1,3 +1,7 @@
+#' summarize fishing event data at the skate level
+#' retrieves missing fishing_event_ids for sablefish surveys using major_level_ids
+#'
+
 get_skate_level_counts <- function(fe) {
   fe_A_no_parent <- filter(fe, is.na(FE_PARENT_EVENT_ID), is.na(FE_MINOR_LEVEL_ID), is.na(FE_SUB_LEVEL_ID)) # just actual events
 
