@@ -236,13 +236,12 @@ get_all_survey_sets <- function(species,
     # get catch for sub levels if skate counts > 1 and gear differs between skates
     # sks <- sk %>% filter(skate_count > 1)
     # fe_vector <- unique(sks$fishing_event_id)
+
     spp_codes <- unique(.d$species_code)
 
-    if(any(fe$FE_SUB_LEVEL_ID > 1)) {
+    fe1 <- get_skate_level_counts(fe)
 
-      fe1 <- get_skate_level_counts(fe)
-
-      if (sum(!is.na(unique(fe1$HOOK_CODE))) > 1 | sum(!is.na(unique(fe1$HOOKSIZE_DESC))) > 1) {
+    if(any(fe$FE_SUB_LEVEL_ID > 1) & (sum(!is.na(unique(fe1$HOOK_CODE))) > 1 | sum(!is.na(unique(fe1$HOOKSIZE_DESC))) > 1)) {
 
         .h <- read_sql("get-ll-sub-level-hook-data.sql")
 
@@ -257,7 +256,7 @@ get_all_survey_sets <- function(species,
         names(fe1) <- tolower(names(fe1))
         fe1 <- left_join(fe1, .hd)
 
-        browser()
+        # browser()
 
         .d <- expand.grid(
           fishing_event_id = unique(fe1$fishing_event_id),
@@ -300,9 +299,7 @@ get_all_survey_sets <- function(species,
           select(-catch_count) |>
           left_join(slc)
         .d <- bind_rows(.d1, .d2)
-      }
-      # space for multiple skate of same gear or non-hook gear difference
-    } else {
+      } else {
 
     ## if hooks do not differ between skates, get hook data and catch for whole event
 
@@ -316,19 +313,10 @@ get_all_survey_sets <- function(species,
     .hd <- run_sql("GFBioSQL", .h)
     names(.hd) <- tolower(names(.hd))
 
-    .hd <- dplyr::distinct(.hd) #%>% select(-survey_id, -survey_series_id) # dropped from sql
-
-    # fe3 <- filter(fe, is.na(FE_PARENT_EVENT_ID), is.na(FE_MINOR_LEVEL_ID), is.na(FE_SUB_LEVEL_ID))
-    # names(fe3) <- tolower(names(fe3))
-    # fe3 <- left_join(dplyr::distinct(select(
-    #   fe3,
-    #   -fe_parent_event_id,
-    #   -fe_minor_level_id,
-    #   -fe_sub_level_id
-    # )), .hd)
+    .hd <- dplyr::distinct(.hd)
 
     ## old sub_level function moved from utils.R
-    fe3 <- get_skate_count(fe)
+    fe3 <- get_parent_level_counts(fe)
     names(fe3) <- tolower(names(fe3))
     fe3 <- left_join(fe3, .hd) |> dplyr::distinct()
 

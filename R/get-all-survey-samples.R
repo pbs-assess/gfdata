@@ -343,13 +343,13 @@ get_all_survey_samples <- function(species, ssid = NULL,
 
        fe2 <- get_skate_level_counts(fe)
 
-       if (sum(!is.na(unique(fe2$HOOK_CODE))) < 1 | sum(!is.na(unique(fe2$HOOKSIZE_DESC))) < 1) {
-       fe2 <- get_skate_count(fe)
+       if (sum(!is.na(unique(fe2$HOOK_CODE))) < 2 | sum(!is.na(unique(fe2$HOOKSIZE_DESC))) < 2) {
+       fe2 <- get_parent_level_counts(fe)
        }
      }
-     fe2 <- get_skate_count(fe)
+     fe2 <- get_parent_level_counts(fe)
      } else {
-     fe2 <- get_skate_count(fe)
+     fe2 <- get_parent_level_counts(fe)
      }
 
     fe2 <- fe2 %>% select(-REASON_DESC, -USABILITY_CODE,
