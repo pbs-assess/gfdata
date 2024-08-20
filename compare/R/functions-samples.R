@@ -30,6 +30,8 @@ compare_survey_samples <- function (spp, ssid, areas = NULL) {
       r2 <- NULL
       # Pull data
       try(d1 <- gfdata::get_survey_samples(species = spp[i], ssid = ssid[j], major = areas))
+      # Let server have a rest
+      Sys.sleep(0.05)
       try(d2 <- gfdata::get_all_survey_samples(species = spp[i], ssid = ssid[j], major = areas,
                                                unsorted_only = FALSE, random_only = FALSE,
                                                remove_duplicates = TRUE,
@@ -135,7 +137,7 @@ compare_survey_samples <- function (spp, ssid, areas = NULL) {
   }
 
   # Arrange
-  x <- dplyr::arrange(x, species, ssid, fn)
+  x <- dplyr::arrange(x, fn, species, ssid)
   s <- dplyr::arrange(s, species, ssid, fn)
 
   # Return
