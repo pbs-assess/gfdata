@@ -73,6 +73,7 @@ get_skate_level_counts <- function(fe) {
       #MINOR_ID_MAX = max(FE_MINOR_LEVEL_ID, na.rm = TRUE)
       MINOR_ID_MAX = ifelse(all(is.na(FE_MINOR_LEVEL_ID)), NA, max(FE_MINOR_LEVEL_ID, na.rm = TRUE))
     ) %>%
+    select(-FE_MINOR_LEVEL_ID) %>%
     dplyr::distinct() %>%
     mutate(skate_id = FE_PARENT_EVENT_ID) %>%
     ungroup()
