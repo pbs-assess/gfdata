@@ -339,7 +339,7 @@ get_all_survey_samples <- function(species, ssid = NULL,
     fe <- run_sql("GFBioSQL", .fe)
 
   if(any(!is.na(fe$FE_SUB_LEVEL_ID))) {
-     if(any(fe$FE_SUB_LEVEL_ID > 1)) {
+     if(any(na.omit(fe$FE_SUB_LEVEL_ID) > 1)) {
 
        fe2 <- get_skate_level_counts(fe)
 
