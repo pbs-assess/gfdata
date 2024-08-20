@@ -51,17 +51,14 @@ try(dd2[dd2$survey_series_id %in% c(6, 7), ]$survey_id <- NA, silent = TRUE)
 # dd2 <- dd2[ (!(dd2$survey_series_id %in% c(43) & dd2$reason_desc %in% c("SABLEFISH STANDARDIZED OFFSHORE SURVEY"))),]
 # dd2 <- dd2[ (!(dd2$survey_series_id %in% c(42,43) & dd2$reason_desc %in% c("SABLEFISH STANDARDIZED INLET SURVEY"))),]
 
-
-
-# TODO: generate special cases for removing duplications of dogfish and HBLL on same trip ???
-
-# Jig surveys
-dd2 <- dd2[ (!(dd2$survey_series_id == 82 & !(dd2$minor_stat_area_code %in% c("12")))), ]
-dd2 <- dd2[ (!(dd2$survey_series_id == 83 & !(dd2$minor_stat_area_code %in% c("13")))), ]
-dd2 <- dd2[ (!(dd2$survey_series_id == 84 & !(dd2$minor_stat_area_code %in% c("15")))), ]
-dd2 <- dd2[ (!(dd2$survey_series_id == 85 & !(dd2$minor_stat_area_code %in% c("16")))), ]
-dd2 <- dd2[ (!(dd2$survey_series_id == 86 & !(dd2$minor_stat_area_code %in% c("18")))), ]
-dd2 <- dd2[ (!(dd2$survey_series_id == 87 & !(dd2$minor_stat_area_code %in% c("19")))), ]
+#
+# # Jig surveys - moved to apply to all samples rather than just duplicated ones.
+# dd2 <- dd2[ (!(dd2$survey_series_id == 82 & !(dd2$minor_stat_area_code %in% c("12")))), ]
+# dd2 <- dd2[ (!(dd2$survey_series_id == 83 & !(dd2$minor_stat_area_code %in% c("13")))), ]
+# dd2 <- dd2[ (!(dd2$survey_series_id == 84 & !(dd2$minor_stat_area_code %in% c("15")))), ]
+# dd2 <- dd2[ (!(dd2$survey_series_id == 85 & !(dd2$minor_stat_area_code %in% c("16")))), ]
+# dd2 <- dd2[ (!(dd2$survey_series_id == 86 & !(dd2$minor_stat_area_code %in% c("18")))), ]
+# dd2 <- dd2[ (!(dd2$survey_series_id == 87 & !(dd2$minor_stat_area_code %in% c("19")))), ]
 
 .d <- bind_rows(dd1, dd2)
 
@@ -79,7 +76,13 @@ try(.d[.d$survey_series_id %in% c(35, 41, 42, 43), ]$survey_id <- NA, silent = T
 # try(.d[ ((.d$survey_series_id %in% c(35, 41, 42, 43) & .d$reason_desc == "EXPLORATORY")), ]$survey_series_id <- 35, silent = TRUE)
 # try(.d[ ((.d$survey_series_id %in% c(35, 41, 42, 43) & .d$reason_desc == "SABLEFISH STANDARDIZED OFFSHORE SURVEY")), ]$survey_series_id <- 42, silent = TRUE)
 
-
+# Jig surveys are split into too many separate survey series, so we'll assume all were assigned correctly and drop everything that doesn't match
+.d <- .d[ (!(.d$survey_series_id == 82 & !(.d$minor_stat_area_code %in% c("12")))), ]
+.d <- .d[ (!(.d$survey_series_id == 83 & !(.d$minor_stat_area_code %in% c("13")))), ]
+.d <- .d[ (!(.d$survey_series_id == 84 & !(.d$minor_stat_area_code %in% c("15")))), ]
+.d <- .d[ (!(.d$survey_series_id == 85 & !(.d$minor_stat_area_code %in% c("16")))), ]
+.d <- .d[ (!(.d$survey_series_id == 86 & !(.d$minor_stat_area_code %in% c("18")))), ]
+.d <- .d[ (!(.d$survey_series_id == 87 & !(.d$minor_stat_area_code %in% c("19")))), ]
 
 .d |> dplyr::distinct()
 }
