@@ -25,7 +25,7 @@ spp <- readRDS("compare/data/species.rds")
 
 # Compare survey samples -------------------------------------------------------
 
-d <- compare_survey_samples(spp = spp, ssid = ssid)
+d <- compare_survey_samples(spp = spp, ssid = ssid, areas = areas)
 
 # Extra specimens
 x <- d$x
