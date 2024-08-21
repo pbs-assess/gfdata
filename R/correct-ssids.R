@@ -84,5 +84,10 @@ try(.d[.d$survey_series_id %in% c(35, 41, 42, 43), ]$survey_id <- NA, silent = T
 .d <- .d[ (!(.d$survey_series_id == 86 & !(.d$minor_stat_area_code %in% c("18")))), ]
 .d <- .d[ (!(.d$survey_series_id == 87 & !(.d$minor_stat_area_code %in% c("19")))), ]
 
+# for IPHC station specific ssids, drop everything that doesn't match
+.d <- .d[ (!(.d$survey_series_id == 17 & !(.d$minor_stat_area_code %in% c("3")))), ] # 3CD
+.d <- .d[ (!(.d$survey_series_id == 18 & !(.d$minor_stat_area_code %in% c("6")))), ] # 5AB
+.d <- .d[ (!(.d$survey_series_id == 19 & !(.d$minor_stat_area_code %in% c("7")))), ] # 5CD
+
 .d |> dplyr::distinct()
 }
