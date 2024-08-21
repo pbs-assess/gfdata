@@ -8,7 +8,7 @@
 #'   species code, then all elements will be assumed to be species common
 #'   names. Does not work with non-numeric species codes, so in those cases the
 #'   common name will be needed.
-#' @param ssid Default is to return all survey sets or samples.
+#' @param ssid Default is to return all data from all surveys.
 #' @param major Character string (or vector) of major stat area code(s) to
 #'   include (characters). Use get_major_areas() to lookup area codes with
 #'   descriptions. Default is NULL.
@@ -24,10 +24,11 @@
 #'   specimens (`sample_type_code` = `1, 2, 6, 7, or 8`).
 #' @param include_event_info Logical for whether to append all relevant fishing
 #'   event info (location, timing, effort, catch, etc.). Defaults to TRUE.
-#' @param include_activity_matches TRUE gets all records collected with activity codes
-#'   that match chosen ssids. Default is FALSE.
+#' @param include_activity_matches TRUE gets all records collected with activity
+#'   codes that match chosen ssids. Default is FALSE.
 #' @param remove_bad_data Remove known bad data, such as unrealistic
-#'   length or weight values. Default is TRUE.
+#'   length or weight values and duplications due to trips that include multiple
+#'   surveys. Default is TRUE.
 #' @param remove_duplicates Remove duplicated specimen records due to overlapping
 #'   survey stratifications when original_ind = 'N', or from known issues with
 #'   MSSM trips including both survey areas.
@@ -108,13 +109,13 @@ get_all_survey_samples <- function(species, ssid = NULL,
     stop(paste0("No survey samples for ", toString(species), "."))
     } else {
       if(!is.null(ssid)&is.null(major)){
-      stop(paste0("No survey samples for ", toString(species), " from ssids ", toString(ssid), "."))
+      stop(paste0("No survey samples for ", toString(species), " from ssid(s) ", toString(ssid), "."))
       }
       if(is.null(ssid)&!is.null(major)){
-      stop(paste0("No survey samples for ", toString(species), " from major areas ", toString(major), "."))
+      stop(paste0("No survey samples for ", toString(species), " from major area(s) ", toString(major), "."))
       }
       if(!is.null(ssid)&!is.null(major)){
-        stop(paste0("No survey samples for ", toString(species), " from ssids ", toString(ssid), " in major areas ", toString(major), "."))
+        stop(paste0("No survey samples for ", toString(species), " from ssid(s) ", toString(ssid), " in major area(s) ", toString(major), "."))
       }
     }
   }

@@ -1,19 +1,26 @@
 #' Get all data
 #'
-#' These functions get all survey set or sample data for a set of species by major area, activity, or specific surveys.
-#' The main functions in this package focus on retrieving the more commonly used typs of data and are often limited to
-#' sets and samples that conform to current design-based standards and survey grids. These functions will retrieve
-#' everything and therefore require careful consideration of what data types are reasonable to include depending on the purpose.
-#' For this reason these function return a lot of columns, although the exact number depends on which types of surveys are being returned.
+#' These functions get all survey set or sample data for a set of species by
+#' major area, activity, or specific surveys. The main functions in this package
+#' focus on retrieving the more commonly used typs of data and are often limited
+#' to sets and samples that conform to current design-based standards and survey
+#' grids. These functions will retrieve everything and therefore require careful
+#' consideration of what data types are reasonable to include depending on the
+#' purpose. For this reason these function return a lot of columns, although the
+#' exact number depends on which types of surveys are being returned.
 #'
-#' @param ssid Default is to return all survey sets or samples.
+#' @param ssid Default is to return all data from all surveys.
 #' @param years Default is NULL, which returns all years.
-#' @param major Character string (or vector) of major stat area code(s) to include (characters). Use
-#'  get_major_areas() to lookup area codes with descriptions. Default is NULL.
+#' @param major Character string (or vector) of major stat area code(s) to
+#'  include (characters). Use get_major_areas() to lookup area codes with
+#'  descriptions. Default is NULL.
 #' @param join_sample_ids This option was problematic, so now reverts to FALSE.
 #' @param remove_false_zeros If `TRUE` will make sure weights > 0 don't have
 #'   associated counts of 0 and vice versa. Mostly useful for trawl data where
 #'   counts are only taken for small catches.
+#' @param remove_bad_data Remove known bad data, such as unrealistic
+#'   length or weight values and duplications due to trips that include multiple
+#'   surveys. Default is TRUE.
 #' @param remove_duplicates Logical for whether to remove duplicated event records due to overlapping survey
 #'   stratifications when original_ind = 'N', or from known issues with MSSM trips including both survey areas.
 #'   Defaults to FALSE when ssids are supplied and activity matches aren't included. Otherwise turns on automatically.
@@ -39,7 +46,7 @@
 #' }
 #'
 get_all_survey_sets <- function(species,
-                                ssid = c(1, 3, 4, 16, 2, 14, 22, 35, 36, 39, 40),
+                                ssid = NULL,
                                 major = NULL,
                                 years = NULL,
                                 join_sample_ids = FALSE,
@@ -158,13 +165,13 @@ get_all_survey_sets <- function(species,
       stop(paste0("No survey set data for ", toString(species), "."))
     } else {
       if(!is.null(ssid)&is.null(major)){
-        stop(paste0("No survey set data for ", toString(species), " from ssids ", toString(ssid), "."))
+        stop(paste0("No survey set data for ", toString(species), " from ssid(s) ", toString(ssid), "."))
       }
       if(is.null(ssid)&!is.null(major)){
-        stop(paste0("No survey set data for ", toString(species), " from major areas ", toString(major), "."))
+        stop(paste0("No survey set data for ", toString(species), " from major area(s) ", toString(major), "."))
       }
       if(!is.null(ssid)&!is.null(major)){
-        stop(paste0("No survey set data for ", toString(species), " from ssids ", toString(ssid), " in major areas ", toString(major), "."))
+        stop(paste0("No survey set data for ", toString(species), " from ssid(s) ", toString(ssid), " in major area(s) ", toString(major), "."))
       }
     }
   }
@@ -354,7 +361,7 @@ get_all_survey_sets <- function(species,
   }
 
   if (remove_bad_data) {
-    .d <- correct_ssids(.d, specimens = TRUE)
+    .d <- correct_ssids(.d)
   }
 
   if (!is.null(ssid)){
@@ -495,8 +502,12 @@ get_all_survey_sets <- function(species,
     species_common_name = tolower(species_common_name)
   )
 
+  .d <- .d |> relocate(species_common_name, species_code, survey_series_id, fishing_event_id, catch_weight, catch_count)
+
   # not sure where things are getting duplicated, but this will get rid of any complete duplication
   .d <- dplyr::distinct(.d)
+
+  # this drops any columns entirely populated with NAs
   .d <- .d %>% select(where(~ !all(is.na(.x))))
 
   species_codes <- common2codes(species)
@@ -507,5 +518,7 @@ get_all_survey_sets <- function(species,
       paste(missing_species, collapse = ", ")
     )
   }
+
+
   add_version(as_tibble(.d))
 }
