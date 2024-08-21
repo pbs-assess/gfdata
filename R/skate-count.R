@@ -7,8 +7,6 @@
 get_parent_level_counts <- function(fe) {
   fe_A_no_parent <- filter(fe, is.na(FE_PARENT_EVENT_ID), is.na(FE_MINOR_LEVEL_ID), is.na(FE_SUB_LEVEL_ID)) # just actual events
 
-  # browser()
-
   # get sub events (known as skates)
   fe_B_no_minor <- filter(fe, !is.na(FE_PARENT_EVENT_ID), is.na(FE_MINOR_LEVEL_ID)) %>%
     select(FE_PARENT_EVENT_ID, FISHING_EVENT_ID, FE_MAJOR_LEVEL_ID, YEAR, TRIP_ID) %>%
@@ -25,8 +23,6 @@ get_parent_level_counts <- function(fe) {
   fe_C_w_minor["FE_PARENT_EVENT_ID"][fe_C_w_minor["FE_PARENT_EVENT_ID"] == 502596] <- 502717
 
   # fe_C_w_minor["FE_PARENT_EVENT_ID"][fe_C_w_minor["FE_PARENT_EVENT_ID"]==502717] <- 502596
-
-
 
   fe_C <- fe_C_w_minor %>%
     select(FE_PARENT_EVENT_ID, FE_MAJOR_LEVEL_ID, FE_MINOR_LEVEL_ID, YEAR, TRIP_ID) %>%

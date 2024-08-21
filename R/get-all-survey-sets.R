@@ -1,12 +1,18 @@
+#' Get all data
 #'
-#' @param years If NULL, returns all years.
-#' @param major Character string (or vector, though doesn't work yet with
-#'  `cache_pbs_data`) of major stat area code to include (characters). Use
-#'  get_major_areas() to lookup area codes with descriptions.
+#' These functions get all survey set or sample data for a set of species by major area, activity, or specific surveys.
+#' The main functions in this package focus on retrieving the more commonly used typs of data and are often limited to
+#' sets and samples that conform to current design-based standards and survey grids. These functions will retrieve
+#' everything and therefore require careful consideration of what data types are reasonable to include depending on the purpose.
+#' For this reason these function return a lot of columns, although the exact number depends on which types of surveys are being returned.
+#'
+#' @param ssid Default is to return all survey sets or samples.
+#' @param years Default is NULL, which returns all years.
+#' @param major Character string (or vector) of major stat area code(s) to include (characters). Use
+#'  get_major_areas() to lookup area codes with descriptions. Default is NULL.
 #' @param join_sample_ids This option was problematic, so now reverts to FALSE.
-#' @param verbose Doesn't do anything in this version.
 #' @param remove_false_zeros If `TRUE` will make sure weights > 0 don't have
-#'   associated counts of 0 and vice versa. Only applies to trawl data where
+#'   associated counts of 0 and vice versa. Mostly useful for trawl data where
 #'   counts are only taken for small catches.
 #' @param remove_duplicates Logical for whether to remove duplicated event records due to overlapping survey
 #'   stratifications when original_ind = 'N', or from known issues with MSSM trips including both survey areas.
@@ -15,7 +21,7 @@
 #' @param usability A vector of usability codes to include. Defaults to NULL, but typical set for trawl is`c(0, 1, 2, 6)`.
 #'   IPHC codes may be different to other surveys and the modern Sablefish survey doesn't seem to assign usabilities.
 #' @export
-#' @rdname get_data
+#' @rdname get_all
 #' @examples
 #' \dontrun{
 #' ## Import survey catch density and location data by tow or set for plotting
@@ -36,8 +42,9 @@ get_all_survey_sets <- function(species,
                                 ssid = c(1, 3, 4, 16, 2, 14, 22, 35, 36, 39, 40),
                                 major = NULL,
                                 years = NULL,
-                                join_sample_ids = FALSE, verbose = FALSE,
+                                join_sample_ids = FALSE,
                                 remove_false_zeros = FALSE,
+                                remove_bad_data = TRUE,
                                 remove_duplicates = FALSE,
                                 include_activity_matches = FALSE,
                                 usability = NULL) {
@@ -65,6 +72,10 @@ get_all_survey_sets <- function(species,
 
       if(any(ssid %in% c(35, 41, 42, 43))){
         ssid <- unique(c(ssid, 35, 41, 42, 43))
+      }
+
+      if(any(ssid %in% c(6,7,67))){
+        ssid <- unique(c(ssid, 6,7,67))
       }
 
       .q <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid,
@@ -142,8 +153,22 @@ get_all_survey_sets <- function(species,
 
 
   if (nrow(.d) < 1) {
-    stop("No survey set data for selected species.")
+
+    if(is.null(ssid)&is.null(major)){
+      stop(paste0("No survey set data for ", toString(species), "."))
+    } else {
+      if(!is.null(ssid)&is.null(major)){
+        stop(paste0("No survey set data for ", toString(species), " from ssids ", toString(ssid), "."))
+      }
+      if(is.null(ssid)&!is.null(major)){
+        stop(paste0("No survey set data for ", toString(species), " from major areas ", toString(major), "."))
+      }
+      if(!is.null(ssid)&!is.null(major)){
+        stop(paste0("No survey set data for ", toString(species), " from ssids ", toString(ssid), " in major areas ", toString(major), "."))
+      }
+    }
   }
+
 
   names(.d) <- tolower(names(.d))
 
@@ -201,7 +226,6 @@ get_all_survey_sets <- function(species,
   #   fe <- filter(fe, SURVEY_SERIES_ID > 0)
   # }
 
-  # browser()
 
   if (all(ssid_with_catch %in% trawl)) {
     # uses raw fe dataframe to save time because sub event counts not need for trawl
@@ -329,9 +353,16 @@ get_all_survey_sets <- function(species,
   }
   }
 
-  .d <- correct_ssids(.d)
+  if (remove_bad_data) {
+    .d <- correct_ssids(.d, specimens = TRUE)
+  }
 
   if (!is.null(ssid)){
+
+    if(any(ssid %in% c(6,7,67))){
+      ssid <- ssid_original
+    }
+
     .d <- filter(.d, survey_series_id %in% ssid)
   }
 
