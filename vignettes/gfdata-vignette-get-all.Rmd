@@ -1,0 +1,116 @@
+---
+title: "The `get all' gfdata Vignette"
+author: "Philina English"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{gfdata Vignette}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(
+  collapse = FALSE,
+  comment = "#>",
+  cache = TRUE,
+  autodep = TRUE,
+  fig.path = "get-all-figs/",
+  cache.path = "get-all-cache/"
+)
+```
+
+```{r, echo=FALSE}
+.error <- tryCatch(get_ssids(), error = function(e) "Error")
+.eval <- !identical(class(.error), "character")
+```
+
+
+
+# Why `get-all*`?
+
+The `get-all*()` functions have been designed to retrieve all fishery-independent data relevant to a particular species, or set of species. 
+If `ssid = NULL` they will return all fishery-independent data in the database, including trap (sablefish), longline, jig, and historic trawl surveys.  
+If a character string of major stat area codes is provided, than all sets or samples from that area will be returned. 
+If retrieving data for mulitple species at once, this function will be a lot faster than the original ones because sql scripts will be called once rather than repeatedly for each species. 
+
+## Non-standard data 
+
+The other `get_*()` survey functions focus on retrieving sets and samples that conform to current design-based standards and survey grids. 
+This means that they do not retrieve sets and samples from cells that fall within Rockfish Conservation Areas or that have otherwise been excluded from the latest version of the survey grid. 
+
+They also were not built to retrieve data that differed at the skate level (like comparision fishing studies), which this function will return only when gear variables (currently checking for differences in hook code and size) differ between skates. 
+
+
+## Duplication of fishing events and specimens
+
+One risk in using these functions is that some fishing events and specimen ids may be duplicated in the resulting data set. This occurs because some vessel trips conduct sampling for multiple survey series, and unless joining based on grouping codes (which aren't used consistently for some surveys ) the only way to connect a fishing event to a survey series is through the vessel trip. This can result in events getting assigned to both surveys that were conducted on a given trip. The most common instances have corrections found in an internal function `correct_ssids()`. The other ways duplication occurs can be due to missing covariates (e.g., both event level and survey defaults are missing for `doorspread_m` on a couple sets for some trawl series), or when multiple vials of DNA were collected and `return_dna_info = TRUE`. 
+
+
+# Examples
+
+If you don't already have the package installed, see the general gfdata vignette for instructions.
+Here we will load the package along with dplyr.
+
+```{r, cache=FALSE, warning = FALSE, message = FALSE}
+library(gfdata)
+library(dplyr)
+```
+
+The available arguments are described in the help documentation:
+
+```{r, eval = FALSE}
+?get_all_survey_sets
+?get_all_survey_samples
+```
+
+ 
+As an example, we might want to determine what survey set data exists for Bluntnose Sixgill Sharks (*Hexanchus griseus*) in our database. For now, we will leave the default settings that pull all surveys and all areas. But it should be noted that some data from United States waters is in our data base, so if we are only interested in Canadian records those sets would need to be filtered. 
+
+```{r, eval=.eval}
+dat <- get_all_survey_sets("Bluntnose Sixgill Shark")
+head(dat)
+```
+
+
+
+
+As an example, we might want to determine what survey sample data exists for Pacific Spiny Dogfish in the Strait of Georgia.
+
+```{r, eval=.eval}
+dat <- get_all_survey_samples("north pacific spiny dogfish")
+head(dat)
+```
+
+<!-- Note that there are some duplicate records in the databases due to relating a  -->
+<!-- record to multiple stratification schemes for alternative analyses. If this  -->
+<!-- occurs, a warning is given. -->
+
+<!-- > "Duplicate specimen IDs are present because of overlapping survey stratifications. If working with the data yourelf, filter them after selecting specific surveys. For example, `dat <- dat[!duplicated(dat$specimen_id), ]`. The tidying and plotting functions within gfplot will do this for you." -->
+
+
+<!-- We can further restrict the data extraction to a single trawl survey series  -->
+<!-- by including the ssid (survey series id) argument. For a list of -->
+<!-- survey series id codes, run the lookup function `get_ssids()`. -->
+
+<!-- ```{r, eval=.eval} -->
+<!-- ssids <- get_ssids() -->
+<!-- head(ssids) -->
+<!-- ``` -->
+
+<!-- Select desired ssid and include as argument (i.e. the Queen Charlotte -->
+<!-- Sound bottom trawl survey): -->
+
+<!-- ```{r, eval = FALSE} -->
+<!-- dat <- get_survey_samples(222, ssid = 1) -->
+<!-- head(dat) -->
+<!-- ``` -->
+
+<!-- ```{r, echo = FALSE, eval=.eval} -->
+<!-- dat <- dat %>% filter(survey_series_id == 1) -->
+<!-- ``` -->
+
+<!-- ```{r, eval=.eval} -->
+<!-- glimpse(dat) -->
+<!-- ``` -->
+

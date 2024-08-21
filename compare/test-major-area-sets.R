@@ -4,7 +4,7 @@
 ### Species --------------------------------------------------------------------
 spp <- "North Pacific Spiny Dogfish"
 spp <- "Yelloweye Rockfish"
-
+spp <- "Bluntnose Sixgill Shark"
 ### Surveys --------------------------------------------------------------------
 
 ssid <- NULL
@@ -33,12 +33,12 @@ major_areas <- c("01", "02", "03", "04", "05", "06", "07", "08", "09", "11",
 d <- get_all_survey_sets(species = spp,
                           ssid = ssid,
                           major = major_areas,
-                          include_activity_matches = TRUE,
-                          remove_duplicates = FALSE)
+                          include_activity_matches = FALSE,
+                          remove_duplicates = TRUE)
 
 
 dd <- d[duplicated(d$fishing_event_id),]
-x <- d |> mutate(duplicate = ifelse(fishing_event_id %in% c(unique(dd$fishing_event_id)), "Y", "N"))
+x <- d |> mutate(duplicate = ifelse(fishing_event_id %in% c(unique(dd$fishing_event_id)) & (is.na(skate_count)|(skate_count == 1)), "Y", "N"))
 
 # x <- filter(d, survey_series_id != 48)
 
@@ -47,11 +47,13 @@ dd1 <- filter(x, !(fishing_event_id %in% c(unique(dd$fishing_event_id))))
 dd2 <- filter(x, (fishing_event_id %in% c(unique(dd$fishing_event_id))))
 
 xx <- x  |>
-  group_by(survey_series_id, survey_series_desc, duplicate,
+  group_by(survey_series_id, survey_series_desc,
+           duplicate,
+           # original_ind,
            # reason_desc,
            # major_stat_area_code,
-           # minor_stat_area_code,
-           original_ind) |>
+           # minor_stat_area_code
+           ) |>
   summarise(n = n(), unique_fe = length(unique(fishing_event_id)))
 
 ### Samples --------------------------------------------------------------------
