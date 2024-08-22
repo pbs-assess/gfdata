@@ -61,7 +61,7 @@ get_all_survey_sets <- function(species,
                                 major = NULL,
                                 years = NULL,
                                 join_sample_ids = FALSE,
-                                remove_false_zeros = FALSE,
+                                remove_false_zeros = TRUE,
                                 remove_bad_data = TRUE,
                                 remove_duplicates = FALSE,
                                 include_activity_matches = FALSE,
@@ -220,9 +220,9 @@ get_all_survey_sets <- function(species,
     )
   }
 
-
-
   fe <- run_sql("GFBioSQL", .fe)
+
+  browser()
 
   fe <- fe |> filter(FE_MAJOR_LEVEL_ID < 700| is.na(FE_MAJOR_LEVEL_ID)) # removes CTD drops
 
