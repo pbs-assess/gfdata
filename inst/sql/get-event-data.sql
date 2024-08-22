@@ -79,4 +79,4 @@ SELECT
       -- insert ssid here
       -- insert fe_vector here
       -- insert major here
-    ORDER BY T.TRIP_START_DATE, FE.FISHING_EVENT_ID
+    ORDER BY A.ACTIVITY_DESC, T.TRIP_START_DATE, FE.FISHING_EVENT_ID
