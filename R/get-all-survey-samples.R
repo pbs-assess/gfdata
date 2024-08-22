@@ -35,6 +35,9 @@
 #' @param return_dna_info Should DNA container ids and sample type be returned?
 #'   This can create duplication of specimen ids for some species.  Defaults to
 #'   FALSE.
+#' @param quiet_option Default option, `"message"`, suppresses messages from
+#'   sections of code with lots of `join_by` messages. Any other string will allow
+#'   messages.
 #'
 #' @export
 #'
@@ -48,7 +51,9 @@ get_all_survey_samples <- function(species, ssid = NULL,
                                    include_activity_matches = FALSE,
                                    remove_bad_data = TRUE,
                                    remove_duplicates = FALSE,
-                                   return_dna_info = FALSE) {
+                                   return_dna_info = FALSE,
+                                   quiet_option = "message"
+                                   ) {
 
   .q <- read_sql("get-all-survey-samples.sql")
   .q <- inject_filter("AND SP.SPECIES_CODE IN", species, sql_code = .q)
@@ -243,6 +248,7 @@ get_all_survey_samples <- function(species, ssid = NULL,
   # dogfish were producing a whole bunch of NAs for some reason
   .d <- .d %>% filter(!is.na(specimen_id))
 
+  suppressMessages(
   if (include_event_info) {
     options(scipen=999)
     # needed for big skate because of a MSA set with an id that was getting converted
@@ -360,10 +366,14 @@ get_all_survey_samples <- function(species, ssid = NULL,
     )
 
   }
+  , classes = quiet_option)
 
+
+  suppressMessages(
   if (remove_bad_data) {
   .d <- correct_ssids(.d, specimens = TRUE)
   }
+  , classes = quiet_option)
 
   if (!is.null(ssid)){
 
