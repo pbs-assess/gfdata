@@ -9,11 +9,13 @@
 #' purpose. For this reason these function return a lot of columns, although the
 #' exact number depends on which types of surveys are being returned.
 #'
-#' @param ssid Default is to return all data from all surveys.
+#' @param ssid Default is to return all data from all surveys. The most
+#'   comprehensive and useful ids include: contemporary trawl (1, 3, 4, 16),
+#'   historic trawl (2), IPHC (14), sablefish (35), and HBLL (22, 36, 39, 40).
 #' @param years Default is NULL, which returns all years.
 #' @param major Character string (or vector) of major stat area code(s) to
-#'  include (characters). Use get_major_areas() to lookup area codes with
-#'  descriptions. Default is NULL.
+#'   include (characters). Use get_major_areas() to lookup area codes with
+#'   descriptions. Default is NULL.
 #' @param join_sample_ids This option was problematic, so now reverts to FALSE.
 #' @param remove_false_zeros If `TRUE` will make sure weights > 0 don't have
 #'   associated counts of 0 and vice versa. Mostly useful for trawl data where
@@ -21,12 +23,21 @@
 #' @param remove_bad_data Remove known bad data, such as unrealistic
 #'   length or weight values and duplications due to trips that include multiple
 #'   surveys. Default is TRUE.
-#' @param remove_duplicates Logical for whether to remove duplicated event records due to overlapping survey
-#'   stratifications when original_ind = 'N', or from known issues with MSSM trips including both survey areas.
-#'   Defaults to FALSE when ssids are supplied and activity matches aren't included. Otherwise turns on automatically.
-#' @param include_activity_matches Get all surveys with activity codes that match chosen ssids.
-#' @param usability A vector of usability codes to include. Defaults to NULL, but typical set for trawl is`c(0, 1, 2, 6)`.
-#'   IPHC codes may be different to other surveys and the modern Sablefish survey doesn't seem to assign usabilities.
+#' @param remove_duplicates Logical for whether to remove duplicated event
+#'   records due to overlapping survey stratifications when original_ind = 'N',
+#'   or from known issues with MSSM trips including both survey areas.
+#'   Defaults to FALSE when ssids are supplied and activity matches aren't
+#'   included. Otherwise turns on automatically.
+#' @param include_activity_matches Get all surveys with activity codes that
+#'   match chosen ssids.
+#' @param usability A vector of usability codes to include. Defaults to NULL,
+#'   but typical set for trawl is`c(0, 1, 2, 6)`. IPHC codes may be different to
+#'   other surveys and the modern Sablefish survey doesn't seem to assign
+#'   usabilities.
+#' @param quiet_option Default option, `"message"`, suppresses messages from
+#'   sections of code with lots of `join_by` messages. Any other string will allow
+#'   messages.
+#'
 #' @export
 #' @rdname get_all
 #' @examples
@@ -54,7 +65,9 @@ get_all_survey_sets <- function(species,
                                 remove_bad_data = TRUE,
                                 remove_duplicates = FALSE,
                                 include_activity_matches = FALSE,
-                                usability = NULL) {
+                                usability = NULL,
+                                quiet_option = "message"
+                                ) {
   .q <- read_sql("get-all-survey-sets.sql")
 
   if (!is.null(species)) {
@@ -118,8 +131,8 @@ get_all_survey_sets <- function(species,
 
     warning(
       "The join_sample_ids option has been removed. To bind with ",
-      "sample data, it is safer to use the include_event_info = TRUE ",
-      "option in get_all_survey_samples() instead."
+      "sample data, it is safer to use include_event_info = TRUE ",
+      "in get_all_survey_samples() instead."
     )
   }
 
@@ -176,7 +189,6 @@ get_all_survey_sets <- function(species,
     }
   }
 
-
   names(.d) <- tolower(names(.d))
 
   # whenever ssid is included, but not activity matches
@@ -189,17 +201,6 @@ get_all_survey_sets <- function(species,
   if (include_activity_matches & !is.null(ssid)) {
     remove_duplicates <- TRUE
   }
-
-  if (is.null(ssid)) {
-    # something to address replicated events across different survey series
-    warning(
-      "Returning all survey series that recorded any of the species saught.",
-      "Probably advisable to call either just one species, or just one survey type at a time.",
-      "If not using default ssids, note that some survey series are nested within eachother.",
-      "This can result in the duplication of fishing events in the dataframe."
-    )
-  }
-
 
   # get all fishing event info
   .fe <- read_sql("get-event-data.sql")
@@ -233,6 +234,7 @@ get_all_survey_sets <- function(species,
   #   fe <- filter(fe, SURVEY_SERIES_ID > 0)
   # }
 
+  suppressMessages(
 
   if (all(ssid_with_catch %in% trawl)) {
     # uses raw fe dataframe to save time because sub event counts not need for trawl
@@ -256,6 +258,7 @@ get_all_survey_sets <- function(species,
         -hooksize_desc
       ))) %>%
       left_join(.d)
+
   } else {
     # for other survey types, further wrangling is required
     # TODO: might be improved by making trap surveys a special case but for now this works ok
@@ -270,7 +273,9 @@ get_all_survey_sets <- function(species,
 
     spp_codes <- unique(.d$species_code)
 
+
     fe1 <- get_skate_level_counts(fe)
+
 
     if(any(fe$FE_SUB_LEVEL_ID > 1) & (sum(!is.na(unique(fe1$HOOK_CODE))) > 1 | sum(!is.na(unique(fe1$HOOKSIZE_DESC))) > 1)) {
 
@@ -285,9 +290,8 @@ get_all_survey_sets <- function(species,
         .hd <- dplyr::distinct(.hd) # %>% select(-fishing_event_id, -survey_id, -survey_series_id)
         names(.hd) <- tolower(names(.hd))
         names(fe1) <- tolower(names(fe1))
-        fe1 <- left_join(fe1, .hd)
 
-        # browser()
+        fe1 <- left_join(fe1, .hd)
 
         .d <- expand.grid(
           fishing_event_id = unique(fe1$fishing_event_id),
@@ -304,6 +308,7 @@ get_all_survey_sets <- function(species,
             # ))
           ) |>
           left_join(.d)
+
 
         slc_list <- list()
         for (i in seq_along(spp_codes)) {
@@ -325,10 +330,14 @@ get_all_survey_sets <- function(species,
         names(slc) <- tolower(names(slc))
 
         .d1 <- .d %>% filter(!(skate_count > 1) | is.na(skate_count))
+
+
         .d2 <- .d %>%
           filter(skate_count > 1) |>
           select(-catch_count) |>
           left_join(slc)
+
+
         .d <- bind_rows(.d1, .d2)
       } else {
 
@@ -349,6 +358,8 @@ get_all_survey_sets <- function(species,
     ## old sub_level function moved from utils.R
     fe3 <- get_parent_level_counts(fe)
     names(fe3) <- tolower(names(fe3))
+
+
     fe3 <- left_join(fe3, .hd) |> dplyr::distinct()
 
     .d <- expand.grid(
@@ -357,12 +368,17 @@ get_all_survey_sets <- function(species,
     ) |>
       left_join(fe3) |>
       left_join(.d)
-  }
-  }
 
-  if (remove_bad_data) {
-    .d <- correct_ssids(.d)
   }
+  }
+  , classes = quiet_option)
+
+
+  suppressMessages(
+  if (remove_bad_data) {
+      .d <- correct_ssids(.d)
+  }
+  , classes = quiet_option)
 
   if (!is.null(ssid)){
 
@@ -371,10 +387,36 @@ get_all_survey_sets <- function(species,
     }
 
     .d <- filter(.d, survey_series_id %in% ssid)
+
+    if (is.null(major)) {
+      warning(
+        paste0("Returning all sets belonging to survey series ", toString(ssid), " when ", toString(species), " were recorded.")
+      )
+    }
+    if (!is.null(major)) {
+      warning(
+        paste0("Returning sets within major area(s) ", toString(major), " and belonging to survey series ", toString(ssid), " when ", toString(species), " were recorded.")
+      )
+    }
+
+
+  } else {
+    if (is.null(major)) {
+      warning(
+        paste0("Returning all survey series that recorded any ", toString(species), ".")
+      )
+    }
+    if (!is.null(major)) {
+      warning(
+        paste0("Returning all survey series that recorded any ", toString(species), " from major area(s) ", toString(major), ".")
+      )
+    }
   }
 
   # check if there are duplicate fishing_event ids
   if (length(.d$fishing_event_id) > length(unique(.d$fishing_event_id))) {
+
+
     if (remove_duplicates) {
 
       # if so, separate original_ind from not
@@ -387,23 +429,28 @@ get_all_survey_sets <- function(species,
       # check if there are still duplicated fishing_event ids
       if (length(.d$fishing_event_id) > length(unique(.d$fishing_event_id))) {
         warning(
-          "Duplicate fishing_event IDs are still present despite ",
-          "`remove_duplicates = TRUE`. This is potentially because of ",
-          "multiple samples from the same event (), overlapping survey ",
-          "stratifications. If working with the data yourself, you should ",
-          "filter them after selecting specific survey stratifications. ",
-          "For example, `dat <- dat[!duplicated(dat$fishing_event_id), ]`. ",
-          "Tidying and plotting functions within gfplot will do this for you."
+          "Duplicate fishing_event_ids are still present despite ",
+          "`remove_duplicates = TRUE`. This may be because of overlapping ",
+          "survey stratifications or multiple skates per event ",
+          "(specifically when at least one survey included used skates with ",
+          "differences in gear type), but could also be due to trips participating ",
+          "in more than one type of survey. If the latter, gear or reason ",
+          "covariates should be used to choose which even to keep. ",
+          "After selecting specific survey stratifications and determining that ",
+          "all relevant variables are accurate, the remaining duplications ",
+          "can be filtered using `dat <- dat[!duplicated(dat$fishing_event_id), ]`. "
         )
       }
     } else {
       # check if there are duplicated fishing_event ids (this often true for SABLE and MSSM surveys)
       if (length(.d$fishing_event_id) > length(unique(.d$fishing_event_id))) {
         warning(
-          "Duplicate fishing_event IDs are present. This is usually because of multiple ",
-          "samples from the same fishing_event, overlapping survey stratifications, ",
-          "or trips that include more than one type of survey. Some cases of the ",
-          "latter two case can be resolved by setting 'remove_duplicates = TRUE'. ",
+          "Duplicate fishing_event_ids are present. This is usually because of ",
+          "overlapping survey stratifications, multiple skates per event ",
+          "(specifically when at least one survey included used skates with ",
+          "differences in gear type), or trips that include more than one type of ",
+          "survey. Some cases of the former can be resolved by setting ",
+          "'remove_duplicates = TRUE'. ",
           "If working with the data yourself, filter them after selecting specific ",
           "surveys. For example, `dat <- dat[!duplicated(dat$fishing_event_id), ]`. ",
           "The tidying and plotting functions within gfplot will do this for you."
@@ -414,6 +461,7 @@ get_all_survey_sets <- function(species,
 
   surveys <- get_ssids()
   names(surveys) <- tolower(names(surveys))
+
   .d <- inner_join(.d,
     dplyr::distinct(select(
       surveys,
@@ -465,7 +513,8 @@ get_all_survey_sets <- function(species,
         u,
         usability_code,
         usability_desc
-      ))
+      )),
+      by = "usability_code"
     )
   }
 
