@@ -113,9 +113,7 @@ get_all_survey_sets <- function(species,
     )
   }
 
-  d <- .d <- run_sql("GFBioSQL", .q)
-
-  browser()
+  d0 <- .d <- run_sql("GFBioSQL", .q)
 
   if (!is.null(years)) {
     .d <- filter(.d, YEAR %in% years)
@@ -211,6 +209,8 @@ get_all_survey_sets <- function(species,
   .d <- filter(.d, catch_count > 0 | catch_weight > 0) # shouldn't be needed but there were some
   ssid_with_catch <- unique(.d$survey_series_id)
 
+  d1 <- .d <- select(.d, -survey_series_id, -survey_id)
+
   .fe <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid_with_catch,
     sql_code = .fe,
     search_flag = "-- insert ssid here", conversion_func = I
@@ -278,6 +278,7 @@ get_all_survey_sets <- function(species,
 
     fe1 <- get_skate_level_counts(fe)
 
+    # browser()
 
     if(any(fe$FE_SUB_LEVEL_ID > 1) & (sum(!is.na(unique(fe1$HOOK_CODE))) > 1 | sum(!is.na(unique(fe1$HOOKSIZE_DESC))) > 1)) {
 
@@ -289,26 +290,19 @@ get_all_survey_sets <- function(species,
         )
 
         .hd <- run_sql("GFBioSQL", .h)
-        .hd <- dplyr::distinct(.hd) #%>% select(-FE.FISHING_EVENT_ID,)
+        .hd <- dplyr::distinct(.hd) #%>% select(-FE.FISHING_EVENT_ID)
         names(.hd) <- tolower(names(.hd))
         names(fe1) <- tolower(names(fe1))
 
-        fe2 <- left_join(fe1, .hd)
+        fe2 <- left_join(fe1, .hd) |>
+          # select(-survey_series_id) |>
+          distinct()
 
         .d <- expand.grid(
           fishing_event_id = unique(fe2$fishing_event_id),
           species_code = unique(.d$species_code)
         ) |>
-          left_join(
-            fe2
-            # dplyr::distinct(select(
-            #    fe1,
-            # #  -survey_id,
-            # #  -survey_series_id,
-            #    -fe_parent_event_id,
-            #    -fe_minor_level_id
-            # ))
-          ) |>
+          left_join(fe2) |>
           left_join(.d)
 
 
@@ -327,15 +321,10 @@ get_all_survey_sets <- function(species,
           # )
           slc_list[[i]] <- run_sql("GFBioSQL", .slc)
         }
-
         slc <- do.call(rbind, slc_list)
         names(slc) <- tolower(names(slc))
 
-
-        browser()
-
         .d1 <- .d %>% filter(!(skate_count > 1) | is.na(skate_count))
-
 
         .d2 <- .d %>%
           filter(skate_count > 1) |>
@@ -365,7 +354,9 @@ get_all_survey_sets <- function(species,
     names(fe3) <- tolower(names(fe3))
 
 
-    fe3 <- left_join(fe3, .hd) |> dplyr::distinct()
+    fe3 <- left_join(fe3, .hd) |>
+      # select(-survey_series_id) |>
+      dplyr::distinct()
 
     .d <- expand.grid(
       fishing_event_id = unique(fe3$fishing_event_id),
@@ -378,6 +369,7 @@ get_all_survey_sets <- function(species,
   }
   , classes = quiet_option)
 
+  # browser()
 
   suppressMessages(
   if (remove_bad_data) {
@@ -556,7 +548,15 @@ get_all_survey_sets <- function(species,
     species_common_name = tolower(species_common_name)
   )
 
-  .d <- .d |> relocate(species_common_name, species_code, survey_series_id, fishing_event_id, catch_weight, catch_count)
+  # return only events from surveys that have recorded any of the species selected
+  # rechecking this after SSID corrections
+  .dpos <- filter(.d, catch_count > 0 | catch_weight > 0)
+  ssid_with_catch <- unique(.dpos$survey_series_id)
+  .d <- filter(.d, survey_series_id %in% ssid_with_catch)
+
+
+  .d <- .d |> relocate(species_common_name, catch_count, catch_weight, survey_series_id, fishing_event_id) |>
+    arrange(species_common_name, survey_series_id, -year, -fishing_event_id)
 
   # not sure where things are getting duplicated, but this will get rid of any complete duplication
   .d <- dplyr::distinct(.d)
