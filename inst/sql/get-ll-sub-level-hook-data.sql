@@ -1,5 +1,5 @@
 -- Adapted from query written by Norm Olsen for Marie-Pierre Etienne (Yelloweye Rockfish outside hbll and iphc surveys)
-   SELECT FE.FISHING_EVENT_ID,
+   SELECT
     FE.FE_MAJOR_LEVEL_ID,
     FE.FE_SUB_LEVEL_ID,
     T.TRIP_ID,

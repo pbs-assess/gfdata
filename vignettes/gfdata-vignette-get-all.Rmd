@@ -95,7 +95,7 @@ Which surveys encountered Bluntnose Sixgill Sharks?
 d |> group_by(survey_series_id, survey_series_desc) |> 
   summarise(rows = n(),
             events = length(unique(fishing_event_id)),
-            individuals = sum(catch_count)) |>
+            individuals = sum(catch_count, na.rm = TRUE)) |>
   arrange(individuals)
 ```
 

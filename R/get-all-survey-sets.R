@@ -222,9 +222,10 @@ get_all_survey_sets <- function(species,
 
   fe <- run_sql("GFBioSQL", .fe)
 
-  browser()
 
-  fe <- fe |> filter(FE_MAJOR_LEVEL_ID < 700| is.na(FE_MAJOR_LEVEL_ID)) # removes CTD drops
+
+  fe <- fe |> distinct() |> # not sure why, but seems to be some complete duplication
+    filter(FE_MAJOR_LEVEL_ID < 700| is.na(FE_MAJOR_LEVEL_ID)) # removes CTD drops
 
   if (!is.null(years)) {
     fe <- filter(fe, YEAR %in% years)
@@ -273,7 +274,6 @@ get_all_survey_sets <- function(species,
 
     spp_codes <- unique(.d$species_code)
 
-
     fe1 <- get_skate_level_counts(fe)
 
 
@@ -287,18 +287,18 @@ get_all_survey_sets <- function(species,
         )
 
         .hd <- run_sql("GFBioSQL", .h)
-        .hd <- dplyr::distinct(.hd) # %>% select(-fishing_event_id, -survey_id, -survey_series_id)
+        .hd <- dplyr::distinct(.hd) #%>% select(-FE.FISHING_EVENT_ID,)
         names(.hd) <- tolower(names(.hd))
         names(fe1) <- tolower(names(fe1))
 
-        fe1 <- left_join(fe1, .hd)
+        fe2 <- left_join(fe1, .hd)
 
         .d <- expand.grid(
-          fishing_event_id = unique(fe1$fishing_event_id),
+          fishing_event_id = unique(fe2$fishing_event_id),
           species_code = unique(.d$species_code)
         ) |>
           left_join(
-            fe1
+            fe2
             # dplyr::distinct(select(
             #    fe1,
             # #  -survey_id,
@@ -328,6 +328,9 @@ get_all_survey_sets <- function(species,
 
         slc <- do.call(rbind, slc_list)
         names(slc) <- tolower(names(slc))
+
+
+        browser()
 
         .d1 <- .d %>% filter(!(skate_count > 1) | is.na(skate_count))
 

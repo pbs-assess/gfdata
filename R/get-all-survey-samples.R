@@ -337,8 +337,10 @@ get_all_survey_samples <- function(species, ssid = NULL,
      fe2 <- get_parent_level_counts(fe)
      }
 
-    # NOTE: fe2 should not have any survey, or survey series variables
+    # NOTE: fe2 should not have any survey, or survey series variables?
+    # adding SURVEY_SERIES_ID back into some of the above functions for *sets()
     fe2 <- fe2 %>% select(
+      -SURVEY_SERIES_ID,
       -REASON_DESC, -USABILITY_CODE,
       -GROUPING_CODE_ORIGINAL, -GROUPING_DESC_ORIGINAL,
       -GROUPING_CODE, -ORIGINAL_IND) # avoid clashing with values for samples
