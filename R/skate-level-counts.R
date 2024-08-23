@@ -14,6 +14,7 @@ get_skate_level_counts <- function(fe) {
   # when present hook data is stored at this level, while other event info tends to be stored at the parent event level
   fe_B_no_minor <- filter(fe, !is.na(FE_PARENT_EVENT_ID), is.na(FE_MINOR_LEVEL_ID)) %>%
     select(FE_PARENT_EVENT_ID, FISHING_EVENT_ID, FE_MAJOR_LEVEL_ID, FE_SUB_LEVEL_ID,
+           SURVEY_SERIES_ID,
            YEAR, TRIP_ID, HOOK_CODE, LGLSP_HOOK_COUNT, HOOK_DESC, HOOKSIZE_DESC) %>%
     dplyr::distinct() %>%
     group_by(YEAR, TRIP_ID, FE_PARENT_EVENT_ID, FE_MAJOR_LEVEL_ID) %>%
@@ -27,14 +28,17 @@ get_skate_level_counts <- function(fe) {
 
 
   # sublevel missing hook info, needs all parent event level covariates
+  # there also seems to be some disagreement between levels and the SSID assigned,
+  # so using parent level when hook code unknown at skate level
   # fe_with_B_no_hook <- fe_B_no_minor[which(fe_B_no_minor$HOOK_CODE %in% 0 | is.na(fe_B_no_minor$HOOK_CODE)),]
   fe_with_B_no_hook <- fe_B_no_minor |> filter(is.na(HOOK_CODE)|HOOK_CODE == 0) |>
-    select(-HOOK_CODE, -LGLSP_HOOK_COUNT, -HOOK_DESC, -HOOKSIZE_DESC) |>
+    select(-HOOK_CODE, -LGLSP_HOOK_COUNT, -HOOK_DESC, -HOOKSIZE_DESC, -SURVEY_SERIES_ID) |>
     left_join(fe_A_no_parent)
 
-  # sublevel w hook info, needs all parent event covariates except the hook ones
+  # sublevel w hook info, needs all parent event covariates except the hook ones and SSID
+  # using sub level SSID when hook code IS known at skate level
   fe_A_data_no_hook <- fe_A_no_parent |>
-    select(-HOOK_CODE, -LGLSP_HOOK_COUNT, -HOOK_DESC, -HOOKSIZE_DESC) |>
+    select(-HOOK_CODE, -LGLSP_HOOK_COUNT, -HOOK_DESC, -HOOKSIZE_DESC, -SURVEY_SERIES_ID) |>
     distinct()
 
   # fe_with_B_and_hook <- fe_B_no_minor[which(fe_B_no_minor$HOOK_CODE %in% c(1,3)),]
