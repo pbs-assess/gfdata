@@ -555,7 +555,7 @@ get_all_survey_sets <- function(species,
   .d <- filter(.d, survey_series_id %in% ssid_with_catch)
 
 
-  .d <- .d |> relocate(species_common_name, catch_count, catch_weight, survey_series_id, fishing_event_id) |>
+  .d <- .d |> relocate(species_common_name, catch_count, catch_weight, survey_series_id, survey_abbrev, trip_year, fishing_event_id) |>
     arrange(species_common_name, survey_series_id, -year, -fishing_event_id)
 
   # not sure where things are getting duplicated, but this will get rid of any complete duplication
