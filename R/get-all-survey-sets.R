@@ -113,7 +113,9 @@ get_all_survey_sets <- function(species,
     )
   }
 
-  .d <- run_sql("GFBioSQL", .q)
+  d <- .d <- run_sql("GFBioSQL", .q)
+
+  browser()
 
   if (!is.null(years)) {
     .d <- filter(.d, YEAR %in% years)
