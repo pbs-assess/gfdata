@@ -13,18 +13,17 @@ vignette: >
 knitr::opts_chunk$set(
   collapse = FALSE,
   comment = "#>",
-  cache = TRUE,
+  # cache = TRUE,
   autodep = TRUE,
   fig.path = "get-all-figs/",
   cache.path = "get-all-cache/"
 )
 ```
 
-```{r, echo=FALSE, eval= TRUE}
+```{r, echo=FALSE, eval = TRUE, cache=FALSE}
 .error <- tryCatch(get_ssids(), error = function(e) "Error")
 .eval <- !identical(class(.error), "character")
 ```
-
 
 
 # Why use a `get_all*` function?
@@ -45,7 +44,7 @@ They also were not built to retrieve data that differed at the skate level (like
 
 ## Duplication of fishing events and specimens
 
-One risk in using these functions is that some fishing events and specimen ids may be duplicated in the resulting data set. This occurs because some vessel trips conduct sampling for multiple survey series, and unless joining is based on grouping codes (which aren't used consistently for some surveys ) the only way to connect a fishing event to a survey series is through the vessel trip. This can result in events and specimens getting assigned to both surveys that were conducted on the same trip. The most common instances of this have custom corrections coded into an internal function `correct_ssids()` that is applied automatically by the `get_all*` functions. Other ways duplication occurs can be due to missing covariates (e.g., both event level and survey defaults are missing for `doorspread_m` on a couple sets for some trawl series), or when multiple vials of DNA were collected and `return_dna_info = TRUE`. 
+One risk in using these functions is that some fishing events and specimen ids may be duplicated in the resulting data set. This occurs because some vessel trips conduct sampling for multiple survey series, and unless joining is based on grouping codes (which aren't used consistently for some surveys ) the only way to connect a fishing event to a survey series id (SSID) is through the vessel trip. This can result in events and specimens getting assigned to both surveys that were conducted on the same trip. The most common instances of this have custom corrections coded into an internal function `correct_ssids()` that is applied automatically by the `get_all*` functions. Other ways duplication occurs can be due to missing covariates (e.g., both event level and survey defaults are missing for `doorspread_m` on a couple sets for some trawl series), or when multiple vials of DNA were collected and `return_dna_info = TRUE`. 
 
 
 # Examples
@@ -68,37 +67,33 @@ The available arguments are described in the help documentation:
  
 ## What data is available for a species?
 
-As an example, we might want to determine what survey set data exists for Bluntnose Sixgill Sharks (*Hexanchus griseus*) in our database. For now, we will leave the default settings that pull all surveys and all areas. It should be noted that some data from United States waters is in our data base, so if we are only interested in Canadian records those sets would need to be filtered. It's not the default for this function, but we'll start by using `remove_false_zeros = FALSE` because the values returned will then match `get_survey_sets()` for any events returned by both functions. 
+As an example, we might want to determine what survey set data exists for Bluntnose Sixgill Sharks (*Hexanchus griseus*) in our database. For now, we will leave the default settings that pull all surveys and all areas. It should be noted that some data from United States waters is in our data base, so if we are only interested in Canadian records those sets would need to be filtered. It's not the default for this function, but we'll start by using `remove_false_zeros = FALSE` because the values returned will then match `get_survey_sets()` for any events returned by both functions. For any survey that encounters this species, this function will return all sets that did not encounter them as well. So, to make positive sets visible to `glimpse()`, We will sort by descending `catch_count` and `catch_weight`. 
 
-```{r, eval=.eval, warning=TRUE, cache=TRUE}
+```{r, eval=TRUE, warning=TRUE}
 d0 <- get_all_survey_sets("Bluntnose Sixgill Shark", remove_false_zeros = FALSE)
+d0 <- d0 |> arrange(-catch_count, -catch_weight)
 head(d0)
 ```
 Notice that `catch_weight` sometimes contains zeros when `catch_count` is at least 1. This may be because some specimens may be too large for the scale and null values are assumed by our SQL calls to be zeros. To avoid this, use the argument `remove_false_zeros = TRUE`. 
 
-```{r, eval=.eval, warning=TRUE, cache=TRUE}
+```{r, eval=TRUE, warning=TRUE}
 d <- get_all_survey_sets("Bluntnose Sixgill Shark", remove_false_zeros = TRUE)
-glimpse(d)
+d <- d |> arrange(-catch_count, -catch_weight)
+head(d)
 ```
 
-In the console, you will also see: 
+So, which surveys encountered the most Bluntnose Sixgill Sharks? Some surveys count individuals and others only weight the total catch, so we will summarize both count and weight variables. The vast majority of records come from the 
 
-> Warning messages:
->1: In get_all_survey_sets(species = spp, ssid = ssid, major = major_areas,  :
->  Returning all survey series that recorded any Bluntnose Sixgill Shark.
->2: In get_all_survey_sets(species = spp, ssid = ssid, major = major_areas,  :
->  Duplicate fishing_event_ids are still present despite `remove_duplicates = TRUE`. This may be because of overlapping survey stratifications or multiple skates per event (specifically when at least one survey included used skates with differences in gear type), but could also be due to trips participating in more than one type of survey. If the latter, gear or reason covariates should be used to choose which even to keep. After selecting specific survey stratifications and determining that all relevant variables are accurate, the remaining duplications can be filtered using `dat <- dat[!duplicated(dat$fishing_event_id), ]`. 
-
-Which surveys encountered Bluntnose Sixgill Sharks?
-
-```{r, eval=.eval, warning=TRUE, cache=TRUE}
+```{r, eval=.eval, message=FALSE}
 d |> group_by(survey_series_id, survey_series_desc) |> 
-  summarise(rows = n(),
+  summarise(individuals = sum(catch_count, na.rm = TRUE),
+            weight = sum(catch_weight),
             events = length(unique(fishing_event_id)),
-            individuals = sum(catch_count, na.rm = TRUE)) |>
-  arrange(individuals)
+            rows = n()) |>
+  arrange(-individuals, -weight)
 ```
 
+We can also tally the number of unique fishing events versus the number of rows of data returned. Data from surveys with more rows than events has been returned at the skate level. This will happen any time one of the surveys being returned has skates that differ in the gear (currently just working of differences in hook type) used within the same fishing event. This was the case for SSID 48, but this also results in all other surveys with skate level records returning data at this level too. If one preferred the other surveys with skate level data, which does not have hook differences between skates, to be summarized at the event level, thay could be called separately using the argument `ssid = c(14, 35)`.  
 
 
 
