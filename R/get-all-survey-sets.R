@@ -308,7 +308,7 @@ get_all_survey_sets <- function(species,
 
         slc_list <- list()
         for (i in seq_along(spp_codes)) {
-          .slc <- read_sql("get-ll-sub-level-catch.sql")
+          .slc <- read_sql("get-sub-level-catch.sql")
           .slc <- inject_filter("", spp_codes[i], sql_code = .slc)
           .slc <- inject_filter("AND C.SPECIES_CODE IN", spp_codes[i],
             sql_code = .slc,

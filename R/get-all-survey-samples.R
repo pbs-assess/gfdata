@@ -22,6 +22,10 @@
 #' @param random_only Defaults to FALSE, which will return all specimens
 #'   collected on research trips. TRUE returns only randomly sampled
 #'   specimens (`sample_type_code` = `1, 2, 6, 7, or 8`).
+#' @param grouping_only Defaults to FALSE, which will return all specimens
+#'   collected on research trips. TRUE returns only specimens from fishing events
+#'   with grouping codes that match that expected for a survey. Can also be
+#'   achieved by filtering for specimens where `!is.na(grouping_code)`.
 #' @param include_event_info Logical for whether to append all relevant fishing
 #'   event info (location, timing, effort, catch, etc.). Defaults to TRUE.
 #' @param include_activity_matches TRUE gets all records collected with activity
@@ -47,10 +51,11 @@ get_all_survey_samples <- function(species, ssid = NULL,
                                    usability = NULL,
                                    unsorted_only = FALSE,
                                    random_only = FALSE,
-                                   include_event_info = TRUE,
+                                   grouping_only = FALSE,
+                                   include_event_info = FALSE,
                                    include_activity_matches = FALSE,
                                    remove_bad_data = TRUE,
-                                   remove_duplicates = FALSE,
+                                   remove_duplicates = TRUE,
                                    return_dna_info = FALSE,
                                    quiet_option = "message"
                                    ) {
@@ -331,8 +336,9 @@ get_all_survey_samples <- function(species, ssid = NULL,
        if (sum(!is.na(unique(fe2$HOOK_CODE))) < 2 | sum(!is.na(unique(fe2$HOOKSIZE_DESC))) < 2) {
        fe2 <- get_parent_level_counts(fe)
        }
-     }
+     }else{
      fe2 <- get_parent_level_counts(fe)
+     }
      } else {
      fe2 <- get_parent_level_counts(fe)
      }
@@ -347,7 +353,35 @@ get_all_survey_samples <- function(species, ssid = NULL,
 
     names(fe2) <- tolower(names(fe2))
 
-    .d <- left_join(.d, fe2)
+    .d <- left_join(.d, fe2, )
+
+    if (sum(!is.na(unique(.d$hook_code))) < 2 | sum(!is.na(unique(.d$hooksize_desc))) < 2) {
+     # keep event level catch for all sets
+    } else{
+      # get skate level catch for each species
+      slc_list <- list()
+      spp_codes <- unique(.d$species_code)
+      for (i in seq_along(spp_codes)) {
+        .slc <- read_sql("get-sub-level-catch.sql")
+        .slc <- inject_filter("", spp_codes[i], sql_code = .slc)
+        .slc <- inject_filter("AND C.SPECIES_CODE IN", spp_codes[i],
+                              sql_code = .slc,
+                              search_flag = "-- insert species again here"
+        )
+        slc_list[[i]] <- run_sql("GFBioSQL", .slc)
+      }
+      slc <- do.call(rbind, slc_list)
+      names(slc) <- tolower(names(slc))
+
+      .d1 <- .d %>% filter(!(skate_count > 1) | is.na(skate_count))
+      # but only replace event level when more than one skate
+      .d2 <- .d %>%
+        filter(skate_count > 1) |>
+        select(-catch_count) |>
+        left_join(slc)
+      .d <- bind_rows(.d1, .d2)
+
+    }
 
     # in trawl data, catch_count is only recorded for small catches
     # so 0 in the catch_count column when catch_weight > 0 seems misleading
@@ -384,6 +418,13 @@ get_all_survey_samples <- function(species, ssid = NULL,
     }
 
     .d <- filter(.d, survey_series_id %in% ssid)
+  }
+
+  .d <- .d |> relocate(species_common_name, survey_series_id, sex, length, weight, age) |>
+    arrange(species_common_name, survey_series_id, -fishing_event_id)
+
+  if(grouping_only){
+    .d <- filter(.d, !is.na(grouping_code))
   }
 
   .d <- .d %>% select(where(~ !all(is.na(.x))))
