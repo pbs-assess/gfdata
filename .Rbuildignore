@@ -3,3 +3,5 @@
 ^scratch$
 ^NEWS\.md$
 ^\.github$
+^doc$
+^Meta$

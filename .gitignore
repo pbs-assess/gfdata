@@ -54,3 +54,5 @@ figs/*
 inst/pcod-vb.html
 *~
 *.dll
+/doc/
+/Meta/
