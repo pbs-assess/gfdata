@@ -194,19 +194,25 @@ A different set of variables would be returned if only retrieving samples from t
 
 ## Surveys with overlapping stratifications
 
-Some fishing events are assigned to multiple surveys, which may or may not be fully or partially overlapping, and are defined by the same activity code in the database. To get all sets with matching activity codes one can use `include_activity_matches = TRUE`. It will return all events that share the same `activity_code` as any SSIDs requested. 
+Some fishing events are assigned to multiple surveys, which may or may not be fully or partially overlapping, and are defined by the same activity code in the database. To get all sets with matching activity codes one can use `include_activity_matches = TRUE`. It will return all events that share the same `activity_code` as any SSIDs requested. This works when retrieving either sets or samples. 
 
 ```{r, eval=.eval, message=FALSE}
-d5 <- get_all_survey_samples("north pacific spiny dogfish", ssid = c(7),
+d5 <- get_all_survey_sets("north pacific spiny dogfish", ssid = c(7),
                              include_activity_matches = TRUE,
-                             include_event_info = TRUE,
                              remove_duplicates = TRUE #> default
                              )
 
 d5 |> group_by(survey_series_id, survey_abbrev, activity_desc) |> 
-  summarise(specimens = length(unique(specimen_id)),
+  summarise(events = length(unique(fishing_event_id)),
             years = paste(min(year), "-", max(year))) |>
-  arrange(-specimens)
+  arrange(-events)
+```
+
+You will get a warning that some fishing events are duplicated even though `remove_duplicates = TRUE`. We can look at one of the duplicated events and see that it lacks location information, which means that it couldn't be accurately assigned to either region of shrimp survey, so it has been returned as potentially belonging to both. 
+
+```{r, eval=.eval, message=FALSE}
+dd <- d5[duplicated(d5$fishing_event_id),]
+glimpse(dd)
 ```
 
 NOTE: This always occurs by default for the sablefish surveys (ssid = any of 35, 41, 42, 43), because SSIDs for that survey are confused by sharing trip ids. In order to separate the types of sablefish surveys one needs to split data from this survey by the `reason_desc` variable. 
