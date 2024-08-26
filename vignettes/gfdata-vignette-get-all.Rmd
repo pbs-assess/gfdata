@@ -92,7 +92,8 @@ To allow direct comparison with the original `get_*()` functions, we will change
 Several warnings alert the user that [edit needed: what warnings are expected in common use?]
 
 ```{r, eval=TRUE, warning=TRUE}
-d0 <- get_all_survey_sets("Bluntnose Sixgill Shark", remove_false_zeros = FALSE)
+d0 <- get_all_survey_sets("Bluntnose Sixgill Shark", 
+                          remove_false_zeros = FALSE)
 ```
 
 The `get_all_survey_sets()` function will return all sets for any survey that encountered the species. On survey trips [edit needed: survey trips, or survey series?] where some sets did capture the species, all sets are returned including sets that did not capture the species.
@@ -107,7 +108,9 @@ head(d0)
 Notice that `catch_weight` sometimes contains zeros when `catch_count` is at least 1. This may be because some specimens may be too large for the scale and null values are assumed by our SQL calls to be zeros. To avoid this, use the argument `remove_false_zeros = TRUE`. [edit needed: consider setting to TRUE from the beginning to simplifiy the flow. I was confused why set to false without comparing to original `get_*()` function]
 
 ```{r, eval=TRUE, warning=TRUE}
-d <- get_all_survey_sets("Bluntnose Sixgill Shark", remove_false_zeros = TRUE)
+d <- get_all_survey_sets("Bluntnose Sixgill Shark", 
+                         remove_false_zeros = TRUE #> default
+                         )
 d <- d |> arrange(-catch_count, -catch_weight)
 head(d)
 ```
