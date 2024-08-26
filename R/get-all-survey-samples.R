@@ -22,8 +22,8 @@
 #' @param random_only Defaults to FALSE, which will return all specimens
 #'   collected on research trips. TRUE returns only randomly sampled
 #'   specimens (`sample_type_code` = `1, 2, 6, 7, or 8`).
-#' @param grouping_only Defaults to FALSE, which will return all specimens
-#'   collected on research trips. TRUE returns only specimens from fishing events
+#' @param grouping_only Defaults to FALSE, which will return all specimens or sets
+#'   collected on research trips. TRUE returns only sets or specimens from fishing events
 #'   with grouping codes that match that expected for a survey. Can also be
 #'   achieved by filtering for specimens where `!is.na(grouping_code)`.
 #' @param include_event_info Logical for whether to append all relevant fishing
@@ -327,37 +327,48 @@ get_all_survey_samples <- function(species, ssid = NULL,
     }
 
     fe <- run_sql("GFBioSQL", .fe)
-
+    browser()
   if(any(!is.na(fe$FE_SUB_LEVEL_ID))) {
      if(any(na.omit(fe$FE_SUB_LEVEL_ID) > 1)) {
-
+       # get both parent and skate level counts
+       fe1 <- get_parent_level_counts(fe)
        fe2 <- get_skate_level_counts(fe)
 
-       if (sum(!is.na(unique(fe2$HOOK_CODE))) < 2 | sum(!is.na(unique(fe2$HOOKSIZE_DESC))) < 2) {
-       fe2 <- get_parent_level_counts(fe)
-       }
      }else{
-     fe2 <- get_parent_level_counts(fe)
+     fe1 <- get_parent_level_counts(fe)
      }
      } else {
-     fe2 <- get_parent_level_counts(fe)
+     fe1 <- get_parent_level_counts(fe)
      }
 
-    # NOTE: fe2 should not have any survey, or survey series variables?
-    # adding SURVEY_SERIES_ID back into some of the above functions for *sets()
-    fe2 <- fe2 %>% select(
+    fe1 <- fe1 %>% select(
       -SURVEY_SERIES_ID,
       -REASON_DESC, -USABILITY_CODE,
       -GROUPING_CODE_ORIGINAL, -GROUPING_DESC_ORIGINAL,
       -GROUPING_CODE, -ORIGINAL_IND) # avoid clashing with values for samples
 
-    names(fe2) <- tolower(names(fe2))
+    names(fe1) <- tolower(names(fe1))
 
-    .d <- left_join(.d, fe2, )
+    if(any(na.omit(fe$FE_SUB_LEVEL_ID) > 1)) {
+      fe2 <- fe2 %>% select(
+        -SURVEY_SERIES_ID,
+        -REASON_DESC, -USABILITY_CODE,
+        -GROUPING_CODE_ORIGINAL, -GROUPING_DESC_ORIGINAL,
+        -GROUPING_CODE, -ORIGINAL_IND) # avoid clashing with values for samples
 
-    if (sum(!is.na(unique(.d$hook_code))) < 2 | sum(!is.na(unique(.d$hooksize_desc))) < 2) {
-     # keep event level catch for all sets
+      names(fe2) <- tolower(names(fe2))
+
+    # do any of those sub levels differ in gear type?
+    ## TODO: other possible variables and tests for difference could be added
+    if (sum(!is.na(unique(fe2$hook_code))) < 2 | sum(!is.na(unique(fe2$hooksize_desc))) < 2) {
+      # NO, then use only the parent level values
+      .d <- left_join(.d, fe1)
     } else{
+      # YES, then use both depending whether a given record has a sub level id, or not
+      browser()
+      .d1 <- .d |> filter(is.na(fe_sub_level_id)) |> left_join(fe1)
+      .d2 <- .d |> filter(!is.na(fe_sub_level_id)) |> left_join(fe2)
+
       # get skate level catch for each species
       slc_list <- list()
       spp_codes <- unique(.d$species_code)
@@ -373,14 +384,16 @@ get_all_survey_samples <- function(species, ssid = NULL,
       slc <- do.call(rbind, slc_list)
       names(slc) <- tolower(names(slc))
 
-      .d1 <- .d %>% filter(!(skate_count > 1) | is.na(skate_count))
-      # but only replace event level when more than one skate
-      .d2 <- .d %>%
-        filter(skate_count > 1) |>
+      # but only replace event level when fe_sub_level_ids are present
+      .d2 <- .d2 |>
         select(-catch_count) |>
         left_join(slc)
+
       .d <- bind_rows(.d1, .d2)
 
+    }
+    } else {
+      .d <- left_join(.d, fe1)
     }
 
     # in trawl data, catch_count is only recorded for small catches
