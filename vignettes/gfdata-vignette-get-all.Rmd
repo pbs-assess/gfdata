@@ -82,7 +82,8 @@ For any survey that encounters this species, this function will return all sets 
 So, to make positive sets visible to `glimpse()`, We will sort by descending `catch_count` and `catch_weight`. 
 
 ```{r, eval=TRUE, warning=TRUE}
-d0 <- get_all_survey_sets("Bluntnose Sixgill Shark", remove_false_zeros = FALSE)
+d0 <- get_all_survey_sets("Bluntnose Sixgill Shark", 
+                          remove_false_zeros = FALSE)
 d0 <- d0 |> arrange(-catch_count, -catch_weight)
 head(d0)
 ```
@@ -90,7 +91,9 @@ head(d0)
 Notice that `catch_weight` sometimes contains zeros when `catch_count` is at least 1. This may be because some specimens may be too large for the scale and null values are assumed by our SQL calls to be zeros. To avoid this, use the argument `remove_false_zeros = TRUE`. 
 
 ```{r, eval=TRUE, warning=TRUE}
-d <- get_all_survey_sets("Bluntnose Sixgill Shark", remove_false_zeros = TRUE)
+d <- get_all_survey_sets("Bluntnose Sixgill Shark", 
+                         remove_false_zeros = TRUE #> default
+                         )
 d <- d |> arrange(-catch_count, -catch_weight)
 head(d)
 ```
