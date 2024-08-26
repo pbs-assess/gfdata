@@ -327,7 +327,7 @@ get_all_survey_samples <- function(species, ssid = NULL,
     }
 
     fe <- run_sql("GFBioSQL", .fe)
-    browser()
+
   if(any(!is.na(fe$FE_SUB_LEVEL_ID))) {
      if(any(na.omit(fe$FE_SUB_LEVEL_ID) > 1)) {
        # get both parent and skate level counts
@@ -365,7 +365,7 @@ get_all_survey_samples <- function(species, ssid = NULL,
       .d <- left_join(.d, fe1)
     } else{
       # YES, then use both depending whether a given record has a sub level id, or not
-      browser()
+
       .d1 <- .d |> filter(is.na(fe_sub_level_id)) |> left_join(fe1)
       .d2 <- .d |> filter(!is.na(fe_sub_level_id)) |> left_join(fe2)
 
