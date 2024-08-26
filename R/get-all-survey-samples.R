@@ -64,6 +64,17 @@ get_all_survey_samples <- function(species, ssid = NULL,
   .q <- inject_filter("AND SP.SPECIES_CODE IN", species, sql_code = .q)
 
   if (!is.null(ssid)) {
+
+
+    if(any(ssid %in% c(35, 41, 42, 43))){
+      ssid <- unique(c(ssid, 35, 41, 42, 43))
+    }
+
+    if(any(ssid %in% c(6, 7, 67))){
+      ssid_original <- ssid
+      ssid <- unique(c(ssid, 6, 7, 67))
+    }
+
     if (include_activity_matches){
         ## draft approach that gets all samples collected using the same activities as the ssid(s) of interest
         .a <- read_sql("get-activity-code.sql")
@@ -77,15 +88,6 @@ get_all_survey_samples <- function(species, ssid = NULL,
                             search_flag = "-- insert ssid here", conversion_func = I
         )
     } else {
-
-    if(any(ssid %in% c(35, 41, 42, 43))){
-        ssid <- unique(c(ssid, 35, 41, 42, 43))
-    }
-
-    if(any(ssid %in% c(6,7,67))){
-      ssid_original <- ssid
-      ssid <- unique(c(ssid, 6,7,67))
-    }
 
     .q <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid,
       sql_code = .q,
@@ -426,7 +428,7 @@ get_all_survey_samples <- function(species, ssid = NULL,
 
   if (!is.null(ssid)){
 
-    if(any(ssid %in% c(6,7,67))){
+    if(any(ssid %in% c(6,7,67))&!include_activity_matches){
       ssid <- ssid_original
     }
 
