@@ -4,7 +4,7 @@ author: "Philina English"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{gfdata Vignette}
+  %\VignetteIndexEntry{gfdata `get_all' Vignette}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -30,35 +30,41 @@ knitr::opts_chunk$set(
 ```
 
 
-# Why use a `get_all*` function?
+# Why use a `get_all_*()` function?
 
-The `get_all*()` functions have been designed to retrieve all fishery-independent data relevant to a particular species, or set of species. 
+The `get_all_*()` functions have been designed to retrieve all fishery-independent data relevant to a particular species, or set of species. 
 If `ssid = NULL` they will return all fishery-independent data in the database, including trap (sablefish), longline, jig, and historic trawl surveys.  
 If a character string of major stat area codes is provided to the argument `major`, than all sets or samples from that area will be returned. 
-If retrieving data for multiple species at once, this function will be a lot faster than the original ones because sql scripts are called once rather than repeatedly for each species. 
+If retrieving data for multiple species at once, this function will be a lot faster than the original `get_*()` functions because sql scripts are called once rather than repeatedly for each species. 
 
 ## Non-standard data 
 
-The other `get_*()` survey functions focus on retrieving sets and samples that conform to current design-based standards and survey grids. 
+The `get_all_*()` functions will return sets or samples both within and beyond the current
+design-based standards and survey grids. 
+This includes sets and samples from grid cells that fall within Rockfish Conservation areas (RCAs), and data that differ at the skate level.
+
+By contrast, the original `get_*()` survey functions focus on retrieving sets and samples that conform to current design-based standards and survey grids. 
 This means that they do not retrieve sets and samples from cells that fall within Rockfish Conservation Areas, or that have otherwise been excluded from the latest version of the survey grid. 
 <!-- Their default settings also exclude tows that are shorter than the standard length.  -->
 
-They also were not built to retrieve data that differed at the skate level (like gear comparison studies), which this function will return only when gear variables (currently checking for differences in hook code and size) differ between skates. 
+Further, the original functions were not built to retrieve data that differed at the skate level (like gear comparison studies), which this function will return only when gear variables (currently checking for differences in hook code and size) differ between skates.
 
 
 ## Duplication of fishing events and specimens
 
-One risk in using these functions is that some fishing events and specimen ids may be duplicated in the resulting data set. 
+The `get_all_*()` functions attempt to avoid duplication of fishing events and specimens.
+
+One risk in using the original `get_*()` functions is that some fishing events and specimen ids may be duplicated in the resulting data set. 
 This occurs because some vessel trips conduct sampling for multiple survey series, and unless joining is based on grouping codes (which aren't used consistently for some surveys ) the only way to connect a fishing event to a survey series id (SSID) is through the vessel trip. 
 This can result in events and specimens getting assigned to both surveys that were conducted on the same trip. 
-The most common instances of this have custom corrections coded into an internal function `correct_ssids()` that is applied automatically by the `get_all*` functions. 
+The most common instances of this have custom corrections coded into an internal function `correct_ssids()` that is applied automatically by the `get_all_*()` functions. 
 Other ways duplication occurs can be due to missing covariates (e.g., both event level and survey defaults are missing for `doorspread_m` on a couple sets for some trawl series), or when multiple vials of DNA were collected and `return_dna_info = TRUE`. 
 
 
 # Examples
 
 If you don't already have the package installed, see the general gfdata vignette for instructions.
-Here we will load the package along with dplyr.
+Here we will load gfdata along with the package dplyr.
 
 ```{r, cache=FALSE, warning = FALSE, message = FALSE}
 library(gfdata)
@@ -68,26 +74,37 @@ library(dplyr)
 The available arguments are described in the help documentation:
 
 ```{r, eval = FALSE}
-?get_all_survey_sets
-?get_all_survey_samples
+?get_all_survey_sets()
+?get_all_survey_samples()
 ```
 
- 
-## What survey data is available for a species?
 
-As an example, we might want to determine what survey set data exists for Bluntnose Sixgill Sharks (*Hexanchus griseus*) in our database. For now, we will leave the default settings that pull all surveys and all areas. 
-It should be noted that some data from United States waters is in our data base, so if we are only interested in Canadian records those sets would need to be filtered. 
-It's not the default for this function, but we'll start by using `remove_false_zeros = FALSE` because the values returned will then match `get_survey_sets()` for any events returned by both functions. 
-For any survey that encounters this species, this function will return all sets that did not encounter them as well. 
-So, to make positive sets visible to `glimpse()`, We will sort by descending `catch_count` and `catch_weight`. 
+## What species-specific data are available across all surveys? 
+
+One common use-case for the `get_all_*()` functions is to determine all set or specimen
+data available for a specific species across all survey data in the database.
+
+As an example, we use `get_all_survey_sets()` to return all survey set data for Bluntnose Sixgill Sharks (*Hexanchus griseus*). For now, we will leave the default settings that pull all surveys and all areas. 
+Some records in the database are from United States waters. If desired, returned data can be filtered to retain only Canadian records after all records are returned.
+
+To allow direct comparison with the original `get_*()` functions, we will change one default argument by setting `remove_false_zeros = FALSE`. This will ensure that events returned by both functions will match. By default, `get_all_survey_sets()` removes false zeros.
+
+Several warnings alert the user that [edit needed: what warnings are expected in common use?]
 
 ```{r, eval=TRUE, warning=TRUE}
 d0 <- get_all_survey_sets("Bluntnose Sixgill Shark", remove_false_zeros = FALSE)
+```
+
+The `get_all_survey_sets()` function will return all sets for any survey that encountered the species. On survey trips [edit needed: survey trips, or survey series?] where some sets did capture the species, all sets are returned including sets that did not capture the species.
+
+So, to make sets that did capture the species visible to `glimpse()`, We will sort by descending `catch_count` and `catch_weight`. 
+
+```{r, eval=TRUE, warning=TRUE}
 d0 <- d0 |> arrange(-catch_count, -catch_weight)
 head(d0)
 ```
 
-Notice that `catch_weight` sometimes contains zeros when `catch_count` is at least 1. This may be because some specimens may be too large for the scale and null values are assumed by our SQL calls to be zeros. To avoid this, use the argument `remove_false_zeros = TRUE`. 
+Notice that `catch_weight` sometimes contains zeros when `catch_count` is at least 1. This may be because some specimens may be too large for the scale and null values are assumed by our SQL calls to be zeros. To avoid this, use the argument `remove_false_zeros = TRUE`. [edit needed: consider setting to TRUE from the beginning to simplifiy the flow. I was confused why set to false without comparing to original `get_*()` function]
 
 ```{r, eval=TRUE, warning=TRUE}
 d <- get_all_survey_sets("Bluntnose Sixgill Shark", remove_false_zeros = TRUE)
@@ -108,11 +125,12 @@ d |> group_by(survey_series_id, survey_series_desc) |>
 
 We can also tally the number of unique fishing events versus the number of rows of data returned. 
 Data from surveys with more rows than events has been returned at the skate level. 
-This will happen any time one of the surveys being returned has skates that differ in the gear (currently just working of differences in hook type) used within the same fishing event. 
+This will happen any time one of the surveys being returned has skates that differ in the gear (currently just working off differences in hook type) used within the same fishing event. 
+
 This was the case for SSID 48, but this also results in all other surveys with skate level records returning data at this level too. 
 If one preferred the other surveys with skate level data, which does not have hook differences between skates, to be summarized at the event level, thay could be called separately using the argument `ssid = c(14, 35)`.  
 
-The vast majority of records come from the IPHC, followed by the Dogfish and Hard Bottom Longline surveys, both conducted in the Strait of Georgia (aka. Inside South). Because only the IPHC covers a wider area, we can explore the spatial distribution of catches within that survey only, and confirm that they are most frequently caught in the Strait of Georgia, major stat area "01". 
+The vast majority of records for Bluntnose Sixgill Shark  come from the IPHC, followed by the Dogfish and Hard Bottom Longline surveys, both conducted in the Strait of Georgia (aka. Inside South). Because only the IPHC covers a wider area, we can explore the spatial distribution of catches within that survey only, and confirm that they are most frequently caught in the Strait of Georgia, major stat area "01". 
 
 ```{r, message=FALSE}
 d |> filter(survey_series_id == 14) |> 
@@ -164,7 +182,7 @@ d3 |> group_by(survey_series_id, survey_series_desc) |>
   arrange(-specimens)
 ```
 
-If rather than limiting the specimens returned to design-based conventions, you want to retrieve covariates for use in model-based analyses change then set `include_event_info = TRUE`.
+Another common use-case returns additional fishing event information. These data can be used as covariates for model-based analyses. To return additional event information, use the argument `include_event_info = TRUE`.
 For example, when this is applied to the various longline surveys in the Strait of Georgia, one can test the effects of variables like depth, date, hook type and size on the sex and sizes of fish caught.
 
 ```{r, eval=.eval, message=FALSE}
@@ -189,8 +207,8 @@ And these additional variables were returned for longline surveys when `include_
 ```{r, eval=.eval, message=FALSE}
 glimpse(d4[, !names(d4) %in% names(d2)]) 
 ```
-A different set of variables would be returned if only retrieving samples from trawl surveys. 
 
+The collection of variables that are returned can change depending on the records that are retrieved. For example, variables that are specific to longline surveys are omitted when only trawl survey sets are returned.
 
 ## Surveys with overlapping stratifications
 
@@ -215,6 +233,6 @@ dd <- d5[duplicated(d5$fishing_event_id),]
 glimpse(dd)
 ```
 
-NOTE: This always occurs by default for the sablefish surveys (ssid = any of 35, 41, 42, 43), because SSIDs for that survey are confused by sharing trip ids. In order to separate the types of sablefish surveys one needs to split data from this survey by the `reason_desc` variable. 
+[edit needed: replace "this" with what it is, e.g. "Duplication of events always..."?] This always occurs by default for the sablefish surveys (ssid = any of 35, 41, 42, 43), because SSIDs for that survey are confused by sharing trip ids. In order to separate the types of sablefish surveys one needs to split data from this survey by the `reason_desc` variable. 
 
 
