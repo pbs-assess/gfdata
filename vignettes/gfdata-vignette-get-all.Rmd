@@ -149,6 +149,7 @@ This should return all fishery-independent specimen records.
 If you want to focus on specimens that come from design-based survey sets you can add arguments that filter for unsorted random samples that come from events that have grouping codes that match those expected for the current survey design. 
 This can also be achieved by filtering for specimens where `!is.na(grouping_code)` and checking that the `sample_type_comment` and `sample_source_desc` notes are consistent with the specimens being from random samples.
 Note: Some surveys do not use grouping codes, and therefore won't be returned when the `grouping_only` option is used. 
+In this case, all of SSID 76 and 48 are missing. 
 
 ```{r, eval=.eval, message=FALSE}
 d3 <- get_all_survey_samples("north pacific spiny dogfish", major = c("01"), 
@@ -168,10 +169,9 @@ Some fishing events are assigned to multiple surveys which may be fully or parti
 ```{r, eval=.eval, message=FALSE}
 
 d4 <- get_all_survey_samples("north pacific spiny dogfish", major = c("01"), ssid = c(76, 48),
-                             include_event_info = TRUE
-                             )
+                             include_event_info = TRUE)
 
-d4 |> group_by(activity_desc, hook_desc, hooksize_desc) |> 
+d4 |> group_by(survey_series_id, activity_desc, hook_desc, hooksize_desc) |> 
   summarise(specimens = length(unique(specimen_id)),
             lengths = sum(!is.na(length)),
             min_year = min(year),
@@ -183,13 +183,13 @@ d4 |> group_by(activity_desc, hook_desc, hooksize_desc) |>
 
 ```{r, eval=.eval, message=FALSE}
 
-d4 <- get_all_survey_samples("north pacific spiny dogfish", major = c("01"), ssid = c(76, 48),
+d5 <- get_all_survey_samples("north pacific spiny dogfish", major = c("01"), ssid = c(76, 48),
                              include_activity_matches = TRUE,
                              include_event_info = TRUE,
                              remove_duplicates = FALSE #> default
                              )
 
-d4 |> group_by(survey_series_id, skate_count, hook_desc, hooksize_desc) |> 
+d5 |> group_by(survey_series_id, skate_count, hook_desc, hooksize_desc) |> 
   summarise(specimens = length(unique(specimen_id)),
             lengths = sum(!is.na(length)),
             min_year = min(year),
