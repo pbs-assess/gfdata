@@ -34,6 +34,10 @@
 #'   but typical set for trawl is`c(0, 1, 2, 6)`. IPHC codes may be different to
 #'   other surveys and the modern Sablefish survey doesn't seem to assign
 #'   usabilities.
+#' @param grouping_only Defaults to FALSE, which will return all specimens or sets
+#'   collected on research trips. TRUE returns only sets or specimens from fishing
+#'   events with grouping codes that match that expected for a survey. Can also be
+#'   achieved by filtering for specimens where `!is.na(grouping_code)`.
 #' @param quiet_option Default option, `"message"`, suppresses messages from
 #'   sections of code with lots of `join_by` messages. Any other string will allow
 #'   messages.
@@ -66,6 +70,7 @@ get_all_survey_sets <- function(species,
                                 remove_duplicates = FALSE,
                                 include_activity_matches = FALSE,
                                 usability = NULL,
+                                grouping_only = FALSE,
                                 quiet_option = "message"
                                 ) {
   .q <- read_sql("get-all-survey-sets.sql")
@@ -547,6 +552,10 @@ get_all_survey_sets <- function(species,
     species_desc = tolower(species_desc),
     species_common_name = tolower(species_common_name)
   )
+
+  if(grouping_only){
+    .d <- filter(.d, !is.na(grouping_code))
+  }
 
   # return only events from surveys that have recorded any of the species selected
   # rechecking this after SSID corrections
