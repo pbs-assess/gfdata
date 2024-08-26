@@ -14,6 +14,8 @@ knitr::opts_chunk$set(
   collapse = FALSE,
   comment = "#>",
   # cache = TRUE,
+  cols.print = 9,
+  rows.print = 9,
   eval = TRUE,
   autodep = TRUE,
   fig.path = "get-all-figs/",
@@ -130,9 +132,6 @@ A table of options can be retrieved with `get_major_area()`.
 
 ```{r, eval=.eval}
 d2 <- get_all_survey_samples("north pacific spiny dogfish", major = c("01"))
-d2 <- d2 |> relocate(species_common_name, survey_series_id, sex, length, weight) |>
-    arrange(species_common_name, survey_series_id, -fishing_event_id)
-glimpse(d2)
 ```
 
 ```{r, eval=.eval, message=FALSE}
@@ -164,70 +163,52 @@ d3 |> group_by(survey_series_id, survey_series_desc) |>
             age_structures = sum(age_specimen_collected)) |>
   arrange(-specimens)
 ```
-Some fishing events are assigned to multiple surveys which may be fully or partially overlapping. To get all sets with matching activity codes one can use `include_activity_matches = TRUE`. It will return all events that share the same `activity_code` as any SSIDs requested. This occurs by default 
+
+If rather than limiting the specimens returned to design-based conventions, you want to retrieve covariates for use in model-based analyses change then set `include_event_info = TRUE`.
+For example, when this is applied to the various longline surveys in the Strait of Georgia, one can test the effects of variables like depth, date, hook type and size on the sex and sizes of fish caught.
 
 ```{r, eval=.eval, message=FALSE}
-
-d4 <- get_all_survey_samples("north pacific spiny dogfish", major = c("01"), ssid = c(76, 48),
+d4 <- get_all_survey_samples("north pacific spiny dogfish", major = c("01"), ssid = c(39, 40, 48, 76),
                              include_event_info = TRUE)
+```
 
+```{r, eval=.eval, message=FALSE}
 d4 |> group_by(survey_series_id, activity_desc, hook_desc, hooksize_desc) |> 
   summarise(specimens = length(unique(specimen_id)),
             lengths = sum(!is.na(length)),
-            min_year = min(year),
-            max_year = max(year)) |>
+            years = paste(min(year), "-", max(year))) |>
   arrange(-specimens)
 ```
-
-
+These are the variables returned by default: 
 
 ```{r, eval=.eval, message=FALSE}
+glimpse(d2)
+```
+And these additional variables were returned for longline surveys when `include_event_info = TRUE`:
 
-d5 <- get_all_survey_samples("north pacific spiny dogfish", major = c("01"), ssid = c(76, 48),
+```{r, eval=.eval, message=FALSE}
+glimpse(d4[, !names(d4) %in% names(d2)]) 
+```
+A different set of variables would be returned if only retrieving samples from trawl surveys. 
+
+
+## Surveys with overlapping stratifications
+
+Some fishing events are assigned to multiple surveys, which may or may not be fully or partially overlapping, and are defined by the same activity code in the database. To get all sets with matching activity codes one can use `include_activity_matches = TRUE`. It will return all events that share the same `activity_code` as any SSIDs requested. 
+
+```{r, eval=.eval, message=FALSE}
+d5 <- get_all_survey_samples("north pacific spiny dogfish", ssid = c(7),
                              include_activity_matches = TRUE,
                              include_event_info = TRUE,
-                             remove_duplicates = FALSE #> default
+                             remove_duplicates = TRUE #> default
                              )
 
-d5 |> group_by(survey_series_id, skate_count, hook_desc, hooksize_desc) |> 
+d5 |> group_by(survey_series_id, survey_abbrev, activity_desc) |> 
   summarise(specimens = length(unique(specimen_id)),
-            lengths = sum(!is.na(length)),
-            min_year = min(year),
-            max_year = max(year)) |>
+            years = paste(min(year), "-", max(year))) |>
   arrange(-specimens)
 ```
 
+NOTE: This always occurs by default for the sablefish surveys (ssid = any of 35, 41, 42, 43), because SSIDs for that survey are confused by sharing trip ids. In order to separate the types of sablefish surveys one needs to split data from this survey by the `reason_desc` variable. 
 
-
-<!-- Note that there are some duplicate records in the databases due to relating a  -->
-<!-- record to multiple stratification schemes for alternative analyses. If this  -->
-<!-- occurs, a warning is given. -->
-
-<!-- > "Duplicate specimen IDs are present because of overlapping survey stratifications. If working with the data yourelf, filter them after selecting specific surveys. For example, `dat <- dat[!duplicated(dat$specimen_id), ]`. The tidying and plotting functions within gfplot will do this for you." -->
-
-
-<!-- We can further restrict the data extraction to a single trawl survey series  -->
-<!-- by including the ssid (survey series id) argument. For a list of -->
-<!-- survey series id codes, run the lookup function `get_ssids()`. -->
-
-<!-- ```{r, eval=.eval} -->
-<!-- ssids <- get_ssids() -->
-<!-- head(ssids) -->
-<!-- ``` -->
-
-<!-- Select desired ssid and include as argument (i.e. the Queen Charlotte -->
-<!-- Sound bottom trawl survey): -->
-
-<!-- ```{r, eval = FALSE} -->
-<!-- dat <- get_survey_samples(222, ssid = 1) -->
-<!-- head(dat) -->
-<!-- ``` -->
-
-<!-- ```{r, echo = FALSE, eval=.eval} -->
-<!-- dat <- dat %>% filter(survey_series_id == 1) -->
-<!-- ``` -->
-
-<!-- ```{r, eval=.eval} -->
-<!-- glimpse(dat) -->
-<!-- ``` -->
 
