@@ -45,30 +45,30 @@ source(here::here("compare", "R", "functions-samples.R"))
 #           81, 94)
 #
 ssid <- c(
-  #OUTSIDE
-  1,
-  2,3,
-  4,
-  5,
-  6,7, 8, 9, 10, 11,
-  14,
-  22, 36, # HBLL
-  25, # thornyhead
-  21, 26,
-  35,
-  46,
-  49, 50, 51,
-  67, 68,
-  81, 94,
-  #INSIDE
-  45, #SOG trawl
-  20, # synoptic vancouver region?
-  79, # triennial vancouver region
-  82-87, #Jig 4B
-  13, # inside longline?
-  15, # SOG lingcod
-  39, 40, # HBLL
-  48, 93, 76, 92
+  # #OUTSIDE
+  # 1,
+  # 2,3,
+  # 4,
+  # 5,
+  # 6,7, 8, 9, 10, 11,
+  # 14,
+  # 22, 36, # HBLL
+  # 25, # thornyhead
+  # 21, 26,
+  # 35,
+  # 46,
+  # 49, 50, 51,
+  # 67, 68,
+  81, 94
+  # #INSIDE
+  # 45, #SOG trawl
+  # 20, # synoptic vancouver region?
+  # 79, # triennial vancouver region
+  # 82-87, #Jig 4B
+  # 13, # inside longline?
+  # 15, # SOG lingcod
+  # 39, 40, # HBLL
+  # 48, 93, 76, 92
   )
 
 spp <- c("Lingcod")
@@ -81,12 +81,14 @@ major_areas <- c("01", "02", "03", "04", "05", "06", "07", "08", "09", "11",
 # dset <- compare_survey_sets(spp = spp, ssid = c(35, 41, 42, 43))
 # dset <- compare_survey_sets(spp = spp, ssid = c(6,7))
 #
-# saveRDS(dset, "test-yelloweye-outside-sets.rds")
+dset <- compare_survey_sets(spp = spp, ssid = ssid)
+
+saveRDS(dset, "test-yelloweye-setsall-0826.rds")
 
 dsam <- compare_survey_samples(spp = spp, ssid = ssid, areas = major_areas)
 
-saveRDS(dsam, "test-lingcod-samples-all.rds")
-saveRDS(dsam, "test-yelloweye-samples-all-2.rds")
+saveRDS(dsam, "test-lingcod-samples-all-0826.rds")
+saveRDS(dsam, "test-yelloweye-samples-all-0826.rds")
 # saveRDS(dsam, "test-yelloweye-samples-incomplete.rds")
 
 

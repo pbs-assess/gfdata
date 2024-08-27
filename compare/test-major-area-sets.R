@@ -1,5 +1,7 @@
 ### test major areas filter on survey sets
-
+library(tidyverse)
+library(gfdata)
+# devtools::load_all(".")
 
 ### Species --------------------------------------------------------------------
 spp <- "North Pacific Spiny Dogfish"
@@ -34,6 +36,7 @@ d <- get_all_survey_sets(species = spp,
                           ssid = ssid,
                           major = major_areas,
                           include_activity_matches = FALSE,
+                          remove_false_zeros = TRUE,
                           remove_duplicates = TRUE)
 
 
@@ -56,13 +59,16 @@ xx <- x  |>
            ) |>
   summarise(n = n(), unique_fe = length(unique(fishing_event_id)))
 
+saveRDS(d, "f2-sixgill-sets-all.rds")
+
+
+
 ### Samples --------------------------------------------------------------------
 
 d2 <- get_all_survey_samples(species = spp,
                           ssid = ssid,
                           major = major_areas,
                           unsorted_only = FALSE, random_only = FALSE,
-
                           # include_event_info = FALSE, # TRUE causes strange duplication of ~ 18 YE samples from QCS synoptic due to missing boot_defaults
                           remove_duplicates = TRUE)
 # d1 <- d2
@@ -78,7 +84,9 @@ xx2 <- x |> group_by(survey_series_id, survey_series_desc, duplicate,
                      # major_stat_area_code,
                      # minor_stat_area_code,
                      original_ind) |>
-  summarise(n = n(), unique_fe = length(unique(fishing_event_id)))
+  summarise(n = n(),
+            unique_sp = length(unique(specimen_id)),
+            unique_fe = length(unique(fishing_event_id)))
 
 
 saveRDS(d2, "f2-yelloweye-samples-all-major-for-39-ssids.rds")
