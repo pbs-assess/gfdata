@@ -214,7 +214,7 @@ get_all_survey_sets <- function(species,
   .d <- filter(.d, catch_count > 0 | catch_weight > 0) # shouldn't be needed but there were some
   ssid_with_catch <- unique(.d$survey_series_id)
 
-  d1 <- .d <- select(.d, -survey_series_id, -survey_id)
+  d1 <- .d <- select(.d, -survey_series_id)
 
   .fe <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid_with_catch,
     sql_code = .fe,
