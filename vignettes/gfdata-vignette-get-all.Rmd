@@ -1,5 +1,5 @@
 ---
-title: "gfdata `get_all' Vignette"
+title: "gfdata `get_all' vignette"
 author: "Philina English"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
@@ -14,13 +14,14 @@ knitr::opts_chunk$set(
   collapse = FALSE,
   comment = "#>",
   cache = TRUE,
-  size = "small", 
+  size = "small",
+  cols.print = 6,
   eval = TRUE,
   autodep = TRUE,
   fig.path = "get-all-figs/",
   cache.path = "get-all-cache/"
 )
-options(width = 110,
+options(width = 100,
   cols.print = 6,
   rows.print = 7)
 ```
@@ -69,6 +70,7 @@ Here we will load gfdata along with the package dplyr.
 ```{r, cache=FALSE, warning = FALSE, message = FALSE}
 library(gfdata)
 library(dplyr)
+library(tibble)
 ```
 
 The available arguments are described in the help documentation:
@@ -104,7 +106,7 @@ So, to make sets that did capture the species visible to `head()`, we will sort 
 
 ```{r, eval=TRUE, warning=TRUE}
 d0 <- d0 |> rename(ssid = survey_series_id) |> 
-  relocate(fishing_event_id, catch_count, catch_weight, ssid, survey_abbrev, year) |> 
+  relocate(year, fishing_event_id, catch_count, catch_weight, ssid, survey_abbrev, survey_series_desc) |> 
   arrange(-catch_count) 
 head(d0)
 ```
@@ -131,7 +133,7 @@ We now also get catches from survey series 48 which was not (and cannot be) retu
 
 ```{r, eval=TRUE, warning=TRUE}
 d <- d |> rename(ssid = survey_series_id) |> 
-  relocate(fishing_event_id, skate_id, catch_count, catch_weight, ssid, survey_abbrev, year) |> 
+  relocate(year, fishing_event_id, skate_id, catch_count, catch_weight, ssid, survey_abbrev, activity_desc) |> 
   arrange(-catch_count) 
 head(d)
 ```
@@ -214,13 +216,13 @@ d4 <- get_all_survey_samples("north pacific spiny dogfish", major = c("01"), ssi
                              include_event_info = TRUE)
 ```
 
-```{r, eval=.eval, message=FALSE}
+```{r, eval=.eval, message=FALSE, cache=FALSE}
 d4 |> group_by(survey_series_id, activity_desc, hook_desc, hooksize_desc) |> 
   summarise(specimens = length(unique(specimen_id)),
-            lengths = sum(!is.na(length)),
-            years = paste(min(year), "-", max(year))) |>
+            year_range = paste(min(year), "-", max(year))) |>
   arrange(-specimens) |> 
-  rename(ssid = survey_series_id)
+  rename(ssid = survey_series_id, hooksize = hooksize_desc) |>
+  print()
 ```
 These are the variables returned by default: 
 
