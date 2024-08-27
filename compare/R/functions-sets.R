@@ -32,7 +32,9 @@ compare_survey_sets <- function (spp, ssid) {
       try(d1 <- gfdata::get_survey_sets(species = spp[i], ssid = ssid[j]))
       # Let server have a rest
       Sys.sleep(0.05)
-      try(d2 <- gfdata::get_all_survey_sets(species = spp[i], ssid = ssid[j], remove_duplicates = TRUE))
+      try(d2 <- gfdata::get_all_survey_sets(species = spp[i], ssid = ssid[j],
+                                            remove_false_zeros = FALSE,
+                                            remove_duplicates = TRUE))
       # Create comparison columns
       if (!is.null(d1)) {
         d1 <- d1 |>

@@ -33,7 +33,8 @@ compare_survey_samples <- function (spp, ssid, areas = NULL) {
       # Let server have a rest
       Sys.sleep(0.05)
       try(d2 <- gfdata::get_all_survey_samples(species = spp[i], ssid = ssid[j], major = areas,
-                                               unsorted_only = FALSE, random_only = FALSE,
+                                               unsorted_only = TRUE, random_only = TRUE,
+                                               grouping_only = TRUE,
                                                remove_duplicates = TRUE,
                                                include_event_info = TRUE))
       # Drop NA specimen_id
