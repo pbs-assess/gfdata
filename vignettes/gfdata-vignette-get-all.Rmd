@@ -13,16 +13,16 @@ vignette: >
 knitr::opts_chunk$set(
   collapse = FALSE,
   comment = "#>",
-  # cache = TRUE,
-  cols.print = 9,
-  rows.print = 9,
+  cache = TRUE,
   size = "small", 
   eval = TRUE,
   autodep = TRUE,
   fig.path = "get-all-figs/",
   cache.path = "get-all-cache/"
 )
-options(width = 60)
+options(width = 110,
+  cols.print = 6,
+  rows.print = 7)
 ```
 
 ```{r, echo=FALSE, eval = TRUE, cache=FALSE}
@@ -103,8 +103,8 @@ Both `*survey_sets()` functions return all sets for any survey series returned, 
 So, to make sets that did capture the species visible to `head()`, we will sort by descending `catch_count`. 
 
 ```{r, eval=TRUE, warning=TRUE}
-d0 <- d0 |> 
-  relocate(fishing_event_id, catch_count, catch_weight, survey_series_id, survey_abbrev, year) |> 
+d0 <- d0 |> rename(ssid = survey_series_id) |> 
+  relocate(fishing_event_id, catch_count, catch_weight, ssid, survey_abbrev, year) |> 
   arrange(-catch_count) 
 head(d0)
 ```
@@ -130,8 +130,8 @@ Now, when we view the data sorted by `catch_count`, the total catches are smalle
 We now also get catches from survey series 48 which was not (and cannot be) returned by `get_survey_sets()`.  
 
 ```{r, eval=TRUE, warning=TRUE}
-d <- d |> 
-  relocate(fishing_event_id, skate_id, catch_count, catch_weight, survey_series_id, survey_abbrev, year) |> 
+d <- d |> rename(ssid = survey_series_id) |> 
+  relocate(fishing_event_id, skate_id, catch_count, catch_weight, ssid, survey_abbrev, year) |> 
   arrange(-catch_count) 
 head(d)
 ```
@@ -139,12 +139,12 @@ So, which surveys encountered the most of this species?
 Some surveys only count individuals and others only weight the total catch, so we will summarize both count and weight variables.
 
 ```{r, message=FALSE}
-d |> group_by(survey_series_id, survey_series_desc) |> 
+d |> group_by(ssid, survey_series_desc) |> 
   summarise(individuals = sum(catch_count, na.rm = TRUE),
             weight = sum(catch_weight),
             events = length(unique(fishing_event_id)),
             rows = n()) |>
-  arrange(-individuals, -weight)
+  arrange(-individuals, -weight) 
 ```
 
 We can also tally the number of unique fishing events versus the number of rows of data returned to see which surveys have been returned at the skate level. 
@@ -155,7 +155,7 @@ The vast majority of records for Bluntnose Sixgill Shark come from the IPHC, fol
 Because only the IPHC covers a wider area, we can explore the spatial distribution of catches within that survey only, and confirm that they are most frequently caught in the Strait of Georgia, major stat area "01". 
 
 ```{r, message=FALSE}
-d |> filter(survey_series_id == 14) |> 
+d |> filter(ssid == 14) |> 
   group_by(major_stat_area_code) |> 
   summarise(individuals = sum(catch_count, na.rm = TRUE),
             weight = sum(catch_weight),
@@ -181,7 +181,8 @@ d2 |> group_by(survey_series_id, survey_series_desc) |>
             weights = sum(!is.na(weight)),
             age_structures = sum(age_specimen_collected)
             ) |>
-  arrange(-specimens)
+  arrange(-specimens)|> 
+  rename(ssid = survey_series_id)
 ```
 
 This should return all fishery-independent specimen records.
@@ -201,7 +202,8 @@ d3 |> group_by(survey_series_id, survey_series_desc) |>
             lengths = sum(!is.na(length)),
             weights = sum(!is.na(weight)),
             age_structures = sum(age_specimen_collected)) |>
-  arrange(-specimens)
+  arrange(-specimens) |> 
+  rename(ssid = survey_series_id)
 ```
 
 If you want to retrieve additional event or skate-level covariates for use in model-based analyses, than use the argument `include_event_info = TRUE`.
@@ -217,7 +219,8 @@ d4 |> group_by(survey_series_id, activity_desc, hook_desc, hooksize_desc) |>
   summarise(specimens = length(unique(specimen_id)),
             lengths = sum(!is.na(length)),
             years = paste(min(year), "-", max(year))) |>
-  arrange(-specimens)
+  arrange(-specimens) |> 
+  rename(ssid = survey_series_id)
 ```
 These are the variables returned by default: 
 
@@ -245,7 +248,8 @@ d5 <- get_all_survey_sets("north pacific spiny dogfish", ssid = c(7),
 d5 |> group_by(survey_series_id, survey_abbrev, activity_desc) |> 
   summarise(events = length(unique(fishing_event_id)),
             years = paste(min(year), "-", max(year))) |>
-  arrange(-events)
+  arrange(-events) |> 
+  rename(ssid = survey_series_id)
 ```
 
 You will get a warning that some fishing events are duplicated even though `remove_duplicates = TRUE`. We can look at one of the duplicated events and see that it lacks location information, which means that it couldn't be accurately assigned to either region of shrimp survey, so it has been returned as potentially belonging to both. 
