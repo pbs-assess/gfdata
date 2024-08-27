@@ -8,13 +8,6 @@ correct_ssids <- function(dat, specimens = FALSE){
   # first split data into unique fishing_events (dd1) and ones with duplicates (dd2)
 .d <- dat
 
-if(nrow(.d[.d$survey_series_id %in% c(35, 41, 42, 43),])> 0){
-  warning("All sablefish research related sets are returned as survey_series_id 35. ",
-          "To separate types of sets, use reason_desc and grouping_code variables.")
-}
-
-# browser()
-
 if(!specimens) {
 .dd <- .d[duplicated(.d$fishing_event_id), ]
 dd1 <- filter(.d, !(fishing_event_id %in% c(unique(.dd$fishing_event_id))))
@@ -71,8 +64,8 @@ try(.d[ ((.d$survey_series_id == 6 & .d$major_stat_area_code %in% c("03", "04"))
 try(.d[ ((.d$survey_series_id == 7 & .d$major_stat_area_code %in% c("05", "06"))), ]$survey_series_id <- 6, silent = TRUE)
 
 # SABLE doesn't work with SSIDs, use reason_desc and or grouping codes instead?
+# try(.d[.d$survey_series_id %in% c(35, 41, 42, 43), ]$survey_id <- NA, silent = TRUE) # this throws a warning when others don't
 try(.d[.d$survey_series_id %in% c(35, 41, 42, 43), ]$survey_series_id <- 35, silent = TRUE)
-try(.d[.d$survey_series_id %in% c(35, 41, 42, 43), ]$survey_id <- NA, silent = TRUE)
 # try(.d[ ((.d$survey_series_id %in% c(35, 41, 42, 43) & .d$reason_desc == "EXPLORATORY")), ]$survey_series_id <- 35, silent = TRUE)
 # try(.d[ ((.d$survey_series_id %in% c(35, 41, 42, 43) & .d$reason_desc == "SABLEFISH STANDARDIZED OFFSHORE SURVEY")), ]$survey_series_id <- 42, silent = TRUE)
 

@@ -374,7 +374,6 @@ get_all_survey_sets <- function(species,
   }
   , classes = quiet_option)
 
-  # browser()
 
   suppressMessages(
   if (remove_bad_data) {
@@ -391,12 +390,12 @@ get_all_survey_sets <- function(species,
     .d <- filter(.d, survey_series_id %in% ssid)
 
     if (is.null(major)) {
-      warning(
+      print(
         paste0("Returning all sets belonging to survey series ", toString(ssid), " when ", toString(species), " were recorded.")
       )
     }
     if (!is.null(major)) {
-      warning(
+      print(
         paste0("Returning sets within major area(s) ", toString(major), " and belonging to survey series ", toString(ssid), " when ", toString(species), " were recorded.")
       )
     }
@@ -404,12 +403,12 @@ get_all_survey_sets <- function(species,
 
   } else {
     if (is.null(major)) {
-      warning(
+      print(
         paste0("Returning all survey series that recorded any ", toString(species), ".")
       )
     }
     if (!is.null(major)) {
-      warning(
+      print(
         paste0("Returning all survey series that recorded any ", toString(species), " from major area(s) ", toString(major), ".")
       )
     }
@@ -459,6 +458,11 @@ get_all_survey_sets <- function(species,
         )
       }
     }
+  }
+
+  if(nrow(.d[.d$survey_series_id %in% c(35, 41, 42, 43),])> 0){
+    warning("All sablefish research related sets are returned as survey_series_id 35. ",
+            "To separate types of sets, use reason_desc and grouping_code variables.")
   }
 
   surveys <- get_ssids()
@@ -564,7 +568,7 @@ get_all_survey_sets <- function(species,
   .d <- filter(.d, survey_series_id %in% ssid_with_catch)
 
 
-  .d <- .d |> relocate(species_common_name, catch_count, catch_weight, survey_series_id, survey_abbrev, trip_year, fishing_event_id) |>
+  .d <- .d |> relocate(species_common_name, catch_count, catch_weight, survey_series_id, survey_abbrev, year, fishing_event_id) |>
     arrange(species_common_name, survey_series_id, -year, -fishing_event_id)
 
   # not sure where things are getting duplicated, but this will get rid of any complete duplication
