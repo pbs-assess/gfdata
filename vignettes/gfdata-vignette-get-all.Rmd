@@ -50,7 +50,7 @@ By contrast, the original `get_*()` survey functions focus on retrieving sets an
 This means that they do not retrieve sets and samples from cells that fall within Rockfish Conservation Areas, or that have otherwise been excluded from the latest version of the survey grid. 
 <!-- Their default settings also exclude tows that are shorter than the standard length.  -->
 
-Further, the original functions were not built to retrieve data that differed at the skate level (like gear comparison studies), which this function will return only when gear variables (currently checking for differences in hook code and size) differ between skates.
+Furthermore, the original functions were not built to retrieve data that differed at the skate level (like gear comparison studies), which `get_all_*()` functions will return only when gear variables (currently checking for differences in hook code and size) differ between skates.
 
 
 ## Duplication of fishing events and specimens
@@ -83,13 +83,13 @@ The available arguments are described in the help documentation:
 
 ## What survey data is available for a species?
 
-As an example, we might want to determine what survey set data is in our database for Bluntnose Sixgill Sharks (*Hexanchus griseus*). 
+As an example, we might want to determine what survey set data are in our database for Bluntnose Sixgill Sharks (*Hexanchus griseus*). 
 For now, we will leave the default settings that pull all surveys and all areas. 
 Beware that some records in the database are from outside Canadian waters. 
 If desired, returned data can be filtered using the `major_stat_area_code` to retain only Canadian records (see `get_major_areas()` to identify which codes to exclude).
 
-To start with we see what the original `get_survey_sets()` function returns for this species. 
-By default this function returns just the most commonly used groundfish surveys (synoptic trawl [1, 3, 4, 16], one historic trawl [2], and five longline--IPHC [14] and PHMA [22, 36, 39, 40]). 
+To start with, we see what the original `get_survey_sets()` function returns for this species. 
+By default this function returns just the most commonly used groundfish surveys (synoptic trawl [1, 3, 4, 16], one historical trawl [2], and five longline--IPHC [14] and PHMA [22, 36, 39, 40] surveys). 
 The first thing to note here is that this function will only return one row per fishing event (unless overlapping survey series or sample_ids were requested).
 
 ```{r, eval=TRUE, warning=TRUE}
@@ -114,7 +114,7 @@ head(d0)
 Notice that `catch_weight` sometimes contains zeros when `catch_count` is at least 1. 
 This is because our SQL calls assume NULL values to be zeros. 
 In many cases catch weights are missing because they are not collected on that type of survey.
-However, even surveys where weights are the usual unit of measurement, a particular catch may have been too large or small for the scale and therefore recorded only as a count. 
+However, even for surveys where weights are the usual unit of measurement, a particular catch may have been too large or small for the scale and therefore recorded only as a count. 
 Both functions have the option to set `remove_false_zeros = TRUE` to remove these misleading zeros from the data, but this is the default setting for `get_all_survey_sets()`.
 
 Messages and warnings will alert the user about nuances in the data requested and returned. 
@@ -138,7 +138,7 @@ d <- d |> rename(ssid = survey_series_id) |>
 head(d)
 ```
 So, which surveys encountered the most of this species? 
-Some surveys only count individuals and others only weight the total catch, so we will summarize both count and weight variables.
+Some surveys only count individuals and others only weigh the total catch, so we will summarize both count and weight variables.
 
 ```{r, message=FALSE}
 d |> group_by(ssid, survey_series_desc) |> 
@@ -262,6 +262,5 @@ glimpse(dd)
 ```
 
 NOTE: All activity matches are always returned by default whenever any one of the sablefish surveys (ssid = 35, 41, 42, 43) is requested. 
-This is because SSIDs for that survey were inconsistently assigned and frequently share trip ids which results in duplication and or assignment to the wrong survey series. 
+This is because SSIDs for that survey were inconsistently assigned and frequently share trip ids, which results in duplication and or assignment to the wrong survey series. 
 In order to accurately separate the types of sablefish surveys one needs to split data from this survey by the `reason_desc` variable. 
-

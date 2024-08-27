@@ -435,8 +435,8 @@ get_all_survey_sets <- function(species,
           "survey stratifications or multiple skates per event ",
           "(specifically when at least one survey included used skates with ",
           "differences in gear type), but could also be due to trips participating ",
-          "in more than one type of survey. If the latter, gear or reason ",
-          "covariates should be used to choose which even to keep. ",
+          "in more than one type of survey. If the latter, location, gear, or `reason_desc` ",
+          "columns should be used to choose which events to keep. ",
           "After selecting specific survey stratifications and determining that ",
           "all relevant variables are accurate, the remaining duplications ",
           "can be filtered using `dat <- dat[!duplicated(dat$fishing_event_id), ]`. "
@@ -451,10 +451,11 @@ get_all_survey_sets <- function(species,
           "(specifically when at least one survey included used skates with ",
           "differences in gear type), or trips that include more than one type of ",
           "survey. Some cases of the former can be resolved by setting ",
-          "'remove_duplicates = TRUE'. ",
-          "If working with the data yourself, filter them after selecting specific ",
-          "surveys. For example, `dat <- dat[!duplicated(dat$fishing_event_id), ]`. ",
-          "The tidying and plotting functions within gfplot will do this for you."
+          "'remove_duplicates = TRUE'. If the latter, location, gear, or `reason_desc` ",
+          "columns should be used to choose which events to keep. ",
+          "After selecting specific survey stratifications and determining that ",
+          "all relevant variables are accurate, the remaining duplications ",
+          "can be filtered using `dat <- dat[!duplicated(dat$fishing_event_id), ]`. "
         )
       }
     }
