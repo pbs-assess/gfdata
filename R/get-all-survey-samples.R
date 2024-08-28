@@ -181,6 +181,24 @@ get_all_survey_samples <- function(species, ssid = NULL,
     # # only 1 = unsorted makes sense! 3 = keepers, 5 = remains, = 6 head only, 7 doesn't exist?
     .d <- filter(.d, is.na(sample_source_code) | sample_source_code %in% c(1))
     # # only 1 = unsorted makes sense! 2 = keepers, 3 = discards
+
+    if (nrow(.d) < 1) {
+
+      if(is.null(ssid)&is.null(major)){
+        stop(paste0("No unsorted survey samples for ", toString(species), "."))
+      } else {
+        if(!is.null(ssid)&is.null(major)){
+          stop(paste0("No unsorted survey samples for ", toString(species), " from ssid(s) ", toString(ssid), "."))
+        }
+        if(is.null(ssid)&!is.null(major)){
+          stop(paste0("No unsorted survey samples for ", toString(species), " from major area(s) ", toString(major), "."))
+        }
+        if(!is.null(ssid)&!is.null(major)){
+          stop(paste0("No unsorted survey samples for ", toString(species), " from ssid(s) ", toString(ssid), " in major area(s) ", toString(major), "."))
+        }
+      }
+    }
+
   } else {
 
     .ss <- get_table("Sample_Source") |> select(-ROW_VERSION)
@@ -191,6 +209,24 @@ get_all_survey_samples <- function(species, ssid = NULL,
 
   if (!is.null(usability)) {
     .d <- filter(.d, usability_code %in% usability)
+
+    if (nrow(.d) < 1) {
+
+      if(is.null(ssid)&is.null(major)){
+        stop(paste0("No 'usable' survey samples for ", toString(species), "."))
+      } else {
+        if(!is.null(ssid)&is.null(major)){
+          stop(paste0("No 'usable' survey samples for ", toString(species), " from ssid(s) ", toString(ssid), "."))
+        }
+        if(is.null(ssid)&!is.null(major)){
+          stop(paste0("No 'usable' survey samples for ", toString(species), " from major area(s) ", toString(major), "."))
+        }
+        if(!is.null(ssid)&!is.null(major)){
+          stop(paste0("No 'usable' survey samples for ", toString(species), " from ssid(s) ", toString(ssid), " in major area(s) ", toString(major), "."))
+        }
+      }
+    }
+
   }
 
   .u <- get_table("Usability") |> select(-ROW_VERSION)
@@ -201,6 +237,24 @@ get_all_survey_samples <- function(species, ssid = NULL,
     # replaces SQL code
     # SM.SAMPLE_TYPE_CODE IN (1, 2, 6, 7, 8) AND
     .d <- filter(.d, sample_type_code %in% c(1, 2, 6, 7, 8)) # 8 = random from set requested by vessel master
+
+    if (nrow(.d) < 1) {
+
+      if(is.null(ssid)&is.null(major)){
+        stop(paste0("No random survey samples for ", toString(species), "."))
+      } else {
+        if(!is.null(ssid)&is.null(major)){
+          stop(paste0("No random survey samples for ", toString(species), " from ssid(s) ", toString(ssid), "."))
+        }
+        if(is.null(ssid)&!is.null(major)){
+          stop(paste0("No random survey samples for ", toString(species), " from major area(s) ", toString(major), "."))
+        }
+        if(!is.null(ssid)&!is.null(major)){
+          stop(paste0("No random survey samples for ", toString(species), " from ssid(s) ", toString(ssid), " in major area(s) ", toString(major), "."))
+        }
+      }
+    }
+
 
   } else {
 
@@ -440,6 +494,25 @@ get_all_survey_samples <- function(species, ssid = NULL,
 
   if(grouping_only){
     .d <- filter(.d, !is.na(grouping_code))
+
+    if (nrow(.d) < 1) {
+
+      if(is.null(ssid)&is.null(major)){
+        stop(paste0("No survey samples with expected grouping codes for ", toString(species), "."))
+      } else {
+        if(!is.null(ssid)&is.null(major)){
+          stop(paste0("No survey samples with expected grouping codes for ", toString(species), " from ssid(s) ", toString(ssid), "."))
+        }
+        if(is.null(ssid)&!is.null(major)){
+          stop(paste0("No survey samples with expected grouping codes for ", toString(species), " from major area(s) ", toString(major), "."))
+        }
+        if(!is.null(ssid)&!is.null(major)){
+          stop(paste0("No survey samples with expected grouping codes for ", toString(species), " from ssid(s) ", toString(ssid), " in major area(s) ", toString(major), "."))
+        }
+      }
+    }
+
+
   }
 
   .d <- .d %>% select(where(~ !all(is.na(.x))))
