@@ -7,13 +7,14 @@ library(gfdata)
 spp <- "North Pacific Spiny Dogfish"
 spp <- "Yelloweye Rockfish"
 spp <- "Bluntnose Sixgill Shark"
+spp <- c("394")
 ### Surveys --------------------------------------------------------------------
 
 ssid <- NULL
 # ssid <- c(39, 40, 48, 93, 76, 92) # Inside dogfish
 # ssid <- c(6,7) # MSSM
 # ssid <- c(35) # SABLE
-# ssid <- c(14) # IPHC
+ssid <- c(2) # IPHC
 
 # ssid <- c(39) # HBLL 40, 76 all
 # Error in if (any(fe$FE_SUB_LEVEL_ID > 1)) { :
@@ -68,7 +69,8 @@ saveRDS(d, "f2-sixgill-sets-all.rds")
 d2 <- get_all_survey_samples(species = spp,
                           ssid = ssid,
                           major = major_areas,
-                          unsorted_only = FALSE, random_only = FALSE,
+                          unsorted_only = TRUE, random_only = TRUE,
+                          # unsorted_only = FALSE, random_only = FALSE,
                           # include_event_info = FALSE, # TRUE causes strange duplication of ~ 18 YE samples from QCS synoptic due to missing boot_defaults
                           remove_duplicates = TRUE)
 # d1 <- d2
@@ -87,6 +89,22 @@ xx2 <- x |> group_by(survey_series_id, survey_series_desc, duplicate,
   summarise(n = n(),
             unique_sp = length(unique(specimen_id)),
             unique_fe = length(unique(fishing_event_id)))
+
+
+
+xx3 <- d2  |>
+  group_by(survey_series_id, survey_series_desc) |>
+  mutate(age_years = ifelse(!is.na(age), trip_year, NA)) |>
+  summarise(n = n(),
+            unique_sp = length(unique(specimen_id)),
+            unique_fe = length(unique(fishing_event_id)),
+            lengths = length(na.omit(length)),
+            weights = length(na.omit(weight)),
+            ages = length(na.omit(age)),
+            maturities = sum(na.omit(maturity_code) != 9),
+            min_age_year = min(age_years, na.rm = TRUE),
+            max_age_year = max(age_years, na.rm = TRUE)
+  )
 
 
 saveRDS(d2, "f2-yelloweye-samples-all-major-for-39-ssids.rds")

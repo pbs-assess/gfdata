@@ -106,7 +106,7 @@ So, to make sets that did capture the species visible to `head()`, we will sort 
 
 ```{r, eval=TRUE, warning=TRUE}
 d0 <- d0 |> rename(ssid = survey_series_id) |> 
-  relocate(year, fishing_event_id, catch_count, catch_weight, ssid, survey_abbrev, survey_series_desc) |> 
+  relocate(year, fishing_event_id, catch_count, catch_weight, ssid, survey_abbrev) |> 
   arrange(-catch_count) 
 head(d0)
 ```
@@ -128,6 +128,7 @@ nrow(d) #> number of rows
 length(unique(d$fishing_event_id)) #> number of fishing events
 sort(unique(d$survey_series_id)) #> only returns survey series that caught the species
 ```
+
 Now, when we view the data sorted by `catch_count`, the total catches are smaller because they are at the skate level and `catch_weight` appears appropriately as `NA` when this data was not collected. 
 We now also get catches from survey series 48 which was not (and cannot be) returned by `get_survey_sets()`.  
 

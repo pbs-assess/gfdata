@@ -74,6 +74,8 @@ ssid <- c(
 
 spp <- c("Lingcod")
 spp <- c("Yelloweye Rockfish")
+
+spp <- c("394")
 # major_areas <- c("01", "02", "03", "04", "05", "06", "07", "08", "09", "11") # unknown "0","00",
 major_areas <- c("01", "02", "03", "04", "05", "06", "07", "08", "09", "11",
                  "71","72","73","74","75","76","77","99")
@@ -86,7 +88,10 @@ dset <- compare_survey_sets(spp = spp, ssid = ssid)
 
 saveRDS(dset, "test-yelloweye-sets-all-0826.rds")
 
-dsam <- compare_survey_samples(spp = spp, ssid = ssid, areas = major_areas)
+dsam11 <- compare_survey_samples(spp = spp, ssid = ssid, areas = major_areas)
+
+saveRDS(dsam, "test-rougheye-samples-all-0827.rds")
+
 
 saveRDS(dsam, "test-lingcod-samples-all-0826.rds")
 saveRDS(dsam, "test-yelloweye-samples-all-0826.rds")
@@ -111,15 +116,24 @@ saveRDS(dsam, "test-yelloweye-samples-all-0826.rds")
 #
 # dsam <- readRDS("test-yelloweye-samples-all.rds")
 
-x <- dsam$x
+# dsam2 is the default get_all setting
+# dsam is the most conservative
 
-x1 <- dsam$x |>
-  filter((major_stat_area_code %in% c("01","68")))
+nrow(dsam$x)
 
-x2 <- dsam$x |>
-  filter(!(major_stat_area_code %in% c("01","68")))
+nrow(dsam2$x)
+nrow(dsam11$x)
 
-check <- x |> filter(fn == 2)
+
+x <- dsam11$x
+
+# x1 <- dsam$x |>
+#   filter((major_stat_area_code %in% c("01","68")))
+#
+# x2 <- dsam$x |>
+#   filter(!(major_stat_area_code %in% c("01","68")))
+#
+# check <- x |> filter(fn == 2)
 
 
 xx1 <- x  |>
