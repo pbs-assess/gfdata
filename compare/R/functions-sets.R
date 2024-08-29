@@ -8,6 +8,7 @@ compare_survey_sets <- function (spp, ssid) {
   x <- tibble::tibble() # Extra sets
   u <- tibble::tibble() # Unlike values
   s <- tibble::tibble() # Summary of returned
+  a <- tibble::tibble() # All sets when any unlike (x1, x2, a12)
 
   # Iterate over cases
   for (i in seq_along(spp)) {
@@ -15,6 +16,7 @@ compare_survey_sets <- function (spp, ssid) {
       # Print current pair
       cat(paste0("spp = ", spp[i], "; ssid = ", ssid[j], "\n"))
       # Reset tibbles
+      a12 <- NULL
       d1 <- NULL
       d2 <- NULL
       dd <- NULL
@@ -28,13 +30,24 @@ compare_survey_sets <- function (spp, ssid) {
       n2 <- NULL
       r1 <- NULL
       r2 <- NULL
+      r12 <- NULL
       # Pull data
-      try(d1 <- gfdata::get_survey_sets(species = spp[i], ssid = ssid[j]))
+      try(
+        d1 <- gfdata::get_survey_sets(
+          species = spp[i],
+          ssid = ssid[j]
+        )
+      )
       # Let server have a rest
       Sys.sleep(0.05)
-      try(d2 <- gfdata::get_all_survey_sets(species = spp[i], ssid = ssid[j],
-                                            remove_false_zeros = FALSE,
-                                            remove_duplicates = TRUE))
+      try(
+        d2 <- gfdata::get_all_survey_sets(
+          species = spp[i],
+          ssid = ssid[j],
+          remove_false_zeros = FALSE,
+          remove_duplicates = TRUE
+        )
+      )
       # Create comparison columns
       if (!is.null(d1)) {
         d1 <- d1 |>
@@ -102,21 +115,25 @@ compare_survey_sets <- function (spp, ssid) {
           d2[r2, ]
         )
       }
-      x3 <- NULL
-      r3 <- NULL
-      # If either function had extra, include the ones that were shared as fn = 12
-      if ((length(n1) + length(n2)) > 0 & length(unique(d2$comparison_id)) > 0 & length(unique(d1$comparison_id)) > 0) {
+      # Augment extra sets
+      x <- dplyr::bind_rows(x, x1, x2)
+
+      # If either function had extra, include all shared as fn = 12
+      any_d1 <- (length(unique(d1$comparison_id)) > 0)
+      any_d2 <- (length(unique(d2$comparison_id)) > 0)
+      any_extra <- ((length(n1) + length(n2)) > 0)
+      if (any_d1 & any_d2 & any_extra) {
         # Shared event row numbers
-        r3 <- which(!(d2$comparison_id %in% n2))
-        x3 <- tibble::tibble(
+        r12 <- which(!(d2$comparison_id %in% n2))
+        a12 <- tibble::tibble(
           fn = 12L,
           species = spp[i],
           ssid = ssid[j],
-          d2[r3, ]
+          d2[r12, ]
         )
       }
       # Augment return all fishing events only when functions differed
-      x <- dplyr::bind_rows(x, x1, x2, x3)
+      a <- dplyr::bind_rows(a, x1, x2, a12)
 
       # Only compares non-null output for both functions
       if (!is.null(d1) & !is.null(d2)) {
@@ -146,7 +163,8 @@ compare_survey_sets <- function (spp, ssid) {
   # Arrange
   x <- dplyr::arrange(x, fn, species, ssid)
   s <- dplyr::arrange(s, species, ssid, fn)
+  a <- dplyr::arrange(a, fn, species, ssid)
 
   # Return
-  list(x = x, u = u, s = s)
+  list(x = x, u = u, s = s, a = a)
 }
