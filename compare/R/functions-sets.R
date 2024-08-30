@@ -48,6 +48,21 @@ compare_survey_sets <- function (spp, ssid) {
           remove_duplicates = TRUE
         )
       )
+      # Set to null if not data frame or if no columns
+      if (is.data.frame(d1)) {
+        if (ncol(d1) == 0) {
+          d1 <- NULL
+        }
+      } else {
+        d1 <- NULL
+      }
+      if (is.data.frame(d2)) {
+        if (ncol(d2) == 0) {
+          d2 <- NULL
+        }
+      } else {
+        d2 <- NULL
+      }
       # Create comparison columns
       if (!is.null(d1)) {
         d1 <- d1 |>
