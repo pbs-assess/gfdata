@@ -82,6 +82,8 @@ get_all_survey_sets <- function(species,
 
   if (!is.null(ssid)) {
 
+    ssid_original <- ssid
+
     if(any(ssid %in% c(35, 41, 42, 43))){
       ssid <- unique(c(ssid, 35, 41, 42, 43))
     }
@@ -214,7 +216,9 @@ get_all_survey_sets <- function(species,
   .d <- filter(.d, catch_count > 0 | catch_weight > 0) # shouldn't be needed but there were some
   ssid_with_catch <- unique(.d$survey_series_id)
 
-  d1 <- .d <- select(.d, -survey_series_id)
+  # browser()
+
+  #d1 <- .d #<- select(.d, -survey_series_id)
 
   .fe <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid_with_catch,
     sql_code = .fe,
@@ -383,6 +387,12 @@ get_all_survey_sets <- function(species,
 
   if (!is.null(ssid)){
 
+    .d <- .d |> group_by(fishing_event_id, survey_series_id) |>
+      mutate(grouping_desc = ifelse(is.logical(na.omit(grouping_desc)), NA, na.omit(grouping_desc)),
+             grouping_code = mean(grouping_code, na.rm = TRUE),
+             grouping_code = ifelse(is.nan(grouping_code), NA, grouping_code)
+      ) |> dplyr::distinct() |> ungroup()
+
     if(any(ssid %in% c(6,7,67))&!include_activity_matches){
       ssid <- ssid_original
     }
@@ -402,6 +412,13 @@ get_all_survey_sets <- function(species,
 
 
   } else {
+
+      .d <- .d |> group_by(fishing_event_id) |>
+        mutate(grouping_code = ifelse(grouping_code == grouping_code_original, grouping_code, NA),
+               grouping_code = mean(grouping_code, na.rm = TRUE),
+               grouping_code = ifelse(is.nan(grouping_code), NA, grouping_code)
+               ) |> dplyr::distinct() |> ungroup()
+
     if (is.null(major)) {
       print(
         paste0("Returning all survey series that recorded any ", toString(species), ".")
