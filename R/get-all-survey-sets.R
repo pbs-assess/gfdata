@@ -414,7 +414,9 @@ get_all_survey_sets <- function(species,
   } else {
 
       .d <- .d |> group_by(fishing_event_id) |>
-        mutate(grouping_code = ifelse(grouping_code == grouping_code_original, grouping_code, NA),
+        mutate(grouping_desc = ifelse(grouping_code == grouping_code_original, grouping_desc, NA),
+               grouping_desc = ifelse(is.logical(na.omit(grouping_desc)), NA, na.omit(grouping_desc)),
+               grouping_code = ifelse(grouping_code == grouping_code_original, grouping_code, NA),
                grouping_code = mean(grouping_code, na.rm = TRUE),
                grouping_code = ifelse(is.nan(grouping_code), NA, grouping_code)
                ) |> dplyr::distinct() |> ungroup()
