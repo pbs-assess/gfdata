@@ -62,10 +62,13 @@ try(.d[ ((.d$survey_series_id == 6 & .d$major_stat_area_code %in% c("03", "04"))
 try(.d[ ((.d$survey_series_id == 7 & .d$major_stat_area_code %in% c("05", "06"))), ]$survey_id <- NA, silent = TRUE)
 try(.d[ ((.d$survey_series_id == 6 & .d$major_stat_area_code %in% c("03", "04"))), ]$survey_series_id <- 7, silent = TRUE)
 try(.d[ ((.d$survey_series_id == 7 & .d$major_stat_area_code %in% c("05", "06"))), ]$survey_series_id <- 6, silent = TRUE)
+try(.d[ ((.d$survey_series_og == 6 & .d$major_stat_area_code %in% c("03", "04"))), ]$survey_series_og <- 7, silent = TRUE)
+try(.d[ ((.d$survey_series_og == 7 & .d$major_stat_area_code %in% c("05", "06"))), ]$survey_series_og <- 6, silent = TRUE)
 
 # SABLE doesn't work with SSIDs, use reason_desc and or grouping codes instead?
 try(.d[.d$survey_series_id %in% c(35, 41, 42, 43), ]$survey_id <- NA, silent = TRUE) # this throws a warning when others don't
 try(.d[.d$survey_series_id %in% c(35, 41, 42, 43), ]$survey_series_id <- 35, silent = TRUE)
+try(.d[.d$survey_series_og %in% c(35, 41, 42, 43), ]$survey_series_og <- 35, silent = TRUE)
 # try(.d[ ((.d$survey_series_id %in% c(35, 41, 42, 43) & .d$reason_desc == "EXPLORATORY")), ]$survey_series_id <- 35, silent = TRUE)
 # try(.d[ ((.d$survey_series_id %in% c(35, 41, 42, 43) & .d$reason_desc == "SABLEFISH STANDARDIZED OFFSHORE SURVEY")), ]$survey_series_id <- 42, silent = TRUE)
 
