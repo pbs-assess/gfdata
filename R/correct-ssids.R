@@ -8,54 +8,31 @@ correct_ssids <- function(dat, specimens = FALSE){
   # first split data into unique fishing_events (dd1) and ones with duplicates (dd2)
 .d <- dat
 
+
+# # first only applying some fixes to duplicated fishing_events in case some are miss-assigned but not duplicated cases
+# # for shrimp survey sets in both qcs and wcvi that were done on the same trip they get duplicated by the sql call
+# # so drop all survey_ids for duplicated records because they are unreliable
+# # note: getting some that violate these rules but aren't duplicated... eg. fe 1720260, 1720263
+
 if(!specimens) {
 .dd <- .d[duplicated(.d$fishing_event_id), ]
-dd1 <- filter(.d, !(fishing_event_id %in% c(unique(.dd$fishing_event_id))))
-dd2 <- filter(.d, (fishing_event_id %in% c(unique(.dd$fishing_event_id))))
-
-# dd2 <- dd2 |> group_by(fishing_event_id) |>
-#   mutate(grouping_code = mean(grouping_code, na.rm = TRUE),
-#          grouping_code = ifelse(is.nan(grouping_code), NA, grouping_code)
-#          ) |> dplyr::distinct() |> ungroup()
+# dd1 <- filter(.d, !(fishing_event_id %in% c(unique(.dd$fishing_event_id))))
+# dd2 <- filter(.d, (fishing_event_id %in% c(unique(.dd$fishing_event_id))))
+try(.d[.d$survey_series_id %in% c(6, 7) & (.d$fishing_event_id %in% c(unique(.dd$fishing_event_id))), ]$survey_id <- NA, silent = TRUE)
+try(.d[.d$survey_series_og %in% c(6, 7) & (.d$fishing_event_id %in% c(unique(.dd$fishing_event_id))), ]$survey_id <- NA, silent = TRUE)
 
 } else {
   .dd <- .d[duplicated(.d$specimen_id), ]
-  dd1 <- filter(.d, !(specimen_id %in% c(unique(.dd$specimen_id))))
-  dd2 <- filter(.d, (specimen_id %in% c(unique(.dd$specimen_id))))
+  # dd1 <- filter(.d, !(specimen_id %in% c(unique(.dd$specimen_id))))
+  # dd2 <- filter(.d, (specimen_id %in% c(unique(.dd$specimen_id))))
 
-  # dd2 <- dd2 |> group_by(specimen_id) |>
-  #   mutate(grouping_code = mean(grouping_code, na.rm = TRUE),
-  #          grouping_code = ifelse(is.nan(grouping_code), NA, grouping_code)
-  #          ) |> dplyr::distinct() |> ungroup()
+  try(.d[.d$survey_series_id %in% c(6, 7) & (.d$specimen_id %in% c(unique(.dd$specimen_id))), ]$survey_id <- NA, silent = TRUE)
+  try(.d[.d$survey_series_og %in% c(6, 7) & (.d$specimen_id %in% c(unique(.dd$specimen_id))), ]$survey_id <- NA, silent = TRUE)
 }
 
-# then only applying fixes to duplicated fishing_events in case some are miss-assigned but not duplicated cases
-# for shrimp survey sets in both qcs and wcvi that were done on the same trip they get duplicated by the sql call
-# note: getting some that violate these rules but aren't duplicated... eg. fe 1720260, 1720263
-dd2 <- dd2[ (!(dd2$survey_series_id == 6 & dd2$major_stat_area_code %in% c("03", "04"))), ]
-dd2 <- dd2[ (!(dd2$survey_series_id == 7 & dd2$major_stat_area_code %in% c("05", "06"))), ]
+# .d <- bind_rows(dd1, dd2)
 
-# and drop all survey_ids because they are unreliable
-try(dd2[dd2$survey_series_id %in% c(6, 7), ]$survey_id <- NA, silent = TRUE)
-
-
-# TODO: generate special cases for sablefish sets with inlets and offshore on same trip ???
-# dd2 <- dd2[ (!(dd2$survey_series_id == 41 & dd2$reason_desc %in% c("SABLEFISH STANDARDIZED OFFSHORE SURVEY","SABLEFISH RANDOM STRATIFIED SURVEY"))),]
-# dd2 <- dd2[ (!(dd2$survey_series_id %in% c(43) & dd2$reason_desc %in% c("SABLEFISH STANDARDIZED OFFSHORE SURVEY"))),]
-# dd2 <- dd2[ (!(dd2$survey_series_id %in% c(42,43) & dd2$reason_desc %in% c("SABLEFISH STANDARDIZED INLET SURVEY"))),]
-
-#
-# # Jig surveys - moved to apply to all samples rather than just duplicated ones.
-# dd2 <- dd2[ (!(dd2$survey_series_id == 82 & !(dd2$minor_stat_area_code %in% c("12")))), ]
-# dd2 <- dd2[ (!(dd2$survey_series_id == 83 & !(dd2$minor_stat_area_code %in% c("13")))), ]
-# dd2 <- dd2[ (!(dd2$survey_series_id == 84 & !(dd2$minor_stat_area_code %in% c("15")))), ]
-# dd2 <- dd2[ (!(dd2$survey_series_id == 85 & !(dd2$minor_stat_area_code %in% c("16")))), ]
-# dd2 <- dd2[ (!(dd2$survey_series_id == 86 & !(dd2$minor_stat_area_code %in% c("18")))), ]
-# dd2 <- dd2[ (!(dd2$survey_series_id == 87 & !(dd2$minor_stat_area_code %in% c("19")))), ]
-
-.d <- bind_rows(dd1, dd2)
-
-### maybe we should correct remaining miss-assignment surveys here?
+### correct miss-assignment of survey series here
 
 # MSSM
 try(.d[ ((.d$survey_series_id == 6 & .d$major_stat_area_code %in% c("03", "04"))), ]$survey_id <- NA, silent = TRUE)
