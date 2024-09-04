@@ -482,11 +482,50 @@ get_all_survey_samples <- function(species, ssid = NULL,
 
   if (!is.null(ssid)){
 
+    .d <- .d |> group_by(specimen_id, survey_series_id) |>
+      mutate(grouping_desc = ifelse(is.logical(na.omit(grouping_desc)), NA, na.omit(grouping_desc)),
+             grouping_code = mean(grouping_code, na.rm = TRUE),
+             grouping_code = ifelse(is.nan(grouping_code), NA, grouping_code)
+      ) |> dplyr::distinct() |> ungroup()
+
+
     if(any(ssid %in% c(6,7,67))&!include_activity_matches){
       ssid <- ssid_original
     }
 
     .d <- filter(.d, survey_series_id %in% ssid)
+
+    if (is.null(major)) {
+      print(
+        paste0("Returning all ", toString(species), " specimens from survey series ", toString(ssid), ".")
+      )
+    }
+    if (!is.null(major)) {
+      print(
+        paste0("Returning all ", toString(species), " specimens from within major area(s) ", toString(major), " and belonging to survey series ", toString(ssid), ".")
+      )
+    }
+
+  } else {
+    .d <- .d |> group_by(fishing_event_id) |>
+      mutate(grouping_desc = ifelse(grouping_code == grouping_code_original, grouping_desc, NA),
+             grouping_desc = ifelse(is.logical(na.omit(grouping_desc)), NA, na.omit(grouping_desc)),
+             grouping_code = ifelse(grouping_code == grouping_code_original, grouping_code, NA),
+             grouping_code = mean(grouping_code, na.rm = TRUE),
+             grouping_code = ifelse(is.nan(grouping_code), NA, grouping_code)
+      ) |> dplyr::distinct() |> ungroup()
+
+
+    if (is.null(major)) {
+      print(
+        paste0("Returning all ", toString(species), " specimens from all survey series.")
+      )
+    }
+    if (!is.null(major)) {
+      print(
+        paste0("Returning all ", toString(species), " specimens from major area(s) ", toString(major), " from any survey series.")
+      )
+    }
   }
 
   .d <- .d |> relocate(species_common_name, survey_series_id, sex, length, weight, age) |>
