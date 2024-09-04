@@ -11,7 +11,7 @@ spp <- "Lingcod"
 ssid <- NULL # will return everything
 
 ### MAJOR AREAS ----------------------------------------------------------------
-major_areas <- c("01", "02", "03", "04", "05", "06", "07", "08", "09", "11",
+major_areas <- c("01", "03", "04", "05", "06", "07", "08", "09", "11",
                  "71","72","73","74","75","76","77","99")
 ## all canadian waters
 ## filter to exclude "01" if the Strait of Georgia not wanted
@@ -43,7 +43,7 @@ dx <- d |>
   )
 
 
-saveRDS(d, "lingcod-samples-all-0827.rds")
+saveRDS(d, "lingcod-samples-all-0903.rds")
 
-write.csv(dx, "lingcod-sample-summary-0827.csv")
+write.csv(dx, "lingcod-sample-summary-0903.csv")
 
