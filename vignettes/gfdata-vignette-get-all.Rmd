@@ -26,11 +26,7 @@ options(width = 100,
   rows.print = 7)
 ```
 
-```{r, echo=FALSE, eval = TRUE, cache=FALSE}
-.error <- tryCatch(get_ssids(), error = function(e) "Error")
-.eval <- !identical(class(.error), "character")
-.eval <- TRUE
-```
+
 
 
 # Why use a `get_all_*()` function?
@@ -71,6 +67,12 @@ Here we will load gfdata along with the package dplyr.
 library(gfdata)
 library(dplyr)
 library(tibble)
+```
+
+```{r, echo=FALSE, eval = TRUE, cache=FALSE}
+.error <- tryCatch(get_ssids(), error = function(e) "Error")
+.eval <- !identical(class(.error), "character")
+.eval <- TRUE
 ```
 
 The available arguments are described in the help documentation:
@@ -141,11 +143,13 @@ head(d)
 So, which surveys encountered the most of this species? 
 Some surveys only count individuals and others only weigh the total catch, so we will summarize both count and weight variables.
 
-```{r, message=FALSE}
+```{r, message=FALSE, cache=FALSE}
 d |> group_by(ssid, survey_series_desc) |> 
+  mutate(event_skate_id = paste0(fishing_event_id, "-", skate_id)) |>
   summarise(individuals = sum(catch_count, na.rm = TRUE),
             weight = sum(catch_weight),
             events = length(unique(fishing_event_id)),
+            skates = length(unique(event_skate_id)),
             rows = n()) |>
   arrange(-individuals, -weight) 
 ```
@@ -220,7 +224,7 @@ d4 <- get_all_survey_samples("north pacific spiny dogfish", major = c("01"), ssi
 ```{r, eval=.eval, message=FALSE, cache=FALSE}
 d4 |> group_by(survey_series_id, activity_desc, hook_desc, hooksize_desc) |> 
   summarise(specimens = length(unique(specimen_id)),
-            year_range = paste(min(year), "-", max(year))) |>
+            year_range = paste(min(year, na.rm = TRUE), "-", max(year, na.rm = TRUE))) |>
   arrange(-specimens) |> 
   rename(ssid = survey_series_id, hooksize = hooksize_desc) |>
   print()
@@ -250,7 +254,8 @@ d5 <- get_all_survey_sets("north pacific spiny dogfish", ssid = c(7),
 
 d5 |> group_by(survey_series_id, survey_abbrev, activity_desc) |> 
   summarise(events = length(unique(fishing_event_id)),
-            years = paste(min(year), "-", max(year))) |>
+            years = paste(min(year), "-", max(year)),
+            rows = n()) |>
   arrange(-events) |> 
   rename(ssid = survey_series_id)
 ```
