@@ -397,20 +397,22 @@ get_all_survey_samples <- function(species, ssid = NULL,
      fe1 <- get_parent_level_counts(fe)
      }
 
-    fe1 <- fe1 %>% select(
+    fe1 <- fe1 |> select(
       -SURVEY_SERIES_ID,
+      -SURVEY_SERIES_OG,
       -REASON_DESC, -USABILITY_CODE,
       -GROUPING_CODE_ORIGINAL, -GROUPING_DESC_ORIGINAL,
-      -GROUPING_CODE, -ORIGINAL_IND) # avoid clashing with values for samples
+      -GROUPING_CODE, -GROUPING_DESC, -ORIGINAL_IND) |> distinct() # avoid clashing with values for samples
 
     names(fe1) <- tolower(names(fe1))
 
     if(any(na.omit(fe$FE_SUB_LEVEL_ID) > 1)) {
-      fe2 <- fe2 %>% select(
+      fe2 <- fe2 |> select(
         -SURVEY_SERIES_ID,
+        -SURVEY_SERIES_OG,
         -REASON_DESC, -USABILITY_CODE,
         -GROUPING_CODE_ORIGINAL, -GROUPING_DESC_ORIGINAL,
-        -GROUPING_CODE, -ORIGINAL_IND) # avoid clashing with values for samples
+        -GROUPING_CODE, -GROUPING_DESC, -ORIGINAL_IND) |> distinct()# avoid clashing with values for samples
 
       names(fe2) <- tolower(names(fe2))
 
