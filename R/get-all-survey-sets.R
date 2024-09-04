@@ -623,6 +623,7 @@ get_all_survey_sets <- function(species,
     )
   }
 
+  # TODO: add a check to see if ssid and ssog are identical and drop ssog if so?
 
   add_version(as_tibble(.d))
 }

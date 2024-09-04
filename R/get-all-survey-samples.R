@@ -613,6 +613,8 @@ get_all_survey_samples <- function(species, ssid = NULL,
                    by = "survey_series_id"
   )
 
+  # TODO: add a check to see if ssid and ssog are identical and drop ssog if so?
+
   .d$species_common_name <- tolower(.d$species_common_name)
   .d$species_science_name <- tolower(.d$species_science_name)
 
