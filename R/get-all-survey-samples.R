@@ -460,7 +460,8 @@ get_all_survey_samples <- function(species, ssid = NULL,
     }
 
     .d <- .d |> group_by(specimen_id) |>
-      mutate(doorspread_m = ifelse(is.logical(na.omit(doorspread_m)), NA, na.omit(doorspread_m))) |>
+      mutate(doorspread_m = ifelse(is.logical(na.omit(doorspread_m)), NA, na.omit(doorspread_m)),
+             speed_mpm = ifelse(is.logical(na.omit(speed_mpm)), NA, na.omit(speed_mpm))) |>
       dplyr::distinct() |> ungroup()
 
 

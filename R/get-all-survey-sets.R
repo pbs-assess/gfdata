@@ -390,9 +390,11 @@ get_all_survey_sets <- function(species,
 
   if (!is.null(ssid)){
 
-    .d <- .d |> group_by(fishing_event_id, survey_series_id) |>
+    .d <- .d |> group_by(fishing_event_id) |>
       mutate(doorspread_m = ifelse(is.logical(na.omit(doorspread_m)), NA, na.omit(doorspread_m)),
-             grouping_desc = ifelse(is.logical(na.omit(grouping_desc)), NA, na.omit(grouping_desc)),
+             speed_mpm = ifelse(is.logical(na.omit(speed_mpm)), NA, na.omit(speed_mpm))) |>
+      group_by(fishing_event_id, survey_series_id) |>
+      mutate(grouping_desc = ifelse(is.logical(na.omit(grouping_desc)), NA, na.omit(grouping_desc)),
              grouping_code = mean(grouping_code, na.rm = TRUE),
              grouping_code = ifelse(is.nan(grouping_code), NA, grouping_code)
       ) |> dplyr::distinct() |> ungroup()
@@ -418,7 +420,8 @@ get_all_survey_sets <- function(species,
   } else {
 
       .d <- .d |> group_by(fishing_event_id) |>
-        mutate(doorspread_m = ifelse(is.logical(na.omit(doorspread_m)), NA, na.omit(doorspread_m)),
+        mutate(speed_mpm = ifelse(is.logical(na.omit(speed_mpm)), NA, na.omit(speed_mpm)),
+               doorspread_m = ifelse(is.logical(na.omit(doorspread_m)), NA, na.omit(doorspread_m)),
                grouping_desc = ifelse(grouping_code == grouping_code_original, grouping_desc, NA),
                grouping_desc = ifelse(is.logical(na.omit(grouping_desc)), NA, na.omit(grouping_desc)),
                grouping_code = ifelse(grouping_code == grouping_code_original, grouping_code, NA),
