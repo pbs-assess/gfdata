@@ -317,7 +317,7 @@ get_all_survey_samples <- function(species, ssid = NULL,
     .d <- select(.d, -minor_stat_area_code) # clashes with wrangled fe data because some sub level events have NAs here
 
     .f <- .d %>% filter(!is.na(fishing_event_id))
-    fe_vector <- unique(.f$fishing_event_id)
+    fe_vector <- unique(na.omit(.f$fishing_event_id))
 
     .q2 <- read_sql("get-all-survey-sets.sql")
     .q2 <- inject_filter("AND SP.SPECIES_CODE IN", species, sql_code = .q2)
@@ -349,7 +349,7 @@ get_all_survey_samples <- function(species, ssid = NULL,
     # get all fishing event info
     .fe <- read_sql("get-event-data.sql")
 
-    ssid_with_samples <- unique(.d$survey_series_id)
+    ssid_with_samples <- unique(na.omit(.d$survey_series_id))
 
     .fe <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid_with_samples,
                          sql_code = .fe,
@@ -368,7 +368,7 @@ get_all_survey_samples <- function(species, ssid = NULL,
     # )
 
     # so reduce data size using trip ids instead?
-    trip_vector <- unique(.d$trip_id)
+    trip_vector <- unique(na.omit(.d$trip_id))
 
     .fe <- inject_filter("AND FE.TRIP_ID IN", trip_vector,
                          sql_code = .fe,
