@@ -42,6 +42,8 @@
 #' @param quiet_option Default option, `"message"`, suppresses messages from
 #'   sections of code with lots of `join_by` messages. Any other string will allow
 #'   messages.
+#' @param drop_na_columns Logical for removing all columns that only contain NAs.
+#'   Defaults to TRUE.
 #'
 #' @export
 #'
@@ -57,6 +59,7 @@ get_all_survey_samples <- function(species, ssid = NULL,
                                    remove_bad_data = TRUE,
                                    remove_duplicates = TRUE,
                                    return_dna_info = FALSE,
+                                   drop_na_columns = TRUE,
                                    quiet_option = "message"
                                    ) {
 
@@ -314,7 +317,7 @@ get_all_survey_samples <- function(species, ssid = NULL,
     options(scipen=999)
     # needed for big skate because of a MSA set with an id that was getting converted
 
-    .d <- select(.d, -minor_stat_area_code) # clashes with wrangled fe data because some sub level events have NAs here
+    # .d <- select(.d, -minor_stat_area_code) # clashes with wrangled fe data because some sub level events have NAs here
 
     .f <- .d %>% filter(!is.na(fishing_event_id))
     fe_vector <- unique(.f$fishing_event_id)
@@ -400,6 +403,7 @@ get_all_survey_samples <- function(species, ssid = NULL,
     fe1 <- fe1 |> select(
       -SURVEY_SERIES_ID,
       -SURVEY_SERIES_OG,
+      -MINOR_STAT_AREA_CODE,
       -REASON_DESC, -USABILITY_CODE,
       -GROUPING_CODE_ORIGINAL, -GROUPING_DESC_ORIGINAL,
       -GROUPING_CODE, -GROUPING_DESC, -ORIGINAL_IND) |> distinct() # avoid clashing with values for samples
@@ -410,6 +414,7 @@ get_all_survey_samples <- function(species, ssid = NULL,
       fe2 <- fe2 |> select(
         -SURVEY_SERIES_ID,
         -SURVEY_SERIES_OG,
+        -MINOR_STAT_AREA_CODE,
         -REASON_DESC, -USABILITY_CODE,
         -GROUPING_CODE_ORIGINAL, -GROUPING_DESC_ORIGINAL,
         -GROUPING_CODE, -GROUPING_DESC, -ORIGINAL_IND) |> distinct()# avoid clashing with values for samples
@@ -454,6 +459,11 @@ get_all_survey_samples <- function(species, ssid = NULL,
       .d <- left_join(.d, fe1)
     }
 
+    .d <- .d |> group_by(specimen_id) |>
+      mutate(doorspread_m = ifelse(is.logical(na.omit(doorspread_m)), NA, na.omit(doorspread_m))) |>
+      dplyr::distinct() |> ungroup()
+
+
     # in trawl data, catch_count is only recorded for small catches
     # so 0 in the catch_count column when catch_weight > 0 seems misleading
     # note: there are also a few occasions for trawl where count > 0 and catch_weight is 0/NA
@@ -471,6 +481,8 @@ get_all_survey_samples <- function(species, ssid = NULL,
       0.0054864 * 0.009144 * .d$minor_id_count,
       0.0024384 * 0.009144 * .d$minor_id_count
     )
+
+
 
   }
   , classes = quiet_option)
@@ -556,7 +568,10 @@ get_all_survey_samples <- function(species, ssid = NULL,
 
   }
 
-  .d <- .d %>% select(where(~ !all(is.na(.x))))
+  if(drop_na_columns){
+    .d <- .d %>% select(where(~ !all(is.na(.x))))
+  }
+
   .d <- unique(.d)
 
   # check if there are duplicate specimen ids
