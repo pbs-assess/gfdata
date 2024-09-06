@@ -41,6 +41,8 @@
 #' @param quiet_option Default option, `"message"`, suppresses messages from
 #'   sections of code with lots of `join_by` messages. Any other string will allow
 #'   messages.
+#' @param drop_na_columns Logical for removing all columns that only contain NAs.
+#'   Defaults to TRUE.
 #'
 #' @export
 #' @rdname get_all
@@ -71,6 +73,7 @@ get_all_survey_sets <- function(species,
                                 include_activity_matches = FALSE,
                                 usability = NULL,
                                 grouping_only = FALSE,
+                                drop_na_columns = TRUE,
                                 quiet_option = "message"
                                 ) {
   .q <- read_sql("get-all-survey-sets.sql")
@@ -387,7 +390,10 @@ get_all_survey_sets <- function(species,
 
   if (!is.null(ssid)){
 
-    .d <- .d |> group_by(fishing_event_id, survey_series_id) |>
+    .d <- .d |> group_by(fishing_event_id) |>
+      mutate(doorspread_m = ifelse(is.logical(na.omit(doorspread_m)), NA, na.omit(doorspread_m)),
+             speed_mpm = ifelse(is.logical(na.omit(speed_mpm)), NA, na.omit(speed_mpm))) |>
+      group_by(fishing_event_id, survey_series_id) |>
       mutate(grouping_desc = ifelse(is.logical(na.omit(grouping_desc)), NA, na.omit(grouping_desc)),
              grouping_code = mean(grouping_code, na.rm = TRUE),
              grouping_code = ifelse(is.nan(grouping_code), NA, grouping_code)
@@ -414,7 +420,9 @@ get_all_survey_sets <- function(species,
   } else {
 
       .d <- .d |> group_by(fishing_event_id) |>
-        mutate(grouping_desc = ifelse(grouping_code == grouping_code_original, grouping_desc, NA),
+        mutate(speed_mpm = ifelse(is.logical(na.omit(speed_mpm)), NA, na.omit(speed_mpm)),
+               doorspread_m = ifelse(is.logical(na.omit(doorspread_m)), NA, na.omit(doorspread_m)),
+               grouping_desc = ifelse(grouping_code == grouping_code_original, grouping_desc, NA),
                grouping_desc = ifelse(is.logical(na.omit(grouping_desc)), NA, na.omit(grouping_desc)),
                grouping_code = ifelse(grouping_code == grouping_code_original, grouping_code, NA),
                grouping_code = mean(grouping_code, na.rm = TRUE),
@@ -612,7 +620,9 @@ get_all_survey_sets <- function(species,
   .d <- dplyr::distinct(.d)
 
   # this drops any columns entirely populated with NAs
+  if(drop_na_columns){
   .d <- .d %>% select(where(~ !all(is.na(.x))))
+  }
 
   species_codes <- common2codes(species)
   missing_species <- setdiff(species_codes, .d$species_code)
