@@ -309,8 +309,13 @@ get_all_survey_samples <- function(species, ssid = NULL,
   # dogfish were producing a whole bunch of NAs for some reason
   .d <- .d %>% filter(!is.na(specimen_id))
 
+  if (include_event_info) {
+    print("Samples found. Fetching additional event info.")
+  }
+
   suppressMessages(
   if (include_event_info) {
+
     options(scipen=999)
     # needed for big skate because of a MSA set with an id that was getting converted
 
@@ -384,7 +389,9 @@ get_all_survey_samples <- function(species, ssid = NULL,
 
     fe <- run_sql("GFBioSQL", .fe)
 
-  if(any(!is.na(fe$FE_SUB_LEVEL_ID))) {
+    # browser()
+
+    if(any(!is.na(fe$FE_SUB_LEVEL_ID))) {
      if(any(na.omit(fe$FE_SUB_LEVEL_ID) > 1)) {
        # get both parent and skate level counts
        fe1 <- get_parent_level_counts(fe)
