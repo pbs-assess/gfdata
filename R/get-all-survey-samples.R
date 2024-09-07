@@ -144,6 +144,25 @@ get_all_survey_samples <- function(species, ssid = NULL,
   }
 
 
+  ### needs testing ----
+
+  .d$length <- NA
+  .d$length_type <- NA
+
+  species_code <- list()
+
+  for (i in seq_along(species)) {
+
+    length_type <- get_spp_sample_length_type(species[i])
+    length_type <- tolower(length_type)
+
+    species_code[i] <- common2codes(tolower(species[i]))
+
+    .d[.d$species_code == tolower(species_code[i]), ]$length <- .d[.d$species_code == species_code[i], length_type]
+    .d[.d$species_code == tolower(species_code[i]), ]$length_type <- length_type
+  }
+
+  ### ----
 
   # if using include_activity_matches = TRU`then remove_duplicates = TRUE
   if (include_activity_matches & !is.null(ssid)) {
@@ -204,25 +223,6 @@ get_all_survey_samples <- function(species, ssid = NULL,
     }
   }
 
-  ### needs testing ----
-
-  .d$length <- NA
-  .d$length_type <- NA
-
-  species_code <- list()
-
-  for (i in seq_along(species)) {
-
-    length_type <- get_spp_sample_length_type(species[i])
-    length_type <- tolower(length_type)
-
-    species_code[i] <- common2codes(tolower(species[i]))
-
-    .d[.d$species_code == tolower(species_code[i]), ]$length <- .d[.d$species_code == species_code[i], length_type]
-    .d[.d$species_code == tolower(species_code[i]), ]$length_type <- length_type
-  }
-
-  ### ----
 
   if (unsorted_only) {
     # .d <- filter(.d, sampling_desc == "UNSORTED")
