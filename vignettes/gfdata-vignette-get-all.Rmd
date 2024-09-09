@@ -270,3 +270,15 @@ glimpse(dd)
 NOTE: All activity matches are always returned by default whenever any one of the sablefish surveys (ssid = 35, 41, 42, 43) is requested. 
 This is because SSIDs for that survey were inconsistently assigned and frequently share trip ids, which results in duplication and or assignment to the wrong survey series. 
 In order to accurately separate the types of sablefish surveys one needs to split data from this survey by the `reason_desc` variable. 
+
+# Trouble shooting
+
+Any error message that mentions SQL Server suggests either that the network connection or server timed out, or that the SQL query was flawed. One way this can happen is providing an invalid ssid (eg. "4" instead of 4) or a search that is otherwise insufficiently limited in its scope.
+
+>Error: nanodbc/nanodbc.cpp:2823: 08S01
+>[Microsoft][ODBC SQL Server Driver][DBNETLIB]ConnectionRead (recv()). 
+>[Microsoft][ODBC SQL Server Driver][DBNETLIB]General network error. Check your network documentation.
+
+If the SQL search is successfully returned to R, but your computer has insufficient memory to handle the amount of data returned, you may see an error like this:
+
+>Error: cannot allocate vector of size XXX Mb

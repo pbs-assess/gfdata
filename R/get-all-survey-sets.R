@@ -9,9 +9,11 @@
 #' purpose. For this reason these function return a lot of columns, although the
 #' exact number depends on which types of surveys are being returned.
 #'
-#' @param ssid Default is to return all data from all surveys. The most
-#'   comprehensive and useful ids include: contemporary trawl (1, 3, 4, 16),
-#'   historic trawl (2), IPHC (14), sablefish (35), and HBLL (22, 36, 39, 40).
+#' @param ssid A numeric vector of survey series IDs. Run [get_ssids()] for a
+#'   look-up table of available survey series IDs with surveys series
+#'   descriptions. Default is to return all data from all surveys. Some of the
+#'   most useful ids include: contemporary trawl (1, 3, 4, 16), historic trawl
+#'   (2), IPHC (14), sablefish (35), and HBLL (22, 36, 39, 40).
 #' @param years Default is NULL, which returns all years.
 #' @param major Character string (or vector) of major stat area code(s) to
 #'   include (characters). Use get_major_areas() to lookup area codes with

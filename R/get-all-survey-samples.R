@@ -8,7 +8,11 @@
 #'   species code, then all elements will be assumed to be species common
 #'   names. Does not work with non-numeric species codes, so in those cases the
 #'   common name will be needed.
-#' @param ssid Default is to return all data from all surveys.
+#' @param ssid A numeric vector of survey series IDs. Run [get_ssids()] for a
+#'   look-up table of available survey series IDs with surveys series
+#'   descriptions. Default is to return all data from all surveys. Some of the
+#'   most useful ids include: contemporary trawl (1, 3, 4, 16), historic trawl
+#'   (2), IPHC (14), sablefish (35), and HBLL (22, 36, 39, 40).
 #' @param major Character string (or vector) of major stat area code(s) to
 #'   include (characters). Use get_major_areas() to lookup area codes with
 #'   descriptions. Default is NULL.
