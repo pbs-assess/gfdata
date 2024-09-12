@@ -21,7 +21,7 @@
 #'   other surveys and the modern Sablefish survey doesn't seem to assign
 #'   usabilities.
 #' @param unsorted_only Defaults to FALSE, which will return all specimens
-#'   collected on research trips.TRUE returns only unsorted (`1`) and `NA`
+#'   collected on research trips. TRUE returns only unsorted (`1`) and `NA`
 #'   specimens for both `species_category_code` and `sample_source_code`.
 #' @param random_only Defaults to FALSE, which will return all specimens
 #'   collected on research trips. TRUE returns only randomly sampled
@@ -233,7 +233,7 @@ get_all_survey_samples <- function(species, ssid = NULL,
     # replaces SQL code
     # (SPECIES_CATEGORY_CODE IS NULL OR SPECIES_CATEGORY_CODE IN (1, 3, 5, 6, 7)) AND
     # (SAMPLE_SOURCE_CODE IS NULL OR SAMPLE_SOURCE_CODE IN(1, 2)) AND
-    .d <- filter(.d, is.na(species_category_code) | species_category_code %in% c(1))
+    .d <- filter(.d, is.na(species_category_code) | species_category_code %in% c(1, 6))
     # # only 1 = unsorted makes sense! 3 = keepers, 5 = remains, = 6 head only, 7 doesn't exist?
     .d <- filter(.d, is.na(sample_source_code) | sample_source_code %in% c(1))
     # # only 1 = unsorted makes sense! 2 = keepers, 3 = discards
