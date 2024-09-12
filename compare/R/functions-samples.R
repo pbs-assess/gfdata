@@ -4,11 +4,18 @@ source(here::here("compare", "R", "utils-compare.R"))
 # Compare survey samples
 compare_survey_samples <- function (spp, ssid, areas = NULL) {
 
+  # Initialize default tibble
+  init <- tibble::tibble(
+    fn = numeric(0),
+    species = character(0),
+    ssid = numeric(0)
+  )
+
   # Initialize tibbles
-  x <- tibble::tibble() # Extra specimens
-  u <- tibble::tibble() # Unlike values
-  s <- tibble::tibble() # Summary of returned
-  a <- tibble::tibble() # All specimens when any unlike (x1, x2, a12)
+  x <- init # Extra specimens
+  u <- init # Unlike values
+  s <- init # Summary of returned
+  a <- init # All specimens when any unlike (x1, x2, a12)
 
   # Iterate over cases
   for (i in seq_along(spp)) {
@@ -19,60 +26,99 @@ compare_survey_samples <- function (spp, ssid, areas = NULL) {
       a12 <- NULL
       d1 <- NULL
       d2 <- NULL
+      d1e <- NULL
+      d2e <- NULL
+      d1_safe <- NULL
+      d2_safe <- NULL
       dd <- NULL
       s1 <- NULL
       s2 <- NULL
       x1 <- NULL
       x2 <- NULL
-      # Resent vectors
+      # Reset vectors
       b <- NULL
       n1 <- NULL
       n2 <- NULL
       r1 <- NULL
       r2 <- NULL
       r12 <- NULL
-      # Pull data
-      try(
-        d1 <- gfdata::get_survey_samples(
-          species = spp[i],
-          ssid = ssid[j],
-          major = areas
-        )
+      # Safely
+      safe_get_survey_samples <- purrr::safely(
+        gfdata::get_survey_samples
       )
+      safe_get_all_survey_samples <- purrr::safely(
+        gfdata::get_all_survey_samples
+      )
+      # Get survey samples
+      d1_safe <- safe_get_survey_samples(
+        species = spp[i],
+        ssid = ssid[j],
+        major = areas
+      )
+      # Extract result and (first) error message
+      d1 <- d1_safe$result
+      d1e <- d1_safe$error[[1]][1] # Extract first list element
       # Let server have a rest
       Sys.sleep(0.05)
-      try(
-        d2 <- gfdata::get_all_survey_samples(
-          species = spp[i],
-          ssid = ssid[j],
-          major = areas,
-          unsorted_only = TRUE,
-          random_only = TRUE,
-          grouping_only = TRUE,
-          remove_duplicates = TRUE,
-          include_event_info = TRUE
-        )
+      # Get all survey samples
+      d2_safe <- safe_get_all_survey_samples(
+        species = spp[i],
+        ssid = ssid[j],
+        major = areas,
+        unsorted_only = TRUE,
+        random_only = TRUE,
+        grouping_only = TRUE,
+        remove_duplicates = TRUE,
+        include_event_info = TRUE
       )
-      # Set to null if not data frame or if no columns
-      if (is.data.frame(d1)) {
-        if (ncol(d1) == 0) {
-          d1 <- NULL
-        }
-      } else {
-        d1 <- NULL
-      }
-      if (is.data.frame(d2)) {
-        if (ncol(d2) == 0) {
-          d2 <- NULL
-        }
-      } else {
-        d2 <- NULL
-      }
+      # Extract result and (first) error message
+      d2 <- d2_safe$result
+      d2e <- d2_safe$error[[1]][1] # Extract first list element
+
+      # # Pull data
+      # try(
+      #   d1 <- gfdata::get_survey_samples(
+      #     species = spp[i],
+      #     ssid = ssid[j],
+      #     major = areas
+      #   )
+      # )
+      # # Let server have a rest
+      # Sys.sleep(0.05)
+      # try(
+      #   d2 <- gfdata::get_all_survey_samples(
+      #     species = spp[i],
+      #     ssid = ssid[j],
+      #     major = areas,
+      #     unsorted_only = TRUE,
+      #     random_only = TRUE,
+      #     grouping_only = TRUE,
+      #     remove_duplicates = TRUE,
+      #     include_event_info = TRUE
+      #   )
+      # )
+
+      # # Set to null if not data frame or if no columns
+      # if (is.data.frame(d1)) {
+      #   if (ncol(d1) == 0) {
+      #     d1 <- NULL
+      #   }
+      # } else {
+      #   d1 <- NULL
+      # }
+      # if (is.data.frame(d2)) {
+      #   if (ncol(d2) == 0) {
+      #     d2 <- NULL
+      #   }
+      # } else {
+      #   d2 <- NULL
+      # }
+
       # Drop NA specimen_id
-      if (!is.null(d1)) {
+      if ("specimen_id" %in% colnames(d1)) {
         d1 <- d1 |> tidyr::drop_na(specimen_id)
       }
-      if (!is.null(d2)) {
+      if ("specimen_id" %in% colnames(d2)) {
         d2 <- d2 |> tidyr::drop_na(specimen_id)
       }
       # Identify extra specimen_id
@@ -88,7 +134,9 @@ compare_survey_samples <- function (spp, ssid, areas = NULL) {
         survey = survey(ssid),
         count_ids = ifelse(is.null(d1), NA, length(unique(d1$specimen_id))),
         extra_ids = ifelse(is.null(d1), NA, length(n1)),
-        shared_ids = ifelse(is.null(d1), NA, length(b))
+        shared_ids = ifelse(is.null(d1), NA, length(b)),
+        error = ifelse(is.null(d1e), "No", "Yes"),
+        message = ifelse(is.null(d1e), "NULL", d1e)
       )
       s2 <- tibble::tibble(
         fn = 2L,
@@ -97,7 +145,9 @@ compare_survey_samples <- function (spp, ssid, areas = NULL) {
         survey = survey(ssid),
         count_ids = ifelse(is.null(d2), NA, length(unique(d2$specimen_id))),
         extra_ids = ifelse(is.null(d2), NA, length(n2)),
-        shared_ids = ifelse(is.null(d2), NA, length(b))
+        shared_ids = ifelse(is.null(d2), NA, length(b)),
+        error = ifelse(is.null(d2e), "No", "Yes"),
+        message = ifelse(is.null(d2e), "NULL", d2e)
       )
       # Augment summary
       s <- dplyr::bind_rows(s, s1, s2)
