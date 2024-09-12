@@ -4,11 +4,18 @@ source(here::here("compare", "R", "utils-compare.R"))
 # Compare survey sets
 compare_survey_sets <- function (spp, ssid) {
 
+  # Initialize default tibble
+  init <- tibble::tibble(
+    fn = numeric(0),
+    species = character(0),
+    ssid = numeric(0)
+  )
+
   # Initialize tibbles
-  x <- tibble::tibble() # Extra sets
-  u <- tibble::tibble() # Unlike values
-  s <- tibble::tibble() # Summary of returned
-  a <- tibble::tibble() # All sets when any unlike (x1, x2, a12)
+  x <- init # Extra sets
+  u <- init # Unlike values
+  s <- init # Summary of returned
+  a <- init # All sets when any unlike (x1, x2, a12)
 
   # Iterate over cases
   for (i in seq_along(spp)) {
@@ -19,52 +26,90 @@ compare_survey_sets <- function (spp, ssid) {
       a12 <- NULL
       d1 <- NULL
       d2 <- NULL
+      d1e <- NULL
+      d2e <- NULL
+      d1_safe <- NULL
+      d2_safe <- NULL
       dd <- NULL
       s1 <- NULL
       s2 <- NULL
       x1 <- NULL
       x2 <- NULL
-      # Resent vectors
+      # Reset vectors
       b <- NULL
       n1 <- NULL
       n2 <- NULL
       r1 <- NULL
       r2 <- NULL
       r12 <- NULL
-      # Pull data
-      try(
-        d1 <- gfdata::get_survey_sets(
-          species = spp[i],
-          ssid = ssid[j]
-        )
+      # Safely
+      safe_get_survey_sets <- purrr::safely(gfdata::get_survey_sets)
+      safe_get_all_survey_sets <- purrr::safely(gfdata::get_all_survey_sets)
+      # Get survey sets
+      d1_safe <- safe_get_survey_sets(
+        species = spp[i],
+        ssid = ssid[j]
       )
+      # Extract result and (first) error message
+      d1 <- d1_safe$result
+      d1e <- d1_safe$error[[1]][1] # Extract first list element
+      # Drop all rows if all counts and weights each either zero or NA
+      if (all(c(d1$catch_count, d1$catch_weight) %in% c(0, NA))) {
+        d1 <- d1[0, ] # Drop all rows and keep columns
+      }
       # Let server have a rest
       Sys.sleep(0.05)
-      try(
-        d2 <- gfdata::get_all_survey_sets(
-          species = spp[i],
-          ssid = ssid[j],
-          remove_false_zeros = FALSE,
-          remove_duplicates = TRUE
-        )
+      # Get all survey sets
+      d2_safe <- safe_get_all_survey_sets(
+        species = spp[i],
+        ssid = ssid[j],
+        remove_false_zeros = FALSE,
+        remove_duplicates = TRUE
       )
-      # Set to null if not data frame or if no columns
-      if (is.data.frame(d1)) {
-        if (ncol(d1) == 0) {
-          d1 <- NULL
-        }
-      } else {
-        d1 <- NULL
-      }
-      if (is.data.frame(d2)) {
-        if (ncol(d2) == 0) {
-          d2 <- NULL
-        }
-      } else {
-        d2 <- NULL
-      }
+      # Extract result and (first) error message
+      d2 <- d2_safe$result
+      d2e <- d2_safe$error[[1]][1] # Extract first list element
+
+      # # Pull data
+      # try(
+      #   d1 <- gfdata::get_survey_sets(
+      #     species = spp[i],
+      #     ssid = ssid[j]
+      #   )
+      # )
+      # # Let server have a rest
+      # Sys.sleep(0.05)
+      # try(
+      #   d2 <- gfdata::get_all_survey_sets(
+      #     species = spp[i],
+      #     ssid = ssid[j],
+      #     remove_false_zeros = FALSE,
+      #     remove_duplicates = TRUE
+      #   )
+      # )
+
+      # # Set to null if not data frame or if no columns
+      # if (is.data.frame(d1)) {
+      #   if (ncol(d1) == 0) {
+      #     d1 <- NULL
+      #   }
+      # } else {
+      #   d1 <- NULL
+      # }
+      # if (is.data.frame(d2)) {
+      #   if (ncol(d2) == 0) {
+      #     d2 <- NULL
+      #   }
+      # } else {
+      #   d2 <- NULL
+      # }
+
       # Create comparison columns
-      if (!is.null(d1)) {
+      # - Robust to d1 <- NULL: Condition evaluates FALSE
+      # - Robust to ncol(d1) == 0: Condition evaluates FALSE
+      # - Robust to nrow(d1) == 0: Assigned value has nrow == 0
+      #
+      if (all(c("species_code", "fishing_event_id") %in% colnames(d1))) {
         d1 <- d1 |>
           tidyr::drop_na(species_code, fishing_event_id) |>
           dplyr::mutate(
@@ -72,7 +117,12 @@ compare_survey_sets <- function (spp, ssid) {
             .before = 1
           )
       }
-      if (!is.null(d2)) {
+      # Create comparison columns
+      # - Robust to d2 <- NULL: Condition evaluates FALSE
+      # - Robust to ncol(d2) == 0: Condition evaluates FALSE
+      # - Robust to nrow(d2) == 0: Assigned value has nrow == 0
+      #
+      if (all(c("species_code", "fishing_event_id") %in% colnames(d2))) {
         d2 <- d2 |>
           tidyr::drop_na(species_code, fishing_event_id) |>
           dplyr::mutate(
@@ -93,7 +143,9 @@ compare_survey_sets <- function (spp, ssid) {
         survey = survey(ssid),
         count_ids = ifelse(is.null(d1), NA, length(unique(d1$comparison_id))),
         extra_ids = ifelse(is.null(d1), NA, length(n1)),
-        shared_ids = ifelse(is.null(d1), NA, length(b))
+        shared_ids = ifelse(is.null(d1), NA, length(b)),
+        error = ifelse(is.null(d1e), "No", "Yes"),
+        message = ifelse(is.null(d1e), "NULL", d1e)
       )
       s2 <- tibble::tibble(
         fn = 2L,
@@ -102,7 +154,10 @@ compare_survey_sets <- function (spp, ssid) {
         survey = survey(ssid),
         count_ids = ifelse(is.null(d2), NA, length(unique(d2$comparison_id))),
         extra_ids = ifelse(is.null(d2), NA, length(n2)),
-        shared_ids = ifelse(is.null(d2), NA, length(b))
+        shared_ids = ifelse(is.null(d2), NA, length(b)),
+        error = ifelse(is.null(d2e), "No", "Yes"),
+        message = ifelse(is.null(d2e), "NULL", d2e)
+
       )
       # Augment summary
       s <- dplyr::bind_rows(s, s1, s2)
