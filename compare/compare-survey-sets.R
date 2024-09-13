@@ -17,18 +17,10 @@ ssid <- id_tab |> dplyr::pull(ssid)
 
 # Get species ------------------------------------------------------------------
 
-spp <- readRDS("compare/data/species.rds")[6] # [c(1:3, 5:12)]
-# [c(1, 5, 6, 8, 10)]
-
-ssid <- c(8, 9, 39, 40)
+spp <- readRDS("compare/data/species.rds")
 
 # Print
 cat("spp = \n", paste0(spp, "\n"))
-
-# Shorter species set
-# spp <- "225" # Hake
-# spp <- "044" # Dogfish
-# spp <- "009" # Rougheye
 
 # Compare survey sets ----------------------------------------------------------
 

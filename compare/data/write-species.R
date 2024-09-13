@@ -6,13 +6,13 @@
 species_names <- c(
   # "Spotted Ratfish",
   # "Longnose Skate",
-  # "Big Skate",
+  "Big Skate",
   # "Sandpaper Skate",
   "North Pacific Spiny Dogfish",
   "Pacific Ocean Perch",
   "Pacific Cod",
   # "Walleye Pollock",
-  "Sablefish",
+  # "Sablefish",
   "Lingcod",
   # "Pacific Hake",
   # "Pacific Tomcod",
@@ -42,13 +42,13 @@ species_names <- c(
   # "Dover Sole",
   # "English Sole",
   # "Flathead Sole",
-  # "Pacific Halibut",
+  "Pacific Halibut",
   # "Pacific Sanddab",
   "Petrale Sole",
   # "Rex Sole",,
   # "Sand Sole",
-  "Slender Sole",
-  "Southern Rock Sole"
+  "Slender Sole" # ,
+  # "Southern Rock Sole"
 )
 
 # Write
