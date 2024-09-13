@@ -18,3 +18,29 @@ xe <- readRDS("compare/results/sets-extras.rds")
 ue <- readRDS("compare/results/sets-unlike.rds")
 se <- readRDS("compare/results/sets-summary.rds")
 ae <- readRDS("compare/results/sets-alldiff.rds")
+
+# View -------------------------------------------------------------------------
+
+# Samples
+sa |>
+  dplyr::group_by(species, ssid) |>
+  dplyr::mutate(
+    key_extras = ifelse(fn == 1, extra_ids, 0),
+    key_view = max(key_extras, na.rm = TRUE) # Max within group
+  ) |>
+  dplyr::filter(key_view > 0) |>
+  dplyr::ungroup() |>
+  dplyr::select(-tidyselect::starts_with("key")) |>
+  tibble::view()
+
+# Sets
+se |>
+  dplyr::group_by(species, ssid) |>
+  dplyr::mutate(
+    key_extras = ifelse(fn == 1, extra_ids, 0),
+    key_view = max(key_extras, na.rm = TRUE) # Max within group
+  ) |>
+  dplyr::filter(key_view > 0) |>
+  dplyr::ungroup() |>
+  dplyr::select(-tidyselect::starts_with("key")) |>
+  tibble::view()
