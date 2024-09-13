@@ -229,14 +229,20 @@ get_all_survey_samples <- function(species, ssid = NULL,
 
 
   if (unsorted_only) {
-    # .d <- filter(.d, sampling_desc == "UNSORTED")
-    # replaces SQL code
-    # (SPECIES_CATEGORY_CODE IS NULL OR SPECIES_CATEGORY_CODE IN (1, 3, 5, 6, 7)) AND
-    # (SAMPLE_SOURCE_CODE IS NULL OR SAMPLE_SOURCE_CODE IN(1, 2)) AND
-    .d <- filter(.d, is.na(species_category_code) | species_category_code %in% c(1, 6))
-    # # only 1 = unsorted makes sense! 3 = keepers, 5 = remains, = 6 head only, 7 doesn't exist?
-    .d <- filter(.d, is.na(sample_source_code) | sample_source_code %in% c(1))
-    # # only 1 = unsorted makes sense! 2 = keepers, 3 = discards
+    # # .d <- filter(.d, sampling_desc == "UNSORTED")
+    # # replaces SQL code
+    # # (SPECIES_CATEGORY_CODE IS NULL OR SPECIES_CATEGORY_CODE IN (1, 3, 5, 6, 7)) AND
+    # # (SAMPLE_SOURCE_CODE IS NULL OR SAMPLE_SOURCE_CODE IN(1, 2)) AND
+    # .d <- filter(.d, is.na(species_category_code) | species_category_code %in% c(1, 6))
+    # # # only 1 = unsorted makes sense! 3 = keepers, 5 = remains, = 6 head only, 7 doesn't exist?
+    # .d <- filter(.d, is.na(sample_source_code) | sample_source_code %in% c(1))
+    # # # only 1 = unsorted makes sense! 2 = keepers, 3 = discards
+
+    # TODO: try instead
+    .d <- filter(.d, species_category_code %in% c(1) | # unsorted
+                     sample_source_code %in% c(1) | # unsorted
+                     sample_type_code %in% c(1) # total catch
+                 )
 
     if (nrow(.d) < 1) {
 
