@@ -19,6 +19,7 @@ get_all_survey_samples(
   remove_bad_data = TRUE,
   remove_duplicates = TRUE,
   return_dna_info = FALSE,
+  drop_na_columns = TRUE,
   quiet_option = "message"
 )
 
@@ -34,6 +35,7 @@ get_all_survey_sets(
   include_activity_matches = FALSE,
   usability = NULL,
   grouping_only = FALSE,
+  drop_na_columns = TRUE,
   quiet_option = "message"
 )
 }
@@ -48,9 +50,11 @@ species code, then all elements will be assumed to be species common
 names. Does not work with non-numeric species codes, so in those cases the
 common name will be needed.}
 
-\item{ssid}{Default is to return all data from all surveys. The most
-comprehensive and useful ids include: contemporary trawl (1, 3, 4, 16),
-historic trawl (2), IPHC (14), sablefish (35), and HBLL (22, 36, 39, 40).}
+\item{ssid}{A numeric vector of survey series IDs. Run \code{\link[=get_ssids]{get_ssids()}} for a
+look-up table of available survey series IDs with surveys series
+descriptions. Default is to return all data from all surveys. Some of the
+most useful ids include: contemporary trawl (1, 3, 4, 16), historic trawl
+(2), IPHC (14), sablefish (35), and HBLL (22, 36, 39, 40).}
 
 \item{major}{Character string (or vector) of major stat area code(s) to
 include (characters). Use get_major_areas() to lookup area codes with
@@ -62,7 +66,7 @@ other surveys and the modern Sablefish survey doesn't seem to assign
 usabilities.}
 
 \item{unsorted_only}{Defaults to FALSE, which will return all specimens
-collected on research trips.TRUE returns only unsorted (\code{1}) and \code{NA}
+collected on research trips. TRUE returns only unsorted (\code{1}) and \code{NA}
 specimens for both \code{species_category_code} and \code{sample_source_code}.}
 
 \item{random_only}{Defaults to FALSE, which will return all specimens
@@ -93,6 +97,9 @@ included. Otherwise turns on automatically.}
 \item{return_dna_info}{Should DNA container ids and sample type be returned?
 This can create duplication of specimen ids for some species.  Defaults to
 FALSE.}
+
+\item{drop_na_columns}{Logical for removing all columns that only contain NAs.
+Defaults to TRUE.}
 
 \item{quiet_option}{Default option, \code{"message"}, suppresses messages from
 sections of code with lots of \code{join_by} messages. Any other string will allow
