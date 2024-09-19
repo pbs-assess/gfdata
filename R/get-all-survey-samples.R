@@ -510,13 +510,19 @@ get_all_survey_samples <- function(species, ssid = NULL,
         )
         slc_list[[i]] <- run_sql("GFBioSQL", .slc)
       }
-      slc <- do.call(rbind, slc_list)
+      slc <- do.call(rbind, slc_list) |> distinct()
       names(slc) <- tolower(names(slc))
 
       # but only replace event level when fe_sub_level_ids are present
       .d2 <- .d2 |>
         select(-catch_count) |>
-        left_join(slc)
+        # rename(event_level_count = catch_count) |>
+        left_join(slc, by = c(
+          "trip_id"="trip_id",
+          "fishing_event_id"="fe_parent_event_id",
+          "fe_major_level_id"="fe_major_level_id",
+          "fe_sub_level_id"="fe_sub_level_id",
+          "species_code"="species_code"))
 
       .d <- bind_rows(.d1, .d2)
 

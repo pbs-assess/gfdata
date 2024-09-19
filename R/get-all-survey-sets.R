@@ -321,6 +321,7 @@ get_all_survey_sets <- function(species,
 
 
         slc_list <- list()
+        spp_codes <- unique(.d$species_code)
         for (i in seq_along(spp_codes)) {
           .slc <- read_sql("get-sub-level-catch.sql")
           .slc <- inject_filter("", spp_codes[i], sql_code = .slc)
@@ -335,16 +336,21 @@ get_all_survey_sets <- function(species,
           # )
           slc_list[[i]] <- run_sql("GFBioSQL", .slc)
         }
-        slc <- do.call(rbind, slc_list)
+        slc <- do.call(rbind, slc_list) |> distinct()
         names(slc) <- tolower(names(slc))
 
-        .d1 <- .d %>% filter(!(skate_count > 1) | is.na(skate_count))
+        .d1 <- .d %>% filter((skate_count <= 1) | is.na(skate_count))
 
         .d2 <- .d %>%
           filter(skate_count > 1) |>
           select(-catch_count) |>
-          left_join(slc)
-
+          # rename(event_level_count = catch_count) |>
+          left_join(slc, by = c(
+            "trip_id"="trip_id",
+            "fishing_event_id"="fe_parent_event_id",
+            "fe_major_level_id"="fe_major_level_id",
+            "fe_sub_level_id"="fe_sub_level_id",
+            "species_code"="species_code"))
 
         .d <- bind_rows(.d1, .d2)
       } else {
