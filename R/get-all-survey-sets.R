@@ -415,15 +415,15 @@ get_all_survey_sets <- function(species,
 
     if (is.null(major)) {
       print(
-        paste0(toString(species), " have been recorded by survey series ", toString(ssid), " at least once."),
-        paste0("Returning all relevant sets/events/skates including those with no catch.")
+        paste0(toString(species), " have been recorded by survey series ", toString(ssid), " at least once. "),
+        "Returning all relevant sets/events/skates including those with no catch."
       )
     }
     if (!is.null(major)) {
       print(
         paste0(toString(species), " have been recorded by survey series ", toString(ssid),
-          "within major area(s) ", toString(major), " at least once"),
-        paste0("Returning all relevant sets/events/skates including those with no catch.")
+          "within major area(s) ", toString(major), " at least once. "),
+        "Returning all relevant sets/events/skates including those with no catch."
       )
     }
 
