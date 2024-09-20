@@ -125,7 +125,7 @@ get_all_survey_sets <- function(species,
     )
   }
 
-  d0 <- .d <- run_sql("GFBioSQL", .q)
+  .d <- run_sql("GFBioSQL", .q)
 
   if (!is.null(years)) {
     .d <- filter(.d, YEAR %in% years)
@@ -266,7 +266,7 @@ get_all_survey_sets <- function(species,
         #-survey_id,
         #-survey_series_id,
         -fe_parent_event_id,
-        -fe_major_level_id,
+        # -fe_major_level_id,
         -fe_minor_level_id,
         -fe_sub_level_id,
         -hook_code,
