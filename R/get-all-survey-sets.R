@@ -415,12 +415,14 @@ get_all_survey_sets <- function(species,
 
     if (is.null(major)) {
       print(
-        paste0("Returning all sets belonging to survey series ", toString(ssid), " when ", toString(species), " were recorded.")
+        paste0(toString(species), " have been recorded by survey series ", toString(ssid), ".
+               Returning all sets including those that did not catch this species.")
       )
     }
     if (!is.null(major)) {
       print(
-        paste0("Returning sets within major area(s) ", toString(major), " and belonging to survey series ", toString(ssid), " when ", toString(species), " were recorded.")
+        paste0(toString(species), " have been recorded by survey series ", toString(ssid), "within major area(s) ", toString(major), ".
+               Returning all sets including those that did not catch this species.")
       )
     }
 
@@ -599,16 +601,16 @@ get_all_survey_sets <- function(species,
     if (nrow(.d) < 1) {
 
       if(is.null(ssid)&is.null(major)){
-        stop(paste0("No survey set data with expected grouping codes for ", toString(species), "."))
+        stop(paste0("No survey set data with expected grouping codes."))
       } else {
         if(!is.null(ssid)&is.null(major)){
-          stop(paste0("No survey set data with expected grouping codes for ", toString(species), " from ssid(s) ", toString(ssid), "."))
+          stop(paste0("No survey set data with expected grouping codes from ssid(s) ", toString(ssid), "."))
         }
         if(is.null(ssid)&!is.null(major)){
-          stop(paste0("No survey set data with expected grouping codes for ", toString(species), " from major area(s) ", toString(major), "."))
+          stop(paste0("No survey set data with expected grouping codes from major area(s) ", toString(major), "."))
         }
         if(!is.null(ssid)&!is.null(major)){
-          stop(paste0("No survey set data with expected grouping codes for ", toString(species), " from ssid(s) ", toString(ssid), " in major area(s) ", toString(major), "."))
+          stop(paste0("No survey set data with expected grouping codes from ssid(s) ", toString(ssid), " in major area(s) ", toString(major), "."))
         }
       }
     }
