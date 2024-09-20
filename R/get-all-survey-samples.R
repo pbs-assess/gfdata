@@ -568,25 +568,22 @@ get_all_survey_samples <- function(species, ssid = NULL,
 
   if(grouping_only){
     .d <- filter(.d, !is.na(grouping_code))
+  }
 
-    if (nrow(.d) < 1) {
-
-      if(is.null(ssid)&is.null(major)){
-        stop(paste0("No survey samples with expected grouping codes for ", toString(species), "."))
-      } else {
-        if(!is.null(ssid)&is.null(major)){
-          stop(paste0("No survey samples with expected grouping codes for ", toString(species), " from ssid(s) ", toString(ssid), "."))
-        }
-        if(is.null(ssid)&!is.null(major)){
-          stop(paste0("No survey samples with expected grouping codes for ", toString(species), " from major area(s) ", toString(major), "."))
-        }
-        if(!is.null(ssid)&!is.null(major)){
-          stop(paste0("No survey samples with expected grouping codes for ", toString(species), " from ssid(s) ", toString(ssid), " in major area(s) ", toString(major), "."))
-        }
+  if (nrow(.d) < 1) {
+    if(is.null(ssid)&is.null(major)){
+      stop(paste0("No survey samples with expected grouping codes for ", toString(species), "."))
+    } else {
+      if(!is.null(ssid)&is.null(major)){
+        stop(paste0("No survey samples with expected grouping codes for ", toString(species), " from ssid(s) ", toString(ssid), "."))
+      }
+      if(is.null(ssid)&!is.null(major)){
+        stop(paste0("No survey samples with expected grouping codes for ", toString(species), " from major area(s) ", toString(major), "."))
+      }
+      if(!is.null(ssid)&!is.null(major)){
+        stop(paste0("No survey samples with expected grouping codes for ", toString(species), " from ssid(s) ", toString(ssid), " in major area(s) ", toString(major), "."))
       }
     }
-
-
   }
 
   if(drop_na_columns){
