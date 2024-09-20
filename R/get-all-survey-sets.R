@@ -415,14 +415,15 @@ get_all_survey_sets <- function(species,
 
     if (is.null(major)) {
       print(
-        paste0(toString(species), " have been recorded by survey series ", toString(ssid), ".
-               Returning all sets including those that did not catch this species.")
+        paste0(toString(species), " have been recorded by survey series ", toString(ssid), " at least once.
+               Returning all relevant sets/events/skates including those with no catch.")
       )
     }
     if (!is.null(major)) {
       print(
-        paste0(toString(species), " have been recorded by survey series ", toString(ssid), "within major area(s) ", toString(major), ".
-               Returning all sets including those that did not catch this species.")
+        paste0(toString(species), " have been recorded by survey series ", toString(ssid),
+          "within major area(s) ", toString(major), " at least once.
+          Returning all relevant sets/events/skates including those with no catch.")
       )
     }
 
@@ -441,12 +442,14 @@ get_all_survey_sets <- function(species,
 
     if (is.null(major)) {
       print(
-        paste0("Returning all survey series that recorded any ", toString(species), ".")
+        paste0("Returning all sets/events/skates (including those with no catch) from all survey series that recorded ",
+               toString(species), " at least once. ")
       )
     }
     if (!is.null(major)) {
       print(
-        paste0("Returning all survey series that recorded any ", toString(species), " from major area(s) ", toString(major), ".")
+        paste0("Returning all sets/events/skates (including those with no catch) from all survey series that recorded ",
+               toString(species), " within major area(s) ", toString(major), " at least once.")
       )
     }
   }
@@ -642,8 +645,6 @@ get_all_survey_sets <- function(species,
       paste(missing_species, collapse = ", ")
     )
   }
-
-  # TODO: add a check to see if ssid and ssog are identical and drop ssog if so?
-
+  # TODO: could add a check to see if ssid and ssog are identical and drop ssog if so? But might be useful to keep...
   add_version(as_tibble(.d))
 }
