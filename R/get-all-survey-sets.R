@@ -414,17 +414,13 @@ get_all_survey_sets <- function(species,
     .d <- filter(.d, survey_series_id %in% ssid)
 
     if (is.null(major)) {
-      print(
-        paste0(toString(species), " have been recorded by survey series ", toString(ssid), " at least once. "),
-        "Returning all relevant sets/events/skates including those with no catch."
-      )
+      print(paste0(toString(species), " have been recorded by survey series ", toString(ssid), " at least once. "))
+      print("Returning all relevant sets/events/skates including those with no catch.")
     }
     if (!is.null(major)) {
-      print(
-        paste0(toString(species), " have been recorded by survey series ", toString(ssid),
-          "within major area(s) ", toString(major), " at least once. "),
-        "Returning all relevant sets/events/skates including those with no catch."
-      )
+      print(paste0(toString(species), " have been recorded by survey series ", toString(ssid),
+          "within major area(s) ", toString(major), " at least once. "))
+      print("Returning all relevant sets/events/skates including those with no catch.")
     }
 
 
