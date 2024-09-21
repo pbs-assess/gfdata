@@ -214,6 +214,15 @@ compare_survey_sets <- function (spp, ssid) {
         d2 <- d2 |> select(all_of(cn)) |> mutate(fn = 2L, .before = 1)
         # Bind rows
         dd <- bind_rows(d1, d2) |>
+          # Augment
+          dplyr::mutate(species = spp[i], .before = 2L) |>
+          dplyr::mutate(ssid = ssid[j], .before = 3L) |>
+          # Round
+          dplyr::mutate(
+            across(starts_with("density"), ~ round(.x, digits = 10)),
+            across(starts_with("speed"), ~ round(.x, digits = 10)),
+            across(starts_with("area"), ~ round(.x, digits = 8))
+          ) |>
           # Drop NAs
           tidyr::drop_na(species_code, fishing_event_id) |>
           # Arrange so same fishing_event_id are in sequential rows
