@@ -200,6 +200,9 @@ compare_survey_samples <- function (spp, ssid, areas = NULL) {
         d2 <- d2 |> select(all_of(cn)) |> mutate(fn = 2L, .before = 1)
         # Bind rows
         dd <- bind_rows(d1, d2) |>
+          # Augment
+          dplyr::mutate(species = spp[i], .before = 2L) |>
+          dplyr::mutate(ssid = ssid[j], .before = 3L) |>
           # Drop dogfish NAs
           tidyr::drop_na(specimen_id) |>
           # Arrange so same specimen_ids are in sequential rows
