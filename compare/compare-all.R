@@ -4,24 +4,48 @@
   source(here::here("compare", "compare-survey-sets.R"))
 }
 
+# Load -------------------------------------------------------------------------
 
 library(tidyverse)
 
-# Read samples files
+# Read -------------------------------------------------------------------------
+
+# Samples
 xa <- readRDS("compare/results/samples-extras.rds")
 ua <- readRDS("compare/results/samples-unlike.rds")
 sa <- readRDS("compare/results/samples-summary.rds")
 aa <- readRDS("compare/results/samples-alldiff.rds")
 
-# Read sets files
+# Sets
 xe <- readRDS("compare/results/sets-extras.rds")
 ue <- readRDS("compare/results/sets-unlike.rds")
 se <- readRDS("compare/results/sets-summary.rds")
 ae <- readRDS("compare/results/sets-alldiff.rds")
 
-# View -------------------------------------------------------------------------
+# Samples ----------------------------------------------------------------------
 
-# Samples
+# Extras
+
+# Unlike
+ua |>
+  dplyr::distinct(
+    dplyr::across(
+      !dplyr::starts_with( # Ignore differences in these columns
+        c(
+          "fn",
+          "month"
+        )
+      )
+    ),
+    .keep_all = TRUE
+  ) |>
+  dplyr::group_by(specimen_id) |>
+  # Keep only groups with more than one row (the inconsistent groups)
+  dplyr::filter(n() > 1) |>
+  dplyr::ungroup() |>
+  tibble::view()
+
+# Summary
 sa |>
   dplyr::group_by(species, ssid) |>
   dplyr::mutate(
@@ -33,7 +57,37 @@ sa |>
   dplyr::select(-tidyselect::starts_with("key")) |>
   tibble::view()
 
-# Sets
+# All diff
+
+
+# Sets -------------------------------------------------------------------------
+
+# Extras
+
+# Unlike
+ue |>
+  dplyr::distinct(
+    dplyr::across(
+      !dplyr::starts_with( # Ignore differences in these columns
+        c(
+          "fn",
+          "month",
+          "speed",
+          "area",
+          "depth",
+          "density"
+        )
+      )
+    ),
+    .keep_all = TRUE
+  ) |>
+  dplyr::group_by(comparison_id) |>
+  # Keep only groups with more than one row (the inconsistent groups)
+  dplyr::filter(n() > 1) |>
+  dplyr::ungroup() |>
+  tibble::view()
+
+# Summary
 se |>
   dplyr::group_by(species, ssid) |>
   dplyr::mutate(
@@ -44,3 +98,5 @@ se |>
   dplyr::ungroup() |>
   dplyr::select(-tidyselect::starts_with("key")) |>
   tibble::view()
+
+# All diff
