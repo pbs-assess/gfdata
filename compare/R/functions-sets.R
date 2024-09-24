@@ -64,7 +64,8 @@ compare_survey_sets <- function (spp, ssid) {
         species = spp[i],
         ssid = ssid[j],
         remove_false_zeros = FALSE,
-        remove_duplicates = TRUE
+        remove_duplicates = TRUE,
+        grouping_only = TRUE # 2024-09-24
       )
       # Extract result and (first) error message
       d2 <- d2_safe$result

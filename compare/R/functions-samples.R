@@ -67,7 +67,7 @@ compare_survey_samples <- function (spp, ssid, areas = NULL) {
         major = areas,
         unsorted_only = TRUE,
         random_only = TRUE,
-        grouping_only = TRUE,
+        grouping_only = FALSE, # 2024-09-24
         remove_duplicates = TRUE,
         include_event_info = TRUE
       )
