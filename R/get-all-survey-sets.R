@@ -33,9 +33,9 @@
 #' @param include_activity_matches Get all surveys with activity codes that
 #'   match chosen ssids.
 #' @param usability A vector of usability codes to include. Defaults to NULL,
-#'   but typical set for trawl is`c(0, 1, 2, 6)`. IPHC codes may be different to
-#'   other surveys and the modern Sablefish survey doesn't seem to assign
-#'   usabilities.
+#'   but typical set for a design-based trawl survey index is `c(0, 1, 2, 6)`.
+#'   IPHC codes may be different to other surveys and the modern Sablefish survey
+#'   doesn't seem to assign usabilities.
 #' @param grouping_only Defaults to FALSE, which will return all specimens or sets
 #'   collected on research trips. TRUE returns only sets or specimens from fishing
 #'   events with grouping codes that match that expected for a survey. Can also be
@@ -439,7 +439,7 @@ get_all_survey_sets <- function(species,
     if (is.null(major)) {
       print(
         paste0("Returning all sets/events/skates (including those with no catch) from all survey series that recorded ",
-               toString(species), " at least once. ")
+               toString(species), " at least once.")
       )
     }
     if (!is.null(major)) {
