@@ -19,17 +19,16 @@
 #'   include (characters). Use get_major_areas() to lookup area codes with
 #'   descriptions. Default is NULL.
 #' @param join_sample_ids This option was problematic, so now reverts to FALSE.
-#' @param remove_false_zeros If `TRUE` will make sure weights > 0 don't have
+#' @param remove_false_zeros Default of `TRUE` will make sure weights > 0 don't have
 #'   associated counts of 0 and vice versa. Mostly useful for trawl data where
 #'   counts are only taken for small catches.
 #' @param remove_bad_data Remove known bad data, such as unrealistic
 #'   length or weight values and duplications due to trips that include multiple
 #'   surveys. Default is TRUE.
 #' @param remove_duplicates Logical for whether to remove duplicated event
-#'   records due to overlapping survey stratifications when original_ind = 'N',
-#'   or from known issues with MSSM trips including both survey areas.
-#'   Defaults to FALSE when ssids are supplied and activity matches aren't
-#'   included. Otherwise turns on automatically.
+#'   records due to overlapping survey stratifications when original_ind = 'N'.
+#'   Default is FALSE. This option only remains possible when ssids are supplied
+#'   and activity matches aren't included. Otherwise turns on automatically.
 #' @param include_activity_matches Get all surveys with activity codes that
 #'   match chosen ssids.
 #' @param usability A vector of usability codes to include. Defaults to NULL,
@@ -183,6 +182,15 @@ get_all_survey_sets <- function(species,
     ORDER BY S.SURVEY_SERIES_ID")
   ll <- unique(ll$SURVEY_SERIES_ID)
 
+  # if(!is.null(ssid)){
+  #   bad_ssid <- c(46, 81)
+  #   if(any(ssid %in% bad_ssid)){
+  #     warning("Ssid(s) ", ssid[ssid %in% bad_ssid], " is/are not currently supported. ",
+  #          "See the function `get_ssids()` for help identifying ",
+  #          "survey series IDs."
+  #     )
+  #   }
+  # }
 
   if (nrow(.d) < 1) {
 
@@ -595,7 +603,7 @@ get_all_survey_sets <- function(species,
   )
 
   if(grouping_only){
-    .d <- filter(.d, !is.na(grouping_code))
+    .d <- filter(.d, !is.na(grouping_code_original))
 
     if (nrow(.d) < 1) {
 
