@@ -2,7 +2,7 @@
 source(here::here("compare", "R", "utils-compare.R"))
 
 # Compare survey sets
-compare_survey_sets <- function (spp, ssid) {
+compare_survey_sets <- function (spp, ssid, usability = c(0, 1, 2, 6)) {
 
   # Initialize default tibble
   init <- tibble::tibble(
@@ -65,7 +65,8 @@ compare_survey_sets <- function (spp, ssid) {
         ssid = ssid[j],
         remove_false_zeros = FALSE,
         remove_duplicates = TRUE,
-        grouping_only = TRUE # 2024-09-24
+        grouping_only = TRUE, # 2024-09-24
+        usability = usability
       )
       # Extract result and (first) error message
       d2 <- d2_safe$result
