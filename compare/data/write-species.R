@@ -7,6 +7,7 @@ species_names <- c(
   # "Spotted Ratfish",
   # "Longnose Skate",
   "Big Skate",
+  "Eulachon",
   # "Sandpaper Skate",
   "North Pacific Spiny Dogfish",
   "Pacific Ocean Perch",
