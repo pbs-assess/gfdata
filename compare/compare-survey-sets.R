@@ -17,7 +17,7 @@ ssid <- id_tab |> dplyr::pull(ssid)
 
 # Get species ------------------------------------------------------------------
 
-spp <- readRDS("compare/data/species.rds")
+spp <- readRDS("compare/data/species-sets.rds")
 
 # Print
 cat("spp = \n", paste0(spp, "\n"))
