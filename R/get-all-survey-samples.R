@@ -556,9 +556,6 @@ get_all_survey_samples <- function(species, ssid = NULL,
       0.0054864 * 0.009144 * .d$minor_id_count,
       0.0024384 * 0.009144 * .d$minor_id_count
     )
-
-
-
   }
   , classes = quiet_option)
 
@@ -567,7 +564,7 @@ get_all_survey_samples <- function(species, ssid = NULL,
     arrange(species_common_name, survey_series_id, -fishing_event_id)
 
   if(grouping_only){
-    .d <- filter(.d, !is.na(grouping_code))
+    .d <- filter(.d, !is.na(grouping_code_original))
   }
 
   if (nrow(.d) < 1) {
