@@ -315,6 +315,15 @@ get_ll_hook_data <- function(species = NULL, ssid = NULL){
 get_survey_samples <- function(species, ssid = NULL,
                                remove_bad_data = TRUE, unsorted_only = TRUE,
                                usability = NULL, major = NULL) {
+
+  if(length(species) > 1L) {
+    stop(
+    "Samples can only be returned by get_survey_samples() for one species at a time. ",
+    "If you've done this in the past, you may have missed some length data for some of your species. ",
+    "If you wish to retrieve multiple species at once, you can use get_all_survey_samples(). ",
+    "But first see get_all* vignette for difference between these functions. "
+    )
+  }
   .q <- read_sql("get-survey-samples.sql")
   .q <- inject_filter("AND SP.SPECIES_CODE IN", species, sql_code = .q)
   if (!is.null(ssid)) {
@@ -324,7 +333,7 @@ get_survey_samples <- function(species, ssid = NULL,
     )
   }
   if (!is.null(major)) {
-    .q <- inject_filter("AND SM.MAJOR_STAT_AREA_CODE =", major, .q,
+    .q <- inject_filter("AND SM.MAJOR_STAT_AREA_CODE IN", major, .q,
       search_flag = "-- insert major here", conversion_func = I
     )
   }
@@ -502,6 +511,30 @@ get_commercial_samples <- function(species, unsorted_only = TRUE,
         is.na(species_ageing_group) ~ NA_real_
       )
     )
+
+  .scc <- get_table("species_category")
+  names(.scc) <- tolower(names(.scc))
+
+  .d <- left_join(.d,
+                  select(.scc, -row_version),
+                  by = "species_category_code"
+  )
+
+  .stc <- get_table("sample_type")
+  names(.stc) <- tolower(names(.stc))
+
+  .d <- left_join(.d,
+                  select(.stc, -row_version),
+                  by = "sample_type_code"
+  )
+
+  .ssc <- get_table("sample_source")
+  names(.ssc) <- tolower(names(.ssc))
+
+  .d <- left_join(.d,
+                  select(.ssc, -row_version),
+                  by = "sample_source_code"
+  )
 
   add_version(as_tibble(.d))
 }

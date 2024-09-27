@@ -62,7 +62,12 @@ if (getRversion() >= "2.15.1") {
       "value",
       "year",
       "SURVEY_ABBREV",
-      "selection_ind"
+      "selection_ind",
+      "CAPTAIN_ID",
+      "DEPTH_M",
+      "LATITUDE",
+      "LONGITUDE",
+      "VESSEL_ID"
     )
   )
 }
