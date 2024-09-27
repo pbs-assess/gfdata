@@ -27,19 +27,20 @@ options(width = 100,
 ```
 
 
-
-
 # Why use a `get_all_*()` function?
 
 The `get_all_*()` functions have been designed to retrieve all fishery-independent survey data relevant to a particular species, or set of species, and to do so more quickly and comprehensively than previous functions. 
-If retrieving data for multiple species at once, these functions will be a lot faster than the original `get_*()` functions because sql scripts are called once rather than repeatedly for each species. 
-The extent of the data returned can be specific to a single survey, a single major stat area, any combination of these, or everything in the database. 
+When retrieving data for multiple species at once, these functions will be dramatically faster than the original `get_*()` functions because sql scripts are called once rather than repeatedly for each species. 
+When retrieving data for single species time savings will depend on which surveys and arguments are used. 
+The extent of the data returned can be specific to a single survey, a single major stat area, any combination of these, or generalized to get everything in the database that is appropriately formatted. 
+<!-- Currently, Nearshore Shrimp trawl and IPES survey data are not available.  -->
 Additional variables are also returned to support modelling objectives and decisions regarding which data should be retained for specific purposes.
 
 ## More flexibility
 
 The original functions were limited in which survey series ids (`ssid`) they could accept and return. 
-For `get_all*()` functions, we have the option to set `ssid = NULL` which will return all fishery-independent data in the database as long as a survey series id has been assigned (and for sets a survey id as well).
+<!-- They were primarily designed to pull the contemporary synoptic trawl surveys (`ssid = c(1, 3, 4, 16)`), the historic Hecate Strait Multispecies Assemblage trawl survey (`ssid = c(2)`), IPHC (`ssid = c(14)`), and four Hard Bottom Longline surveys (`ssid = c(22, 36, 39, 40)`). -->
+For `get_all*()` functions, we have the option to set `ssid = NULL` which will return all fishery-independent samples and catch data in the database as long as a survey series id has been assigned (for catch data a survey id is required as well).
 These include trap (sablefish), longline, jig, and most contemporary and historic trawl surveys (exceptions include the Nearshore Shrimp trawl survey for which survey ids are missing).
 If a character string of major stat area codes is provided to the argument `major`, than all sets or samples from that area will be returned. 
 
@@ -48,7 +49,7 @@ If a character string of major stat area codes is provided to the argument `majo
 The original `get_*()` survey functions were limited to returning sets and specimen samples that conformed to current survey design specifications based on assigned grouping and usability codes.
 This means that they do not retrieve sets and samples from cells that fall within Rockfish Conservation Areas, or that have otherwise been excluded from the latest version of the survey grid. 
 <!-- Their default settings also exclude tows that are shorter than the standard length.  -->
-While this behaviour can be reproduced reliably using the `get_all_*()` functions for some suveys including synoptic trawl (`ssid = c(1, 3, 4, 16)`) by using the options `grouping_only = TRUE` and `usability = c(0, 1, 2, 6)`, a small proportion of the data returned by the original function is missed when these options are applied to certain surveys (`ssid = c(###)`) and no data is returned for surveys for which these codes have not been generated (e.g., `ssid = c(###)`).
+While this behaviour can be reproduced reliably using the `get_all_*()` functions for some surveys including synoptic trawl (`ssid = c(1, 3, 4, 16)`) by using the options `grouping_only = TRUE` and `usability = c(0, 1, 2, 6)`, a small proportion of the data returned by the original function is missed when these options are applied to certain surveys (`ssid = c(###)`) and no data is returned for surveys for which these codes have not been generated (e.g., `ssid = c(###)`).
 In contrast, the default behaviour of these functions is to return all data collected on any given survey, whether or not it conforms to current design. 
 This includes sets and samples from grid cells that fall within Rockfish Conservation areas (RCAs), and data that differ at the skate level.
 The original functions were not built to retrieve data that differed at the skate level (like gear comparison studies), which `get_all_*()` functions will return only when gear variables (currently checking for differences in hook code and size) differ between skates.
@@ -56,11 +57,13 @@ The original functions were not built to retrieve data that differed at the skat
 
 ## Beware of duplication of fishing events and specimens
 
-One risk in using `get_all_*()` functions is that, in the attempt to return a comprehensive data set, some fishing events and specimen ids may be duplicated. 
-This occurs because some vessel trips conduct sampling for multiple survey series, and unless joining is based on grouping codes (which aren't used consistently for some surveys) the only way to connect a fishing event to a survey series id is through the vessel trip (or grouping codes, but these aren't available for all surveys). 
+A risk in using `get_all_*()` functions is that, in the attempt to return a comprehensive data set, some fishing events and specimen ids may be duplicated. 
+This occurs because some vessel trips conduct sampling for multiple survey series, and unless joining is based on grouping codes (which aren't used consistently for some surveys) the only way to connect a fishing event to a survey series id is through the vessel trip. 
 This can result in events and specimens getting assigned to both surveys that were conducted on the same trip. 
-The most common instances of this have custom corrections coded into an internal function `correct_ssids()` that is applied automatically by the `get_all_*()` functions. 
+The most common instances of this (e.g., sablefish, jig, and offshore shrimp surveys) have custom corrections coded into an internal function `correct_ssids()` that is applied automatically by the `get_all_*()` functions. 
 Other ways duplication occurs can be due to missing covariates (e.g., both event level and survey defaults are missing for `doorspread_m` on a couple sets for some trawl series), or when multiple vials of DNA were collected and `return_dna_info = TRUE`. 
+Duplication can also be an issue with the original functions, so it is recommended to always check for unexpected duplication of observations (usually `fishing_event_id` or `specimen_id`) before beginning any analysis. 
+Two return both copies of each duplicated record the following can be used: `d[duplicated(d$specimen_id) | duplicated(d$specimen_id, fromLast=TRUE), ]`.
 
 
 # Examples
@@ -93,22 +96,24 @@ The available arguments are described in the help documentation:
 As an example, we might want to determine what survey set data are in our database for Bluntnose Sixgill Sharks (*Hexanchus griseus*). 
 For now, we will leave the default settings that pull all surveys and all areas. 
 Beware that some records in the database are from outside Canadian waters. 
-If desired, returned data can be filtered using the `major_stat_area_code` to retain only Canadian records (see `get_major_areas()` to identify which codes to exclude).
+If desired, returned data can be filtered using the `major_stat_area_code` to retain only Canadian records (see `get_major_areas()` to identify which codes to use).
+
+### Original `get_survey_sets()` function
 
 To start with, we see what the original `get_survey_sets()` function returns for this species. 
 By default this function returns just the most commonly used groundfish surveys (synoptic trawl [1, 3, 4, 16], one historical trawl [2], and five longline--IPHC [14] and PHMA [22, 36, 39, 40] surveys). 
 The first thing to note here is that this function will only return one row per fishing event (unless overlapping survey series or sample_ids were requested).
+This function will also return all sets for any survey series, even when the species was never recorded on that survey. 
 
 ```{r, eval=TRUE, warning=TRUE}
 d0 <- get_survey_sets("Bluntnose Sixgill Shark")
 nrow(d0) #> number of rows
 length(unique(d0$fishing_event_id)) #> number of fishing events
-sort(unique(d0$survey_series_id)) #> all survey series were returned
+sort(unique(d0$survey_series_id)) #> all default survey series were returned
 ```
 
-This function will return all sets for any survey series, even when the species was never recorded on that survey. 
 In contrast, `get_all_survey_sets()` only returns set data for survey series that captured the species at least once. 
-Both `*survey_sets()` functions return all sets for any survey series returned, including those that did not record the species. 
+Both `*_survey_sets()` functions return all sets for any survey series returned, including those that did not record the species. 
 So, to make sets that did capture the species visible to `head()`, we will sort by descending `catch_count`. 
 
 ```{r, eval=TRUE, warning=TRUE}
@@ -119,10 +124,12 @@ head(d0)
 ```
 
 Notice that `catch_weight` sometimes contains zeros when `catch_count` is at least 1. 
-This is because our SQL calls assume NULL values to be zeros. 
+This is because the original SQL code assume NULL values to be zeros. 
 In many cases catch weights are missing because they are not collected on that type of survey.
 However, even for surveys where weights are the usual unit of measurement, a particular catch may have been too large or small for the scale and therefore recorded only as a count. 
-Both functions have the option to set `remove_false_zeros = TRUE` to remove these misleading zeros from the data, but this is the default setting for `get_all_survey_sets()`.
+Both `*_survey_sets()` functions have the option to set `remove_false_zeros = TRUE` to remove these misleading zeros from the data, but this is the default setting for `get_all_survey_sets()`.
+
+### Using `get_all_survey_sets()`
 
 Messages and warnings will alert the user about nuances in the data requested and returned. 
 For example, this function call results in multiple rows of data that share the same fishing_event_id and a warning that suggests possible reasons for this. 
@@ -136,8 +143,8 @@ length(unique(d$fishing_event_id)) #> number of fishing events
 sort(unique(d$survey_series_id)) #> only returns survey series that caught the species
 ```
 
-Now, when we view the data sorted by `catch_count`, the total catches are smaller because they are at the skate level and `catch_weight` appears appropriately as `NA` when this data was not collected. 
-We now also get catches from survey series 48 which was not (and cannot be) returned by `get_survey_sets()`.  
+Now, when we view the data sorted by `catch_count`, the total catches are smaller because they are at the skate level (multiple skates make up each fishing event for some longline and trap surveys) and `catch_weight` appears appropriately as `NA` when this data was not collected. 
+We now also get catches from the dogfish comparison work (`ssid = c(48)`) which was not (and cannot be) returned by `get_survey_sets()`.  
 
 ```{r, eval=TRUE, warning=TRUE}
 d <- d |> rename(ssid = survey_series_id) |> 
@@ -164,7 +171,7 @@ This was the case for SSID 48, but this also results in all other surveys with s
 If one preferred the other surveys with skate level data, which do not have hook differences between skates, to be summarized at the event level, they could be called separately using the argument `ssid = c(14, 35)`.  
 
 The vast majority of records for Bluntnose Sixgill Shark come from the IPHC, followed by the Dogfish and Hard Bottom Longline surveys, both conducted in the Strait of Georgia (aka. Inside South). 
-Because only the IPHC covers a wider area, we can explore the spatial distribution of catches within that survey only, and confirm that they are most frequently caught in the Strait of Georgia, major stat area "01". 
+Because the IPHC covers a wider area, we can explore the spatial distribution of catches within that survey only, and confirm that they are most frequently caught in the Strait of Georgia, major stat area "01". 
 
 ```{r, message=FALSE}
 d |> filter(ssid == 14) |> 
