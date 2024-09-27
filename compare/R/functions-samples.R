@@ -2,7 +2,27 @@
 source(here::here("compare", "R", "utils-compare.R"))
 
 # Compare survey samples
-compare_survey_samples <- function (spp, ssid, areas = NULL) {
+compare_survey_samples <- function (
+  spp,
+  ssid,
+  # Args for get_survey_samples()
+  get_arg_remove_bad_data = TRUE,
+  get_arg_unsorted_only = TRUE,
+  get_arg_usability = NULL,
+  get_arg_major = NULL,
+  # Args for get_all_survey_samples()
+  get_all_arg_major = NULL,
+  get_all_arg_usability = NULL,
+  get_all_arg_unsorted_only = TRUE, # Check
+  get_all_arg_random_only = TRUE, # Check
+  get_all_arg_grouping_only = TRUE, # Check
+  get_all_arg_include_event_info = TRUE, # Check
+  get_all_arg_include_activity_matches = FALSE,
+  get_all_arg_remove_bad_data = TRUE,
+  get_all_arg_remove_duplicates = TRUE,
+  get_all_arg_return_dna_info = FALSE,
+  get_all_arg_drop_na_columns = TRUE,
+  get_all_arg_quiet_option = "message") {
 
   # Initialize default tibble
   init <- tibble::tibble(
@@ -51,9 +71,12 @@ compare_survey_samples <- function (spp, ssid, areas = NULL) {
       )
       # Get survey samples
       d1_safe <- safe_get_survey_samples(
-        species = spp[i],
-        ssid = ssid[j],
-        major = areas
+        species         = spp[i],
+        ssid            = ssid[j],
+        remove_bad_data = get_arg_remove_bad_data,
+        unsorted_only   = get_arg_unsorted_only,
+        usability       = get_arg_usability,
+        major           = get_arg_major
       )
       # Extract result and (first) error message
       d1 <- d1_safe$result
@@ -62,57 +85,24 @@ compare_survey_samples <- function (spp, ssid, areas = NULL) {
       Sys.sleep(0.05)
       # Get all survey samples
       d2_safe <- safe_get_all_survey_samples(
-        species = spp[i],
-        ssid = ssid[j],
-        major = areas,
-        unsorted_only = TRUE,
-        random_only = TRUE,
-        grouping_only = TRUE, # 2024-09-26
-        remove_duplicates = TRUE,
-        include_event_info = TRUE
+        species                  = spp[i],
+        ssid                     = ssid[j],
+        major                    = get_all_arg_major,
+        usability                = get_all_arg_usability,
+        unsorted_only            = get_all_arg_unsorted_only,
+        random_only              = get_all_arg_random_only,
+        grouping_only            = get_all_arg_grouping_only,
+        include_event_info       = get_all_arg_include_event_info,
+        include_activity_matches = get_all_arg_include_activity_matches,
+        remove_bad_data          = get_all_arg_remove_bad_data,
+        remove_duplicates        = get_all_arg_remove_duplicates,
+        return_dna_info          = get_all_arg_return_dna_info,
+        drop_na_columns          = get_all_arg_drop_na_columns,
+        quiet_option             = get_all_arg_quiet_option
       )
       # Extract result and (first) error message
       d2 <- d2_safe$result
       d2e <- d2_safe$error[[1]][1] # Extract first list element
-
-      # # Pull data
-      # try(
-      #   d1 <- gfdata::get_survey_samples(
-      #     species = spp[i],
-      #     ssid = ssid[j],
-      #     major = areas
-      #   )
-      # )
-      # # Let server have a rest
-      # Sys.sleep(0.05)
-      # try(
-      #   d2 <- gfdata::get_all_survey_samples(
-      #     species = spp[i],
-      #     ssid = ssid[j],
-      #     major = areas,
-      #     unsorted_only = TRUE,
-      #     random_only = TRUE,
-      #     grouping_only = TRUE,
-      #     remove_duplicates = TRUE,
-      #     include_event_info = TRUE
-      #   )
-      # )
-
-      # # Set to null if not data frame or if no columns
-      # if (is.data.frame(d1)) {
-      #   if (ncol(d1) == 0) {
-      #     d1 <- NULL
-      #   }
-      # } else {
-      #   d1 <- NULL
-      # }
-      # if (is.data.frame(d2)) {
-      #   if (ncol(d2) == 0) {
-      #     d2 <- NULL
-      #   }
-      # } else {
-      #   d2 <- NULL
-      # }
 
       # Drop NA specimen_id
       if ("specimen_id" %in% colnames(d1)) {

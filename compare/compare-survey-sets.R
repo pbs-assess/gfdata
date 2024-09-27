@@ -24,7 +24,33 @@ cat("spp = \n", paste0(spp, "\n"))
 
 # Compare survey sets ----------------------------------------------------------
 
-d <- compare_survey_sets(spp = spp, ssid = ssid)
+# Notes
+#
+# For get_survey_sets():
+# - Drops all rows if all counts and weights each either zero or NA
+#
+# For get_all_survey_sets():
+# - Arguments default to comparison values
+#
+d <- compare_survey_sets(spp = spp,
+                         ssid = ssid,
+                         # Args for get_survey_sets()
+                         get_arg_join_sample_ids = FALSE,
+                         get_arg_verbose = FALSE,
+                         get_arg_remove_false_zeros = FALSE,
+                         get_arg_sleep = 0.05,
+                         # Args for get_all_survey_sets()
+                         get_all_arg_major = NULL,
+                         get_all_arg_years = NULL,
+                         get_all_arg_join_sample_ids = FALSE,
+                         get_all_arg_remove_false_zeros = FALSE, # Check
+                         get_all_arg_remove_bad_data = TRUE,
+                         get_all_arg_remove_duplicates = TRUE, # Check
+                         get_all_arg_include_activity_matches = FALSE,
+                         get_all_arg_usability = c(0, 1, 2, 6), # Check
+                         get_all_arg_grouping_only = TRUE, # Check
+                         get_all_arg_drop_na_columns = TRUE,
+                         get_all_arg_quiet_option = "message")
 
 # Extra sets
 x <- d$x

@@ -24,7 +24,31 @@ cat("spp = \n", paste0(spp, "\n"))
 
 # Compare survey samples -------------------------------------------------------
 
-d <- compare_survey_samples(spp = spp, ssid = ssid, areas = NULL)
+# Notes
+#
+# For get_all_survey_samples():
+# - Arguments default to comparison values
+#
+d <- compare_survey_samples(spp = spp,
+                            ssid = ssid,
+                            # Args for get_survey_samples()
+                            get_arg_remove_bad_data = TRUE,
+                            get_arg_unsorted_only = TRUE,
+                            get_arg_usability = NULL,
+                            get_arg_major = NULL,
+                            # Args for get_all_survey_samples()
+                            get_all_arg_major = NULL,
+                            get_all_arg_usability = NULL,
+                            get_all_arg_unsorted_only = TRUE, # Check
+                            get_all_arg_random_only = TRUE, # Check
+                            get_all_arg_grouping_only = TRUE, # Check
+                            get_all_arg_include_event_info = TRUE, # Check
+                            get_all_arg_include_activity_matches = FALSE,
+                            get_all_arg_remove_bad_data = TRUE,
+                            get_all_arg_remove_duplicates = TRUE,
+                            get_all_arg_return_dna_info = FALSE,
+                            get_all_arg_drop_na_columns = TRUE,
+                            get_all_arg_quiet_option = "message")
 
 # Extra specimens
 x <- d$x
