@@ -315,6 +315,15 @@ get_ll_hook_data <- function(species = NULL, ssid = NULL){
 get_survey_samples <- function(species, ssid = NULL,
                                remove_bad_data = TRUE, unsorted_only = TRUE,
                                usability = NULL, major = NULL) {
+
+  if(length(species) > 1L) {
+    stop(
+    "Samples can only be returned by get_survey_samples() for one species at a time. ",
+    "If you've done this in the past, you may have missed some length data for some of your species. ",
+    "If you wish to retrieve multiple species at once, you can use get_all_survey_samples(). ",
+    "But first see get_all* vignette for difference between these functions. "
+    )
+  }
   .q <- read_sql("get-survey-samples.sql")
   .q <- inject_filter("AND SP.SPECIES_CODE IN", species, sql_code = .q)
   if (!is.null(ssid)) {
