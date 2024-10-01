@@ -2,7 +2,25 @@
 source(here::here("compare", "R", "utils-compare.R"))
 
 # Compare survey sets
-compare_survey_sets <- function (spp, ssid, usability = c(0, 1, 2, 6)) {
+compare_survey_sets <- function (spp,
+                                 ssid,
+                                 # Args for get_survey_sets()
+                                 get_arg_join_sample_ids = FALSE,
+                                 get_arg_verbose = FALSE,
+                                 get_arg_remove_false_zeros = FALSE,
+                                 get_arg_sleep = 0.05,
+                                 # Args for get_all_survey_sets()
+                                 get_all_arg_major = NULL,
+                                 get_all_arg_years = NULL,
+                                 get_all_arg_join_sample_ids = FALSE,
+                                 get_all_arg_remove_false_zeros = FALSE, # Check
+                                 get_all_arg_remove_bad_data = TRUE,
+                                 get_all_arg_remove_duplicates = TRUE, # Check
+                                 get_all_arg_include_activity_matches = FALSE,
+                                 get_all_arg_usability = c(0, 1, 2, 6), # Check
+                                 get_all_arg_grouping_only = TRUE, # Check
+                                 get_all_arg_drop_na_columns = TRUE,
+                                 get_all_arg_quiet_option = "message") {
 
   # Initialize default tibble
   init <- tibble::tibble(
@@ -47,8 +65,12 @@ compare_survey_sets <- function (spp, ssid, usability = c(0, 1, 2, 6)) {
       safe_get_all_survey_sets <- purrr::safely(gfdata::get_all_survey_sets)
       # Get survey sets
       d1_safe <- safe_get_survey_sets(
-        species = spp[i],
-        ssid = ssid[j]
+        species            = spp[i],
+        ssid               = ssid[j],
+        join_sample_ids    = get_arg_join_sample_ids,
+        verbose            = get_arg_verbose,
+        remove_false_zeros = get_arg_remove_false_zeros,
+        sleep              = get_arg_sleep
       )
       # Extract result and (first) error message
       d1 <- d1_safe$result
@@ -61,50 +83,23 @@ compare_survey_sets <- function (spp, ssid, usability = c(0, 1, 2, 6)) {
       Sys.sleep(0.05)
       # Get all survey sets
       d2_safe <- safe_get_all_survey_sets(
-        species = spp[i],
-        ssid = ssid[j],
-        remove_false_zeros = FALSE,
-        remove_duplicates = TRUE,
-        grouping_only = TRUE, # 2024-09-24
-        usability = usability
+        species                  = spp[i],
+        ssid                     = ssid[j],
+        major                    = get_all_arg_major,
+        years                    = get_all_arg_years,
+        join_sample_ids          = get_all_arg_join_sample_ids,
+        remove_false_zeros       = get_all_arg_remove_false_zeros,
+        remove_bad_data          = get_all_arg_remove_bad_data,
+        remove_duplicates        = get_all_arg_remove_duplicates,
+        include_activity_matches = get_all_arg_include_activity_matches,
+        usability                = get_all_arg_usability,
+        grouping_only            = get_all_arg_grouping_only,
+        drop_na_columns          = get_all_arg_drop_na_columns,
+        quiet_option             = get_all_arg_quiet_option
       )
       # Extract result and (first) error message
       d2 <- d2_safe$result
       d2e <- d2_safe$error[[1]][1] # Extract first list element
-
-      # # Pull data
-      # try(
-      #   d1 <- gfdata::get_survey_sets(
-      #     species = spp[i],
-      #     ssid = ssid[j]
-      #   )
-      # )
-      # # Let server have a rest
-      # Sys.sleep(0.05)
-      # try(
-      #   d2 <- gfdata::get_all_survey_sets(
-      #     species = spp[i],
-      #     ssid = ssid[j],
-      #     remove_false_zeros = FALSE,
-      #     remove_duplicates = TRUE
-      #   )
-      # )
-
-      # # Set to null if not data frame or if no columns
-      # if (is.data.frame(d1)) {
-      #   if (ncol(d1) == 0) {
-      #     d1 <- NULL
-      #   }
-      # } else {
-      #   d1 <- NULL
-      # }
-      # if (is.data.frame(d2)) {
-      #   if (ncol(d2) == 0) {
-      #     d2 <- NULL
-      #   }
-      # } else {
-      #   d2 <- NULL
-      # }
 
       # Create comparison columns
       # - Robust to d1 <- NULL: Condition evaluates FALSE
