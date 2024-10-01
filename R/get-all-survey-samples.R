@@ -182,9 +182,9 @@ get_all_survey_samples <- function(species, ssid = NULL,
   if (!is.null(ssid)&!include_activity_matches){
 
     .d <- .d |> group_by(specimen_id, survey_series_id) |>
-      mutate(grouping_desc = ifelse(is.logical(na.omit(grouping_desc)), NA, na.omit(grouping_desc)),
-             grouping_code = mean(grouping_code, na.rm = TRUE),
-             grouping_code = ifelse(is.nan(grouping_code), NA, grouping_code)
+      mutate(grouping_desc_updated = ifelse(is.logical(na.omit(grouping_desc_updated)), NA, na.omit(grouping_desc_updated)),
+             grouping_code_updated = mean(grouping_code_updated, na.rm = TRUE),
+             grouping_code_updated = ifelse(is.nan(grouping_code_updated), NA, grouping_code_updated)
       ) |> dplyr::distinct() |> ungroup()
 
 
@@ -207,11 +207,13 @@ get_all_survey_samples <- function(species, ssid = NULL,
 
   } else {
     .d <- .d |> group_by(fishing_event_id) |>
-      mutate(grouping_desc = ifelse(grouping_code == grouping_code_original, grouping_desc, NA),
-             grouping_desc = ifelse(is.logical(na.omit(grouping_desc)), NA, na.omit(grouping_desc)),
-             grouping_code = ifelse(grouping_code == grouping_code_original, grouping_code, NA),
-             grouping_code = mean(grouping_code, na.rm = TRUE),
-             grouping_code = ifelse(is.nan(grouping_code), NA, grouping_code)
+      mutate(
+        # make sure updated codes are from the original survey design and purge others
+        grouping_desc_updated = ifelse(grouping_code_updated == grouping_code_original, grouping_desc_updated, NA),
+        grouping_desc_updated = ifelse(is.logical(na.omit(grouping_desc_updated)), NA, na.omit(grouping_desc_updated)),
+        grouping_code_updated = ifelse(grouping_code_updated == grouping_code_original, grouping_code_updated, NA),
+        grouping_code_updated = mean(grouping_code_updated, na.rm = TRUE),
+        grouping_code_updated = ifelse(is.nan(grouping_code_updated), NA, grouping_code_updated)
       ) |> dplyr::distinct() |> ungroup()
 
 
@@ -473,7 +475,7 @@ get_all_survey_samples <- function(species, ssid = NULL,
       -MINOR_STAT_AREA_CODE,
       -REASON_DESC, -USABILITY_CODE,
       -GROUPING_CODE_ORIGINAL, -GROUPING_DESC_ORIGINAL,
-      -GROUPING_CODE, -GROUPING_DESC, -ORIGINAL_IND) |> distinct() # avoid clashing with values for samples
+      -GROUPING_CODE_UPDATED, -GROUPING_DESC_UPDATED, -ORIGINAL_IND) |> distinct() # avoid clashing with values for samples
 
     names(fe1) <- tolower(names(fe1))
 
@@ -485,7 +487,7 @@ get_all_survey_samples <- function(species, ssid = NULL,
         -MINOR_STAT_AREA_CODE,
         -REASON_DESC, -USABILITY_CODE,
         -GROUPING_CODE_ORIGINAL, -GROUPING_DESC_ORIGINAL,
-        -GROUPING_CODE, -GROUPING_DESC, -ORIGINAL_IND) |> distinct()# avoid clashing with values for samples
+        -GROUPING_CODE_UPDATED, -GROUPING_DESC_UPDATED, -ORIGINAL_IND) |> distinct()# avoid clashing with values for samples
 
       names(fe2) <- tolower(names(fe2))
 
@@ -649,6 +651,9 @@ get_all_survey_samples <- function(species, ssid = NULL,
 
   .d$species_common_name <- tolower(.d$species_common_name)
   .d$species_science_name <- tolower(.d$species_science_name)
+
+  # we will use grouping_code_original as the primary grouping_code returned
+  .d <- dplyr::rename(.d, grouping_code = grouping_code_original, grouping_desc = grouping_desc_original)
 
   add_version(as_tibble(.d))
 }

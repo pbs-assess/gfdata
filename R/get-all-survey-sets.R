@@ -365,7 +365,7 @@ get_all_survey_sets <- function(species,
 
     ## if hooks do not differ between skates, get hook data and catch for whole event
 
-    .h <- read_sql("get-ll-hook-data2.sql")
+    .h <- read_sql("get-ll-hook-data-generalized.sql")
 
     .h <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid_with_catch,
       sql_code = .h,
@@ -410,9 +410,9 @@ get_all_survey_sets <- function(species,
       mutate(doorspread_m = ifelse(is.logical(na.omit(doorspread_m)), NA, na.omit(doorspread_m)),
              speed_mpm = ifelse(is.logical(na.omit(speed_mpm)), NA, na.omit(speed_mpm))) |>
       group_by(fishing_event_id, survey_series_id) |>
-      mutate(grouping_desc = ifelse(is.logical(na.omit(grouping_desc)), NA, na.omit(grouping_desc)),
-             grouping_code = mean(grouping_code, na.rm = TRUE),
-             grouping_code = ifelse(is.nan(grouping_code), NA, grouping_code)
+      mutate(grouping_desc_updated = ifelse(is.logical(na.omit(grouping_desc_updated)), NA, na.omit(grouping_desc_updated)),
+             grouping_code_updated = mean(grouping_code_updated, na.rm = TRUE),
+             grouping_code_updated = ifelse(is.nan(grouping_code_updated), NA, grouping_code_updated)
       ) |> dplyr::distinct() |> ungroup()
 
     if(any(ssid %in% c(6,7,67))&!include_activity_matches){
@@ -433,15 +433,16 @@ get_all_survey_sets <- function(species,
 
 
   } else {
-
+      # when not specifying ssid
       .d <- .d |> group_by(fishing_event_id) |>
         mutate(speed_mpm = ifelse(is.logical(na.omit(speed_mpm)), NA, na.omit(speed_mpm)),
                doorspread_m = ifelse(is.logical(na.omit(doorspread_m)), NA, na.omit(doorspread_m)),
-               grouping_desc = ifelse(grouping_code == grouping_code_original, grouping_desc, NA),
-               grouping_desc = ifelse(is.logical(na.omit(grouping_desc)), NA, na.omit(grouping_desc)),
-               grouping_code = ifelse(grouping_code == grouping_code_original, grouping_code, NA),
-               grouping_code = mean(grouping_code, na.rm = TRUE),
-               grouping_code = ifelse(is.nan(grouping_code), NA, grouping_code)
+               # make sure updated codes are from the original survey design and purge others
+               grouping_desc_updated = ifelse(grouping_code_updated == grouping_code_original, grouping_desc_updated, NA),
+               grouping_desc_updated = ifelse(is.logical(na.omit(grouping_desc_updated)), NA, na.omit(grouping_desc_updated)),
+               grouping_code_updated = ifelse(grouping_code_updated == grouping_code_original, grouping_code_updated, NA),
+               grouping_code_updated = mean(grouping_code_updated, na.rm = TRUE),
+               grouping_code_updated = ifelse(is.nan(grouping_code_updated), NA, grouping_code_updated)
                ) |> dplyr::distinct() |> ungroup()
 
     if (is.null(major)) {
@@ -635,6 +636,9 @@ get_all_survey_sets <- function(species,
 
   # not sure where things are getting duplicated, but this will get rid of any complete duplication
   .d <- dplyr::distinct(.d)
+
+  # we will use grouping_code_original as the primary grouping_code returned
+  .d <- dplyr::rename(.d, grouping_code = grouping_code_original, grouping_desc = grouping_desc_original)
 
   # this drops any columns entirely populated with NAs
   if(drop_na_columns){
