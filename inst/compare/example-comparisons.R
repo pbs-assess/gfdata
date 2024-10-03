@@ -1,10 +1,14 @@
+# Load
+devtools::load_all()
 # Source functions
-source(here::here("inst", "compare-survey-sets.R"))
+source(here::here("inst", "compare", "compare-survey-sets.R"))
+source(here::here("inst", "compare", "compare-survey-samples.R"))
+# Define species and ssids
+spp <- c("Yelloweye Rockfish", "Eulachon")
+ssids <-  c(1,2,7,14,22)
+# ssids <- NULL
 
-species <- c("Yelloweye Rockfish", "Eulachon")
-ssids <- NULL
-# ssids <-  c(1,2,7,14,22)
-
+# Compare survey sets
 de <- compare_survey_sets(spp = spp,
                          ssid = ssids, # NULL here (default) returns default ssid for og fn
                          # Args for get_all_survey_sets()
@@ -27,10 +31,7 @@ de$s
 de$a
 
 
-
-source(here::here("inst", "compare-survey-samples.R"))
-
-
+# Compare survey samples
 ds <- compare_survey_samples(spp = spp,
                             ssid = ssids, # default is NULL for both
                             major_areas = NULL, # default
