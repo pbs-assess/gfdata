@@ -107,9 +107,10 @@ compare_survey_sets <- function (spp,
       # - Robust to ncol(d1) == 0: Condition evaluates FALSE
       # - Robust to nrow(d1) == 0: Assigned value has nrow == 0
 
-      ssids_found <- bind_rows(select(d1, survey_series_id, survey_series_desc),
-                select(d2, survey_series_id, survey_series_desc)) |>
-        distinct()
+      ssids_found <- dplyr::bind_rows(
+        dplyr::select(d1, survey_series_id, survey_series_desc),
+        dplyr::select(d2, survey_series_id, survey_series_desc)) |>
+        dplyr::distinct()
 
       ssid <- unique(ssids_found$survey_series_id)
 
@@ -218,18 +219,28 @@ compare_survey_sets <- function (spp,
         # Only compare shared colnames
         cn <- intersect(colnames(d1), colnames(d2))
         # Shared columns
-        d1 <- d1 |> select(all_of(cn)) |> mutate(fn = 1L, .before = 1)
-        d2 <- d2 |> select(all_of(cn)) |> mutate(fn = 2L, .before = 1)
+        d1 <- d1 |>
+          dplyr::select(tidyselect::all_of(cn)) |>
+          dplyr::mutate(fn = 1L, .before = 1)
+        d2 <- d2 |>
+          dplyr::select(tidyselect::all_of(cn)) |>
+          dplyr::mutate(fn = 2L, .before = 1)
         # Bind rows
-        dd <- bind_rows(d1, d2) |>
+        dd <- dplyr::bind_rows(d1, d2) |>
           # Augment
           dplyr::mutate(species = spp[i], .before = 2L) |>
           dplyr::mutate(ssid = ssid[j], .before = 3L) |>
           # Round
           dplyr::mutate(
-            across(starts_with("density"), ~ round(.x, digits = 10)),
-            across(starts_with("speed"), ~ round(.x, digits = 10)),
-            across(starts_with("area"), ~ round(.x, digits = 8))
+            dplyr::across(
+              tidyselect::starts_with("density"), ~ round(.x, digits = 10)
+            ),
+            dplyr::across(
+              tidyselect::starts_with("speed"), ~ round(.x, digits = 10)
+            ),
+            dplyr::across(
+              tidyselect::starts_with("area"), ~ round(.x, digits = 8)
+            )
           ) |>
           # Drop NAs
           tidyr::drop_na(species_code, fishing_event_id) |>
@@ -239,7 +250,7 @@ compare_survey_sets <- function (spp,
           dplyr::distinct(dplyr::across(-fn), .keep_all = TRUE) |>
           dplyr::group_by(comparison_id) |>
           # Keep only groups with more than one row (the inconsistent groups)
-          dplyr::filter(n() > 1) |>
+          dplyr::filter(dplyr::n() > 1) |>
           dplyr::ungroup()
       } # End if
       # Bind rows
