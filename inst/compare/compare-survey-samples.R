@@ -2,7 +2,7 @@
 compare_survey_samples <- function (
   # Shared args
   spp,
-  ssid,
+  ssids,
   major_areas = NULL,
   set_usability = NULL,
   set_remove_bad_data = TRUE,
@@ -38,8 +38,8 @@ compare_survey_samples <- function (
       cat(paste0("spp = ", spp[i], "\n"))
       # Reset tibbles
       a12 <- NULL
-      d1 <- NULL
-      d2 <- NULL
+      d1_all <- NULL
+      d2_all <- NULL
       d1e <- NULL
       d2e <- NULL
       d1_safe <- NULL
@@ -66,21 +66,21 @@ compare_survey_samples <- function (
       # Get survey samples
       d1_safe <- safe_get_survey_samples(
         species         = spp[i],
-        ssid            = ssid,
+        ssid            = ssids,
         usability       = set_usability,
         remove_bad_data = set_remove_bad_data,
         unsorted_only   = get_arg_unsorted_only,
         major           = major_areas
       )
       # Extract result and (first) error message
-      d1 <- d1_safe$result
+      d1_all <- d1_safe$result
       d1e <- d1_safe$error[[1]][1] # Extract first list element
       # Let server have a rest
       Sys.sleep(0.05)
       # Get all survey samples
       d2_safe <- safe_get_all_survey_samples(
         species                  = spp[i],
-        ssid                     = ssid,
+        ssid                     = ssids,
         major                    = major_areas,
         usability                = set_usability,
         unsorted_only            = get_all_arg_unsorted_only,
@@ -95,23 +95,31 @@ compare_survey_samples <- function (
         quiet_option             = get_all_arg_quiet_option
       )
       # Extract result and (first) error message
-      d2 <- d2_safe$result
+      d2_all <- d2_safe$result
       d2e <- d2_safe$error[[1]][1] # Extract first list element
 
       ssids_found <- dplyr::bind_rows(
-        dplyr::select(d1, survey_series_id, survey_series_desc),
-        dplyr::select(d2, survey_series_id, survey_series_desc)) |>
+        dplyr::select(d1_all, survey_series_id, survey_series_desc),
+        dplyr::select(d2_all, survey_series_id, survey_series_desc)) |>
         dplyr::distinct()
 
       ssid <- unique(ssids_found$survey_series_id)
 
       for (j in seq_along(ssid)) {
+
+        d1 <- NULL
+        d2 <- NULL
+
       # Drop NA specimen_id
-      if ("specimen_id" %in% colnames(d1)) {
-        d1 <- d1 |> tidyr::drop_na(specimen_id)
+      if ("specimen_id" %in% colnames(d1_all)) {
+        d1 <- d1_all |>
+          dplyr::filter(survey_series_id == ssid[j]) |>
+          tidyr::drop_na(specimen_id)
       }
-      if ("specimen_id" %in% colnames(d2)) {
-        d2 <- d2 |> tidyr::drop_na(specimen_id)
+      if ("specimen_id" %in% colnames(d2_all)) {
+        d2 <- d2_all |>
+          dplyr::filter(survey_series_id == ssid[j]) |>
+          tidyr::drop_na(specimen_id)
       }
       # Identify extra specimen_id
       n1 <- setdiff(d1$specimen_id, d2$specimen_id)
@@ -156,6 +164,7 @@ compare_survey_samples <- function (
           d1[r1, ]
         )
       }
+
       if (length(n2) > 0) {
         # Extra specimen rows numbers
         r2 <- which(d2$specimen_id %in% n2)

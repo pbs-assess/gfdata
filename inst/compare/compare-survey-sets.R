@@ -1,6 +1,6 @@
 # Compare survey sets
 compare_survey_sets <- function (spp,
-                                 ssid = NULL,
+                                 ssids = NULL,
                                  set_join_sample_ids = FALSE,
                                  # Args for get_survey_sets()
                                  get_arg_verbose = TRUE,
@@ -17,12 +17,12 @@ compare_survey_sets <- function (spp,
                                  get_all_arg_drop_na_columns = TRUE,
                                  get_all_arg_quiet_option = "message") {
 
-  if(is.null(ssid)) {
+  if(is.null(ssids)) {
     get_arg_ssid <- c(1, 3, 4, 16, 2, 14, 22, 36, 39, 40)
     get_all_arg_ssid  <- NULL
   } else {
-    get_arg_ssid <- ssid
-    get_all_arg_ssid  <- ssid
+    get_arg_ssid <- ssids
+    get_all_arg_ssid  <- ssids
   }
 
   # Initialize default tibble
@@ -44,8 +44,8 @@ compare_survey_sets <- function (spp,
       cat(paste0("spp = ", spp[i], "\n"))
       # Reset tibbles
       a12 <- NULL
-      d1 <- NULL
-      d2 <- NULL
+      d1_all <- NULL
+      d2_all <- NULL
       d1e <- NULL
       d2e <- NULL
       d1_safe <- NULL
@@ -74,7 +74,7 @@ compare_survey_sets <- function (spp,
         sleep              = get_arg_sleep
       )
       # Extract result and (first) error message
-      d1 <- d1_safe$result
+      d1_all <- d1_safe$result
       d1e <- d1_safe$error[[1]][1] # Extract first list element
       # Drop all rows if all counts and weights each either zero or NA
       if (all(c(d1$catch_count, d1$catch_weight) %in% c(0, NA))) {
@@ -99,7 +99,7 @@ compare_survey_sets <- function (spp,
         quiet_option             = get_all_arg_quiet_option
       )
       # Extract result and (first) error message
-      d2 <- d2_safe$result
+      d2_all <- d2_safe$result
       d2e <- d2_safe$error[[1]][1] # Extract first list element
 
       # Create comparison columns
@@ -108,16 +108,19 @@ compare_survey_sets <- function (spp,
       # - Robust to nrow(d1) == 0: Assigned value has nrow == 0
 
       ssids_found <- dplyr::bind_rows(
-        dplyr::select(d1, survey_series_id, survey_series_desc),
-        dplyr::select(d2, survey_series_id, survey_series_desc)) |>
+        dplyr::select(d1_all, survey_series_id, survey_series_desc),
+        dplyr::select(d2_all, survey_series_id, survey_series_desc)) |>
         dplyr::distinct()
 
       ssid <- unique(ssids_found$survey_series_id)
 
       for (j in seq_along(ssid)) {
 
-      if (all(c("species_code", "fishing_event_id") %in% colnames(d1))) {
-        d1 <- d1 |>
+      d1 <- NULL
+      d2 <- NULL
+
+      if (all(c("species_code", "fishing_event_id") %in% colnames(d1_all))) {
+        d1 <- d1_all |>
           dplyr::filter(survey_series_id == ssid[j]) |>
           tidyr::drop_na(species_code, fishing_event_id) |>
           dplyr::mutate(
@@ -130,8 +133,8 @@ compare_survey_sets <- function (spp,
       # - Robust to ncol(d2) == 0: Condition evaluates FALSE
       # - Robust to nrow(d2) == 0: Assigned value has nrow == 0
       #
-      if (all(c("species_code", "fishing_event_id") %in% colnames(d2))) {
-        d2 <- d2 |>
+      if (all(c("species_code", "fishing_event_id") %in% colnames(d2_all))) {
+        d2 <- d2_all |>
           dplyr::filter(survey_series_id == ssid[j]) |>
           tidyr::drop_na(species_code, fishing_event_id) |>
           dplyr::mutate(
