@@ -1,5 +1,5 @@
 ---
-title: "gfdata `get_all' vignette"
+title: "gfdata 'get_all' vignette"
 author: "Philina English"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
@@ -29,8 +29,10 @@ options(width = 100,
 
 # Why use a `get_all_*()` function?
 
-The `get_all_*()` functions have been designed to retrieve all fishery-independent survey data relevant to a particular species, or set of species, and to do so more quickly and comprehensively than previous functions. 
-When retrieving data for multiple species at once, these functions will be dramatically faster than the original `get_*()` functions because sql scripts are called once rather than repeatedly for each species. 
+The original `get_*()` survey functions are limited to returning sets and specimen samples that conform to current survey design specifications based on assigned grouping and usability codes.
+This works well for some surveys and data uses, but can miss a large proportion of sets and/or specimens for surveys that don't consistently apply these codes. 
+The `get_all_*()` functions have been designed to retrieve all fishery-independent survey data relevant to a particular species, or set of species, and to do so more quickly and comprehensively than the original functions. 
+When retrieving data for multiple species at once, these functions will be dramatically faster than the original `get_*()` functions. This is because sql scripts are called once rather than repeatedly for each species. 
 When retrieving data for single species time savings will depend on which surveys and arguments are used. 
 The extent of the data returned can be specific to a single survey, a single major stat area, any combination of these, or generalized to get everything in the database that is appropriately formatted. 
 <!-- Currently, Nearshore Shrimp trawl and IPES survey data are not available.  -->
@@ -38,20 +40,20 @@ Additional variables are also returned to support modelling objectives and decis
 
 ## More flexibility
 
-The original functions were limited in which survey series ids (`ssid`) they could accept and return. 
+The original functions required the user to specify survey series ids (`ssid`) and were limited in which they could accept and return. 
 <!-- They were primarily designed to pull the contemporary synoptic trawl surveys (`ssid = c(1, 3, 4, 16)`), the historic Hecate Strait Multispecies Assemblage trawl survey (`ssid = c(2)`), IPHC (`ssid = c(14)`), and four Hard Bottom Longline surveys (`ssid = c(22, 36, 39, 40)`). -->
-For `get_all*()` functions, we have the option to set `ssid = NULL` which will return all fishery-independent samples and catch data in the database as long as a survey series id has been assigned (for catch data a survey id is required as well).
+For `get_all*()` functions, we have the option to set `ssid = NULL` which will return all fishery-independent samples and catch data in the database, as long as the survey series ids (and for catch data survey ids as well) have been assigned.
 These include trap (sablefish), longline, jig, and most contemporary and historic trawl surveys (exceptions include the Nearshore Shrimp trawl survey for which survey ids are missing).
 If a character string of major stat area codes is provided to the argument `major`, than all sets or samples from that area will be returned. 
 
 ## Non-standard data 
 
-The original `get_*()` survey functions were limited to returning sets and specimen samples that conformed to current survey design specifications based on assigned grouping and usability codes.
-This means that they do not retrieve sets and samples from cells that fall within Rockfish Conservation Areas, or that have otherwise been excluded from the latest version of the survey grid. 
+Because the original `get_*()` survey functions were intended to only return sets and specimen samples that conformed to current survey design specifications, they cannot retrieve sets and samples from cells that fall outside the latest definition of a particular survey's design. 
 <!-- Their default settings also exclude tows that are shorter than the standard length.  -->
-While this behaviour can be reproduced reliably using the `get_all_*()` functions for some surveys including synoptic trawl (`ssid = c(1, 3, 4, 16)`) by using the options `grouping_only = TRUE` and `usability = c(0, 1, 2, 6)`, a small proportion of the data returned by the original function is missed when these options are applied to certain surveys (`ssid = c(###)`) and no data is returned for surveys for which these codes have not been generated (e.g., `ssid = c(###)`).
-In contrast, the default behaviour of these functions is to return all data collected on any given survey, whether or not it conforms to current design. 
-This includes sets and samples from grid cells that fall within Rockfish Conservation areas (RCAs), and data that differ at the skate level.
+When this behaviour is desired, it can be reproduced reliably using the `get_all_*()` functions for some surveys including synoptic trawl (`ssid = c(1, 3, 4, 16)`) by using the options `grouping_only = TRUE` and `usability = c(0, 1, 2, 6)`. 
+However, beware that a small proportion of the data returned by the original function is missed when these options are applied to certain surveys (`ssid = c(###)`) and no data is returned for surveys for which these codes have not been generated (e.g., `ssid = c(###)`).
+In contrast, the default behaviour of the `get_*()` survey functions is to return all data collected on any given survey, whether or not it conforms to current design. 
+This includes sets and samples from grid cells that fall within subsequently established Rockfish Conservation areas (RCAs), and data that differ at the skate level.
 The original functions were not built to retrieve data that differed at the skate level (like gear comparison studies), which `get_all_*()` functions will return only when gear variables (currently checking for differences in hook code and size) differ between skates.
 
 
