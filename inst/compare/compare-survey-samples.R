@@ -34,81 +34,82 @@ compare_survey_samples <- function (
 
   # Iterate over cases
   for (i in seq_along(spp)) {
-      # Print current species
-      cat(paste0("spp = ", spp[i], "\n"))
+    # Print current species
+    cat(paste0("spp = ", spp[i], "\n"))
+    # Reset tibbles
+    d1_all <- NULL
+    d2_all <- NULL
+    d1e <- NULL
+    d2e <- NULL
+    d1_safe <- NULL
+    d2_safe <- NULL
+
+    # Safely
+    safe_get_survey_samples <- purrr::safely(
+      gfdata::get_survey_samples
+    )
+    safe_get_all_survey_samples <- purrr::safely(
+      gfdata::get_all_survey_samples
+    )
+    # Get survey samples
+    d1_safe <- safe_get_survey_samples(
+      species         = spp[i],
+      ssid            = ssids,
+      usability       = set_usability,
+      remove_bad_data = set_remove_bad_data,
+      unsorted_only   = get_arg_unsorted_only,
+      major           = major_areas
+    )
+    # Extract result and (first) error message
+    d1_all <- d1_safe$result
+    d1e <- d1_safe$error[[1]][1] # Extract first list element
+    # Let server have a rest
+    Sys.sleep(0.05)
+    # Get all survey samples
+    d2_safe <- safe_get_all_survey_samples(
+      species                  = spp[i],
+      ssid                     = ssids,
+      major                    = major_areas,
+      usability                = set_usability,
+      unsorted_only            = get_all_arg_unsorted_only,
+      random_only              = get_all_arg_random_only,
+      grouping_only            = get_all_arg_grouping_only,
+      include_event_info       = get_all_arg_include_event_info,
+      include_activity_matches = get_all_arg_include_activity_matches,
+      remove_bad_data          = set_remove_bad_data,
+      remove_duplicates        = get_all_arg_remove_duplicates,
+      return_dna_info          = get_all_arg_return_dna_info,
+      drop_na_columns          = get_all_arg_drop_na_columns,
+      quiet_option             = get_all_arg_quiet_option
+    )
+    # Extract result and (first) error message
+    d2_all <- d2_safe$result
+    d2e <- d2_safe$error[[1]][1] # Extract first list element
+
+    ssids_found <- dplyr::bind_rows(
+      dplyr::select(d1_all, survey_series_id, survey_series_desc),
+      dplyr::select(d2_all, survey_series_id, survey_series_desc)) |>
+      dplyr::distinct()
+
+    ssid <- unique(ssids_found$survey_series_id)
+
+    for (j in seq_along(ssid)) {
       # Reset tibbles
-      a12 <- NULL
-      d1_all <- NULL
-      d2_all <- NULL
-      d1e <- NULL
-      d2e <- NULL
-      d1_safe <- NULL
-      d2_safe <- NULL
-      dd <- NULL
-      s1 <- NULL
-      s2 <- NULL
-      x1 <- NULL
-      x2 <- NULL
+      a12 <- NULL #
+      d1 <- NULL
+      d2 <- NULL
+      dd <- NULL #
+      s1 <- NULL #
+      s2 <- NULL #
+      x1 <- NULL #
+      x2 <- NULL #
       # Reset vectors
-      b <- NULL
-      n1 <- NULL
-      n2 <- NULL
-      r1 <- NULL
-      r2 <- NULL
-      r12 <- NULL
-      # Safely
-      safe_get_survey_samples <- purrr::safely(
-        gfdata::get_survey_samples
-      )
-      safe_get_all_survey_samples <- purrr::safely(
-        gfdata::get_all_survey_samples
-      )
-      # Get survey samples
-      d1_safe <- safe_get_survey_samples(
-        species         = spp[i],
-        ssid            = ssids,
-        usability       = set_usability,
-        remove_bad_data = set_remove_bad_data,
-        unsorted_only   = get_arg_unsorted_only,
-        major           = major_areas
-      )
-      # Extract result and (first) error message
-      d1_all <- d1_safe$result
-      d1e <- d1_safe$error[[1]][1] # Extract first list element
-      # Let server have a rest
-      Sys.sleep(0.05)
-      # Get all survey samples
-      d2_safe <- safe_get_all_survey_samples(
-        species                  = spp[i],
-        ssid                     = ssids,
-        major                    = major_areas,
-        usability                = set_usability,
-        unsorted_only            = get_all_arg_unsorted_only,
-        random_only              = get_all_arg_random_only,
-        grouping_only            = get_all_arg_grouping_only,
-        include_event_info       = get_all_arg_include_event_info,
-        include_activity_matches = get_all_arg_include_activity_matches,
-        remove_bad_data          = set_remove_bad_data,
-        remove_duplicates        = get_all_arg_remove_duplicates,
-        return_dna_info          = get_all_arg_return_dna_info,
-        drop_na_columns          = get_all_arg_drop_na_columns,
-        quiet_option             = get_all_arg_quiet_option
-      )
-      # Extract result and (first) error message
-      d2_all <- d2_safe$result
-      d2e <- d2_safe$error[[1]][1] # Extract first list element
-
-      ssids_found <- dplyr::bind_rows(
-        dplyr::select(d1_all, survey_series_id, survey_series_desc),
-        dplyr::select(d2_all, survey_series_id, survey_series_desc)) |>
-        dplyr::distinct()
-
-      ssid <- unique(ssids_found$survey_series_id)
-
-      for (j in seq_along(ssid)) {
-
-        d1 <- NULL
-        d2 <- NULL
+      b <- NULL #
+      n1 <- NULL #
+      n2 <- NULL #
+      r1 <- NULL #
+      r2 <- NULL #
+      r12 <- NULL #
 
       # Drop NA specimen_id
       if ("specimen_id" %in% colnames(d1_all)) {

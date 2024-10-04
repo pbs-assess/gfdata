@@ -40,85 +40,85 @@ compare_survey_sets <- function (spp,
 
   # Iterate over cases
   for (i in seq_along(spp)) {
-      # Print current species
-      cat(paste0("spp = ", spp[i], "\n"))
+    # Print current species
+    cat(paste0("spp = ", spp[i], "\n"))
+    # Reset tibbles
+    d1_all <- NULL
+    d2_all <- NULL
+    d1e <- NULL
+    d2e <- NULL
+    d1_safe <- NULL
+    d2_safe <- NULL
+    # Safely
+    safe_get_survey_sets <- purrr::safely(gfdata::get_survey_sets)
+    safe_get_all_survey_sets <- purrr::safely(gfdata::get_all_survey_sets)
+    # Get survey sets
+    d1_safe <- safe_get_survey_sets(
+      species            = spp[i],
+      ssid               = get_arg_ssid,
+      join_sample_ids    = set_join_sample_ids,
+      verbose            = get_arg_verbose,
+      sleep              = get_arg_sleep
+    )
+    # Extract result and (first) error message
+    d1_all <- d1_safe$result
+    d1e <- d1_safe$error[[1]][1] # Extract first list element
+    # Drop all rows if all counts and weights each either zero or NA
+    if (all(c(d1_all$catch_count, d1_all$catch_weight) %in% c(0, NA))) {
+      d1_all <- d1_all[0, ] # Drop all rows and keep columns
+    }
+    # Let server have a rest
+    Sys.sleep(0.05)
+    # Get all survey sets
+    d2_safe <- safe_get_all_survey_sets(
+      species                  = spp[i],
+      ssid                     = get_all_arg_ssid,
+      major                    = get_all_arg_major,
+      years                    = get_all_arg_years,
+      join_sample_ids          = set_join_sample_ids,
+      remove_false_zeros       = get_all_arg_remove_false_zeros,
+      remove_bad_data          = get_all_arg_remove_bad_data,
+      remove_duplicates        = get_all_arg_remove_duplicates,
+      include_activity_matches = get_all_arg_include_activity_matches,
+      usability                = get_all_arg_usability,
+      grouping_only            = get_all_arg_grouping_only,
+      drop_na_columns          = get_all_arg_drop_na_columns,
+      quiet_option             = get_all_arg_quiet_option
+    )
+    # Extract result and (first) error message
+    d2_all <- d2_safe$result
+    d2e <- d2_safe$error[[1]][1] # Extract first list element
+
+    ssids_found <- dplyr::bind_rows(
+      dplyr::select(d1_all, survey_series_id, survey_series_desc),
+      dplyr::select(d2_all, survey_series_id, survey_series_desc)) |>
+      dplyr::distinct()
+
+    ssid <- unique(ssids_found$survey_series_id)
+
+    for (j in seq_along(ssid)) {
       # Reset tibbles
-      a12 <- NULL
-      d1_all <- NULL
-      d2_all <- NULL
-      d1e <- NULL
-      d2e <- NULL
-      d1_safe <- NULL
-      d2_safe <- NULL
-      dd <- NULL
-      s1 <- NULL
-      s2 <- NULL
-      x1 <- NULL
-      x2 <- NULL
+      a12 <- NULL #
+      d1 <- NULL
+      d2 <- NULL
+      dd <- NULL #
+      s1 <- NULL #
+      s2 <- NULL #
+      x1 <- NULL #
+      x2 <- NULL #
       # Reset vectors
-      b <- NULL
-      n1 <- NULL
-      n2 <- NULL
-      r1 <- NULL
-      r2 <- NULL
-      r12 <- NULL
-      # Safely
-      safe_get_survey_sets <- purrr::safely(gfdata::get_survey_sets)
-      safe_get_all_survey_sets <- purrr::safely(gfdata::get_all_survey_sets)
-      # Get survey sets
-      d1_safe <- safe_get_survey_sets(
-        species            = spp[i],
-        ssid               = get_arg_ssid,
-        join_sample_ids    = set_join_sample_ids,
-        verbose            = get_arg_verbose,
-        sleep              = get_arg_sleep
-      )
-      # Extract result and (first) error message
-      d1_all <- d1_safe$result
-      d1e <- d1_safe$error[[1]][1] # Extract first list element
-      # Drop all rows if all counts and weights each either zero or NA
-      if (all(c(d1$catch_count, d1$catch_weight) %in% c(0, NA))) {
-        d1 <- d1[0, ] # Drop all rows and keep columns
-      }
-      # Let server have a rest
-      Sys.sleep(0.05)
-      # Get all survey sets
-      d2_safe <- safe_get_all_survey_sets(
-        species                  = spp[i],
-        ssid                     = get_all_arg_ssid,
-        major                    = get_all_arg_major,
-        years                    = get_all_arg_years,
-        join_sample_ids          = set_join_sample_ids,
-        remove_false_zeros       = get_all_arg_remove_false_zeros,
-        remove_bad_data          = get_all_arg_remove_bad_data,
-        remove_duplicates        = get_all_arg_remove_duplicates,
-        include_activity_matches = get_all_arg_include_activity_matches,
-        usability                = get_all_arg_usability,
-        grouping_only            = get_all_arg_grouping_only,
-        drop_na_columns          = get_all_arg_drop_na_columns,
-        quiet_option             = get_all_arg_quiet_option
-      )
-      # Extract result and (first) error message
-      d2_all <- d2_safe$result
-      d2e <- d2_safe$error[[1]][1] # Extract first list element
+      b <- NULL #
+      n1 <- NULL #
+      n2 <- NULL #
+      r1 <- NULL #
+      r2 <- NULL #
+      r12 <- NULL #
 
       # Create comparison columns
       # - Robust to d1 <- NULL: Condition evaluates FALSE
       # - Robust to ncol(d1) == 0: Condition evaluates FALSE
       # - Robust to nrow(d1) == 0: Assigned value has nrow == 0
-
-      ssids_found <- dplyr::bind_rows(
-        dplyr::select(d1_all, survey_series_id, survey_series_desc),
-        dplyr::select(d2_all, survey_series_id, survey_series_desc)) |>
-        dplyr::distinct()
-
-      ssid <- unique(ssids_found$survey_series_id)
-
-      for (j in seq_along(ssid)) {
-
-      d1 <- NULL
-      d2 <- NULL
-
+      #
       if (all(c("species_code", "fishing_event_id") %in% colnames(d1_all))) {
         d1 <- d1_all |>
           dplyr::filter(survey_series_id == ssid[j]) |>
