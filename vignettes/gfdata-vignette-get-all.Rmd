@@ -1,5 +1,5 @@
 ---
-title: "gfdata 'get_all' vignette"
+title: "gfdata `get_all*` vignette"
 author: "Philina English"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
@@ -27,7 +27,7 @@ options(width = 100,
 ```
 
 
-# Why use a `get_all_*()` function?
+## Why use a `get_all_*()` function?
 
 The original `get_*()` survey functions are limited to returning sets and specimen samples that conform to current survey design specifications based on assigned grouping and usability codes.
 This works well for some surveys and data uses, but can miss a large proportion of sets and/or specimens for surveys that don't consistently apply these codes. 
@@ -38,7 +38,7 @@ The extent of the data returned can be specific to a single survey, a single maj
 <!-- Currently, Nearshore Shrimp trawl and IPES survey data are not available.  -->
 Additional variables are also returned to support modelling objectives and decisions regarding which data should be retained for specific purposes.
 
-## More flexibility
+### More flexibility
 
 The original functions required the user to specify survey series ids (`ssid`) and were limited in which they could accept and return. 
 <!-- They were primarily designed to pull the contemporary synoptic trawl surveys (`ssid = c(1, 3, 4, 16)`), the historic Hecate Strait Multispecies Assemblage trawl survey (`ssid = c(2)`), IPHC (`ssid = c(14)`), and four Hard Bottom Longline surveys (`ssid = c(22, 36, 39, 40)`). -->
@@ -46,7 +46,7 @@ For `get_all*()` functions, we have the option to set `ssid = NULL` which will r
 These include trap (sablefish), longline, jig, and most contemporary and historic trawl surveys (exceptions include the Nearshore Shrimp trawl survey for which survey ids are missing).
 If a character string of major stat area codes is provided to the argument `major`, than all sets or samples from that area will be returned. 
 
-## Non-standard data 
+### Non-standard data 
 
 Because the original `get_*()` survey functions were intended to only return sets and specimen samples that conformed to current survey design specifications, they cannot retrieve sets and samples from cells that fall outside the latest definition of a particular survey's design. 
 <!-- Their default settings also exclude tows that are shorter than the standard length.  -->
@@ -57,7 +57,7 @@ This includes sets and samples from grid cells that fall within subsequently est
 The original functions were not built to retrieve data that differed at the skate level (like gear comparison studies), which `get_all_*()` functions will return only when gear variables (currently checking for differences in hook code and size) differ between skates.
 
 
-## Beware of duplication of fishing events and specimens
+### Beware of duplication of fishing events and specimens
 
 A risk in using `get_all_*()` functions is that, in the attempt to return a comprehensive data set, some fishing events and specimen ids may be duplicated. 
 This occurs because some vessel trips conduct sampling for multiple survey series, and unless joining is based on grouping codes (which aren't used consistently for some surveys) the only way to connect a fishing event to a survey series id is through the vessel trip. 
@@ -67,8 +67,10 @@ Other ways duplication occurs can be due to missing covariates (e.g., both event
 Duplication can also be an issue with the original functions, so it is recommended to always check for unexpected duplication of observations (usually `fishing_event_id` or `specimen_id`) before beginning any analysis. 
 Two return both copies of each duplicated record the following can be used: `d[duplicated(d$specimen_id) | duplicated(d$specimen_id, fromLast=TRUE), ]`.
 
+```{r}
+```
 
-# Examples
+## Set up
 
 If you don't already have the package installed, see the general gfdata vignette for instructions.
 Here we will load gfdata along with the package dplyr.
@@ -93,14 +95,16 @@ The available arguments are described in the help documentation:
 ```
 
 
-## What survey data is available for a species?
+## Examples
+
+### What survey data is available for a species?
 
 As an example, we might want to determine what survey set data are in our database for Bluntnose Sixgill Sharks (*Hexanchus griseus*). 
 For now, we will leave the default settings that pull all surveys and all areas. 
 Beware that some records in the database are from outside Canadian waters. 
 If desired, returned data can be filtered using the `major_stat_area_code` to retain only Canadian records (see `get_major_areas()` to identify which codes to use).
 
-### Original `get_survey_sets()` function
+#### Original `get_survey_sets()` function
 
 To start with, we see what the original `get_survey_sets()` function returns for this species. 
 By default this function returns just the most commonly used groundfish surveys (synoptic trawl [1, 3, 4, 16], one historical trawl [2], and five longline--IPHC [14] and PHMA [22, 36, 39, 40] surveys). 
@@ -131,7 +135,7 @@ In many cases catch weights are missing because they are not collected on that t
 However, even for surveys where weights are the usual unit of measurement, a particular catch may have been too large or small for the scale and therefore recorded only as a count. 
 Both `*_survey_sets()` functions have the option to set `remove_false_zeros = TRUE` to remove these misleading zeros from the data, but this is the default setting for `get_all_survey_sets()`.
 
-### Using `get_all_survey_sets()`
+#### Using `get_all_survey_sets()`
 
 Messages and warnings will alert the user about nuances in the data requested and returned. 
 For example, this function call results in multiple rows of data that share the same fishing_event_id and a warning that suggests possible reasons for this. 
@@ -185,7 +189,7 @@ d |> filter(ssid == 14) |>
 ```
 
 
-## What survey samples are available for a species within a specific area?
+### What survey samples are available for a species within a specific area?
 
 As an example, we might want to determine what survey sample data exists for Pacific Spiny Dogfish in the Strait of Georgia. 
 The area argument is `major` and accepts character vectors of major stat area codes. 
@@ -256,7 +260,7 @@ glimpse(d4[, !names(d4) %in% names(d2)])
 
 The collection of variables that are returned can change depending on the records that are retrieved. For example, variables that are specific to longline surveys are omitted when only trawl survey sets are returned.
 
-## Surveys with overlapping stratifications
+### Surveys with overlapping stratifications
 
 Some fishing events are assigned to multiple surveys, which may or may not be fully or partially overlapping, and are defined by the same activity code in the database. To get all sets with matching activity codes one can use `include_activity_matches = TRUE`. It will return all events that share the same `activity_code` as any SSIDs requested. This works when retrieving either sets or samples. 
 
@@ -285,7 +289,7 @@ NOTE: All activity matches are always returned by default whenever any one of th
 This is because SSIDs for that survey were inconsistently assigned and frequently share trip ids, which results in duplication and or assignment to the wrong survey series. 
 In order to accurately separate the types of sablefish surveys one needs to split data from this survey by the `reason_desc` variable. 
 
-# Trouble shooting
+## Trouble shooting
 
 Any error message that mentions SQL Server suggests either that the network connection or server timed out, or that the SQL query was flawed. One way this can happen is providing an invalid ssid (eg. "4" instead of 4) or a search that is otherwise insufficiently limited in its scope.
 
@@ -296,3 +300,4 @@ Any error message that mentions SQL Server suggests either that the network conn
 If the SQL search is successfully returned to R, but your computer has insufficient memory to handle the amount of data returned, you may see an error like this:
 
 >Error: cannot allocate vector of size XXX Mb
+
