@@ -10,12 +10,14 @@ compare_survey_sets <- function (spp,
                                  get_all_arg_years = NULL,
                                  get_all_arg_remove_false_zeros = TRUE,
                                  get_all_arg_remove_bad_data = TRUE,
-                                 get_all_arg_remove_duplicates = FALSE,
+                                 get_all_arg_remove_duplicates = TRUE,
                                  get_all_arg_include_activity_matches = FALSE,
                                  get_all_arg_usability = NULL,
                                  get_all_arg_grouping_only = FALSE,
                                  get_all_arg_drop_na_columns = TRUE,
-                                 get_all_arg_quiet_option = "message") {
+                                 get_all_arg_quiet_option = "message",
+                                 drop_if_all_zero = FALSE
+                                 ) {
 
   if(is.null(ssids)) {
     get_arg_ssid <- c(1, 3, 4, 16, 2, 14, 22, 36, 39, 40)
@@ -63,10 +65,7 @@ compare_survey_sets <- function (spp,
     # Extract result and (first) error message
     d1_all <- d1_safe$result
     d1e <- d1_safe$error[[1]][1] # Extract first list element
-    # Drop all rows if all counts and weights each either zero or NA
-    if (all(c(d1_all$catch_count, d1_all$catch_weight) %in% c(0, NA))) {
-      d1_all <- d1_all[0, ] # Drop all rows and keep columns
-    }
+
     # Let server have a rest
     Sys.sleep(0.05)
     # Get all survey sets
@@ -127,6 +126,14 @@ compare_survey_sets <- function (spp,
             comparison_id = paste0(species_code, fishing_event_id),
             .before = 1
           )
+
+        if(drop_if_all_zero){
+        # Drop all rows if all counts and weights each either zero or NA
+        if (all(c(d1$catch_count, d1$catch_weight) %in% c(0, NA))) {
+          d1 <- d1[0, ] # Drop all rows and keep columns
+        }
+       }
+
       }
       # Create comparison columns
       # - Robust to d2 <- NULL: Condition evaluates FALSE
