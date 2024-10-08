@@ -3,21 +3,21 @@ compare_survey_samples <- function (
   # Shared args
   spp,
   ssids,
-  major_areas = NULL,
-  set_usability = NULL,
-  set_remove_bad_data = TRUE,
-  # Args for get_survey_samples()
-  get_arg_unsorted_only = TRUE, # both have, but default differs
-  # Args for get_all_survey_samples()
-  get_all_arg_unsorted_only = FALSE,
-  get_all_arg_random_only = FALSE,
-  get_all_arg_grouping_only = FALSE,
-  get_all_arg_include_event_info = FALSE,
-  get_all_arg_include_activity_matches = FALSE,
-  get_all_arg_remove_duplicates = TRUE,
-  get_all_arg_return_dna_info = FALSE,
-  get_all_arg_drop_na_columns = TRUE,
-  get_all_arg_quiet_option = "message") {
+  ...
+  ) {
+
+  # Store '...' args as list of named values
+  arg_list <- list(...)
+  # Prepare argument list for each function
+  get_args <- arg_list[ names(arg_list) %in% names(formals(get_survey_samples)) ]
+  get_all_args <- arg_list[ names(arg_list) %in% names(formals(get_all_survey_samples)) ]
+
+  if(length(get_args)==0){
+    get_args <- list()
+  }
+  if(length(get_all_args)==0){
+    get_all_args <- list()
+  }
 
   # Initialize default tibble
   init <- tibble::tibble(
@@ -51,37 +51,22 @@ compare_survey_samples <- function (
     safe_get_all_survey_samples <- purrr::safely(
       gfdata::get_all_survey_samples
     )
+
+    get_args$species <- get_all_args$species <- spp[i]
+    get_args$ssid <- get_all_args$ssid <- ssids
+
     # Get survey samples
-    d1_safe <- safe_get_survey_samples(
-      species         = spp[i],
-      ssid            = ssids,
-      usability       = set_usability,
-      remove_bad_data = set_remove_bad_data,
-      unsorted_only   = get_arg_unsorted_only,
-      major           = major_areas
-    )
+    d1_safe <- do.call(safe_get_survey_samples, get_args)
+
     # Extract result and (first) error message
     d1_all <- d1_safe$result
     d1e <- d1_safe$error[[1]][1] # Extract first list element
+
     # Let server have a rest
     Sys.sleep(0.05)
+
     # Get all survey samples
-    d2_safe <- safe_get_all_survey_samples(
-      species                  = spp[i],
-      ssid                     = ssids,
-      major                    = major_areas,
-      usability                = set_usability,
-      unsorted_only            = get_all_arg_unsorted_only,
-      random_only              = get_all_arg_random_only,
-      grouping_only            = get_all_arg_grouping_only,
-      include_event_info       = get_all_arg_include_event_info,
-      include_activity_matches = get_all_arg_include_activity_matches,
-      remove_bad_data          = set_remove_bad_data,
-      remove_duplicates        = get_all_arg_remove_duplicates,
-      return_dna_info          = get_all_arg_return_dna_info,
-      drop_na_columns          = get_all_arg_drop_na_columns,
-      quiet_option             = get_all_arg_quiet_option
-    )
+    d2_safe <- do.call(safe_get_survey_samples, get_all_args)
     # Extract result and (first) error message
     d2_all <- d2_safe$result
     d2e <- d2_safe$error[[1]][1] # Extract first list element

@@ -1,21 +1,6 @@
 # Compare survey sets
 compare_survey_sets <- function (spp,
                                  ssids = NULL,
-                                 # set_join_sample_ids = FALSE,
-                                 # # Args for get_survey_sets()
-                                 # get_arg_verbose = TRUE,
-                                 # get_arg_sleep = 0.05,
-                                 # # Args for get_all_survey_sets()
-                                 # get_all_arg_major = NULL,
-                                 # get_all_arg_years = NULL,
-                                 # get_all_arg_remove_false_zeros = TRUE,
-                                 # get_all_arg_remove_bad_data = TRUE,
-                                 # get_all_arg_remove_duplicates = TRUE,
-                                 # get_all_arg_include_activity_matches = FALSE,
-                                 # get_all_arg_usability = NULL,
-                                 # get_all_arg_grouping_only = FALSE,
-                                 # get_all_arg_drop_na_columns = TRUE,
-                                 # get_all_arg_quiet_option = "message",
                                  drop_if_all_zero = FALSE,
                                  ...
                                  ) {
@@ -23,8 +8,8 @@ compare_survey_sets <- function (spp,
   # Store '...' args as list of named values
   arg_list <- list(...)
   # Prepare argument list for each function
-  get_args <- arg_list[names(formals(get_survey_sets)) %in% arg_list]
-  get_all_args <- arg_list[names(formals(get_all_survey_sets)) %in% arg_list]
+  get_args <- arg_list[ names(arg_list) %in% names(formals(get_survey_sets)) ]
+  get_all_args <- arg_list[ names(arg_list) %in% names(formals(get_all_survey_sets)) ]
 
   if(is.null(ssids)) {
     ssid <- c(1, 3, 4, 16, 2, 14, 22, 36, 39, 40)
@@ -34,16 +19,6 @@ compare_survey_sets <- function (spp,
     ssid2  <- ssids
   }
 
-  get_args <- c(spp, ssid, get_args)
-  get_all_args <- c(spp, ssid2, get_all_args)
-
-  # if(is.null(ssids)) {
-  #   get_arg_ssid <- c(1, 3, 4, 16, 2, 14, 22, 36, 39, 40)
-  #   get_all_arg_ssid  <- NULL
-  # } else {
-  #   get_arg_ssid <- ssids
-  #   get_all_arg_ssid  <- ssids
-  # }
 
   # Initialize default tibble
   init <- tibble::tibble(
@@ -73,15 +48,21 @@ compare_survey_sets <- function (spp,
     safe_get_survey_sets <- purrr::safely(gfdata::get_survey_sets)
     safe_get_all_survey_sets <- purrr::safely(gfdata::get_all_survey_sets)
 
+    if(length(get_args)==0){
+      get_args <- list()
+    }
+    if(length(get_all_args)==0){
+      get_all_args <- list()
+    }
+
+      get_args$species <- get_all_args$species <- spp[i]
+      get_args$ssid <- ssid
+      get_all_args$ssid <- ssid2
+
+
     # Get survey sets
     d1_safe <- do.call(safe_get_survey_sets, get_args)
-    # d1_safe <- safe_get_survey_sets(
-    #   species            = spp[i],
-    #   ssid               = get_arg_ssid,
-    #   join_sample_ids    = set_join_sample_ids,
-    #   verbose            = get_arg_verbose,
-    #   sleep              = get_arg_sleep
-    # )
+
     # Extract result and (first) error message
     d1_all <- d1_safe$result
     d1e <- d1_safe$error[[1]][1] # Extract first list element
@@ -90,24 +71,17 @@ compare_survey_sets <- function (spp,
     Sys.sleep(0.05)
     # Get all survey sets
     d2_safe <- do.call(safe_get_all_survey_sets, get_all_args)
-    # d2_safe <- safe_get_all_survey_sets(
-    #   species                  = spp[i],
-    #   ssid                     = get_all_arg_ssid,
-    #   major                    = get_all_arg_major,
-    #   years                    = get_all_arg_years,
-    #   join_sample_ids          = set_join_sample_ids,
-    #   remove_false_zeros       = get_all_arg_remove_false_zeros,
-    #   remove_bad_data          = get_all_arg_remove_bad_data,
-    #   remove_duplicates        = get_all_arg_remove_duplicates,
-    #   include_activity_matches = get_all_arg_include_activity_matches,
-    #   usability                = get_all_arg_usability,
-    #   grouping_only            = get_all_arg_grouping_only,
-    #   drop_na_columns          = get_all_arg_drop_na_columns,
-    #   quiet_option             = get_all_arg_quiet_option
-    # )
+
     # Extract result and (first) error message
     d2_all <- d2_safe$result
     d2e <- d2_safe$error[[1]][1] # Extract first list element
+
+    if(is.null(d2_all)){
+      d2_all <- tibble::tibble(
+        survey_series_id = numeric(0),
+        survey_series_desc = character(0)
+      )
+    }
 
     ssids_found <- dplyr::bind_rows(
       dplyr::select(d1_all, survey_series_id, survey_series_desc),
