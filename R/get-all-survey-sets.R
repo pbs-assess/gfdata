@@ -75,10 +75,7 @@ get_all_survey_sets <- function(species,
                                 usability = NULL,
                                 grouping_only = FALSE,
                                 drop_na_columns = TRUE,
-                                quiet_option = "message"
-                                ) {
-
-
+                                quiet_option = "message") {
   .q <- read_sql("get-all-survey-sets.sql")
 
   if (!is.null(species)) {
@@ -86,15 +83,14 @@ get_all_survey_sets <- function(species,
   }
 
   if (!is.null(ssid)) {
-
     ssid_original <- ssid
 
-    if(any(ssid %in% c(35, 41, 42, 43))){
+    if (any(ssid %in% c(35, 41, 42, 43))) {
       ssid <- unique(c(ssid, 35, 41, 42, 43))
     }
 
-    if(any(ssid %in% c(6,7,67))){
-      ssid <- unique(c(ssid, 6,7,67))
+    if (any(ssid %in% c(6, 7, 67))) {
+      ssid <- unique(c(ssid, 6, 7, 67))
     }
 
     if (include_activity_matches) {
@@ -205,17 +201,16 @@ get_all_survey_sets <- function(species,
   # }
 
   if (nrow(.d) < 1) {
-
-    if(is.null(ssid)&is.null(major)){
+    if (is.null(ssid) & is.null(major)) {
       stop(paste0("No survey set data for ", toString(species), "."))
     } else {
-      if(!is.null(ssid)&is.null(major)){
+      if (!is.null(ssid) & is.null(major)) {
         stop(paste0("No survey set data for ", toString(species), " from ssid(s) ", toString(ssid), "."))
       }
-      if(is.null(ssid)&!is.null(major)){
+      if (is.null(ssid) & !is.null(major)) {
         stop(paste0("No survey set data for ", toString(species), " from major area(s) ", toString(major), "."))
       }
-      if(!is.null(ssid)&!is.null(major)){
+      if (!is.null(ssid) & !is.null(major)) {
         stop(paste0("No survey set data for ", toString(species), " from ssid(s) ", toString(ssid), " in major area(s) ", toString(major), "."))
       }
     }
@@ -243,7 +238,7 @@ get_all_survey_sets <- function(species,
 
   # browser()
 
-  #d1 <- .d #<- select(.d, -survey_series_id)
+  # d1 <- .d #<- select(.d, -survey_series_id)
 
   .fe <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid_with_catch,
     sql_code = .fe,
@@ -261,7 +256,7 @@ get_all_survey_sets <- function(species,
 
 
   fe <- fe |> distinct() |> # not sure why, but seems to be some complete duplication
-    filter(FE_MAJOR_LEVEL_ID < 700| is.na(FE_MAJOR_LEVEL_ID)) # removes CTD drops
+    filter(FE_MAJOR_LEVEL_ID < 700 | is.na(FE_MAJOR_LEVEL_ID)) # removes CTD drops
 
   if (!is.null(years)) {
     fe <- filter(fe, YEAR %in% years)
@@ -272,48 +267,45 @@ get_all_survey_sets <- function(species,
   # }
 
   suppressMessages(
+    if (all(ssid_with_catch %in% trawl)) {
+      # uses raw fe dataframe to save time because sub event counts not need for trawl
+      names(fe) <- tolower(names(fe))
 
-  if (all(ssid_with_catch %in% trawl)) {
-    # uses raw fe dataframe to save time because sub event counts not need for trawl
-    names(fe) <- tolower(names(fe))
+      .d <- expand.grid(
+        fishing_event_id = unique(fe$fishing_event_id),
+        species_code = unique(.d$species_code)
+      ) |>
+        left_join(dplyr::distinct(select(
+          fe,
+          #-survey_id,
+          #-survey_series_id,
+          -fe_parent_event_id,
+          # -fe_major_level_id,
+          -fe_minor_level_id,
+          -fe_sub_level_id,
+          -hook_code,
+          -lglsp_hook_count,
+          -hook_desc,
+          -hooksize_desc
+        ))) %>%
+        left_join(.d)
+    } else {
+      # for other survey types, further wrangling is required
+      # TODO: might be improved by making trap surveys a special case but for now this works ok
+      # TODO: could split by survey to see when skate level is needed rather than applying to all
+      # start by checking the skate level counts and gear details
+      # sk <- get_skate_level_counts(fe)
+      # names(sk) <- tolower(names(sk))
 
-    .d <- expand.grid(
-      fishing_event_id = unique(fe$fishing_event_id),
-      species_code = unique(.d$species_code)
-    ) |>
-      left_join(dplyr::distinct(select(
-        fe,
-        #-survey_id,
-        #-survey_series_id,
-        -fe_parent_event_id,
-        # -fe_major_level_id,
-        -fe_minor_level_id,
-        -fe_sub_level_id,
-        -hook_code,
-        -lglsp_hook_count,
-        -hook_desc,
-        -hooksize_desc
-      ))) %>%
-      left_join(.d)
+      # get catch for sub levels if skate counts > 1 and gear differs between skates
+      # sks <- sk %>% filter(skate_count > 1)
+      # fe_vector <- unique(sks$fishing_event_id)
 
-  } else {
-    # for other survey types, further wrangling is required
-    # TODO: might be improved by making trap surveys a special case but for now this works ok
-    # TODO: could split by survey to see when skate level is needed rather than applying to all
-    # start by checking the skate level counts and gear details
-    # sk <- get_skate_level_counts(fe)
-    # names(sk) <- tolower(names(sk))
+      spp_codes <- unique(.d$species_code)
 
-    # get catch for sub levels if skate counts > 1 and gear differs between skates
-    # sks <- sk %>% filter(skate_count > 1)
-    # fe_vector <- unique(sks$fishing_event_id)
+      fe1 <- get_skate_level_counts(fe)
 
-    spp_codes <- unique(.d$species_code)
-
-    fe1 <- get_skate_level_counts(fe)
-
-    if((max(fe$FE_SUB_LEVEL_ID, na.rm = TRUE) > 1) & (sum(!is.na(unique(fe1$HOOK_CODE))) > 1 | sum(!is.na(unique(fe1$HOOKSIZE_DESC))) > 1)) {
-
+      if ((max(fe$FE_SUB_LEVEL_ID, na.rm = TRUE) > 1) & (sum(!is.na(unique(fe1$HOOK_CODE))) > 1 | sum(!is.na(unique(fe1$HOOKSIZE_DESC))) > 1)) {
         .h <- read_sql("get-ll-sub-level-hook-data.sql")
 
         .h <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid_with_catch,
@@ -322,7 +314,7 @@ get_all_survey_sets <- function(species,
         )
 
         .hd <- run_sql("GFBioSQL", .h)
-        .hd <- dplyr::distinct(.hd) #%>% select(-FE.FISHING_EVENT_ID)
+        .hd <- dplyr::distinct(.hd) # %>% select(-FE.FISHING_EVENT_ID)
         names(.hd) <- tolower(names(.hd))
         names(fe1) <- tolower(names(fe1))
 
@@ -364,65 +356,73 @@ get_all_survey_sets <- function(species,
           select(-catch_count) |>
           # rename(event_level_count = catch_count) |> # used as a temporary check
           left_join(slc, by = c(
-            "trip_id"="trip_id",
-            "fishing_event_id"="fe_parent_event_id",
-            "fe_major_level_id"="fe_major_level_id",
-            "fe_sub_level_id"="fe_sub_level_id",
-            "species_code"="species_code"))
+            "trip_id" = "trip_id",
+            "fishing_event_id" = "fe_parent_event_id",
+            "fe_major_level_id" = "fe_major_level_id",
+            "fe_sub_level_id" = "fe_sub_level_id",
+            "species_code" = "species_code"
+          ))
 
         .d <- bind_rows(.d1, .d2)
       } else {
+        ## if hooks do not differ between skates, get hook data and catch for whole event
+        .h <- read_sql("get-ll-hook-data-generalized.sql")
 
-    ## if hooks do not differ between skates, get hook data and catch for whole event
-    .h <- read_sql("get-ll-hook-data-generalized.sql")
+        .h <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid_with_catch,
+          sql_code = .h,
+          search_flag = "-- insert ssid here", conversion_func = I
+        )
 
-    .h <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid_with_catch,
-      sql_code = .h,
-      search_flag = "-- insert ssid here", conversion_func = I
-    )
+        .hd <- run_sql("GFBioSQL", .h)
+        names(.hd) <- tolower(names(.hd))
 
-    .hd <- run_sql("GFBioSQL", .h)
-    names(.hd) <- tolower(names(.hd))
+        .hd <- dplyr::distinct(.hd)
 
-    .hd <- dplyr::distinct(.hd)
-
-    fe3 <- get_parent_level_counts(fe)
-    names(fe3) <- tolower(names(fe3))
+        fe3 <- get_parent_level_counts(fe)
+        names(fe3) <- tolower(names(fe3))
 
 
-    fe3 <- left_join(fe3, .hd) |>
-      # select(-survey_series_id) |>
-      dplyr::distinct()
+        fe3 <- left_join(fe3, .hd) |>
+          # select(-survey_series_id) |>
+          dplyr::distinct()
 
-    .d <- expand.grid(
-      fishing_event_id = unique(fe3$fishing_event_id),
-      species_code = unique(.d$species_code)
-    ) |>
-      left_join(fe3) |>
-      left_join(.d)
-  }
-  }
-  , classes = quiet_option)
+        .d <- expand.grid(
+          fishing_event_id = unique(fe3$fishing_event_id),
+          species_code = unique(.d$species_code)
+        ) |>
+          left_join(fe3) |>
+          left_join(.d)
+      }
+    },
+    classes = quiet_option
+  )
 
 
   suppressMessages(
-  if (remove_bad_data) {
+    if (remove_bad_data) {
       .d <- correct_ssids(.d)
-  }
-  , classes = quiet_option)
+    },
+    classes = quiet_option
+  )
 
-  if (!is.null(ssid)){
+  if (!is.null(ssid)) {
     # deal with NAs somehow causing duplicated rows of data
-    .d <- .d |> group_by(fishing_event_id) |>
-      mutate(doorspread_m = ifelse(is.logical(na.omit(doorspread_m)), NA, na.omit(doorspread_m)),
-             speed_mpm = ifelse(is.logical(na.omit(speed_mpm)), NA, na.omit(speed_mpm))) |>
+    .d <- .d |>
+      group_by(fishing_event_id) |>
+      mutate(
+        doorspread_m = ifelse(is.logical(na.omit(doorspread_m)), NA, na.omit(doorspread_m)),
+        speed_mpm = ifelse(is.logical(na.omit(speed_mpm)), NA, na.omit(speed_mpm))
+      ) |>
       group_by(fishing_event_id, survey_series_id) |>
-      mutate(grouping_desc_updated = ifelse(is.logical(na.omit(grouping_desc_updated)), NA, na.omit(grouping_desc_updated)),
-             grouping_code_updated = mean(grouping_code_updated, na.rm = TRUE),
-             grouping_code_updated = ifelse(is.nan(grouping_code_updated), NA, grouping_code_updated)
-      ) |> dplyr::distinct() |> ungroup()
+      mutate(
+        grouping_desc_updated = ifelse(is.logical(na.omit(grouping_desc_updated)), NA, na.omit(grouping_desc_updated)),
+        grouping_code_updated = mean(grouping_code_updated, na.rm = TRUE),
+        grouping_code_updated = ifelse(is.nan(grouping_code_updated), NA, grouping_code_updated)
+      ) |>
+      dplyr::distinct() |>
+      ungroup()
 
-    if(any(ssid %in% c(6,7,67))&!include_activity_matches){
+    if (any(ssid %in% c(6, 7, 67)) & !include_activity_matches) {
       ssid <- ssid_original
     }
 
@@ -433,44 +433,51 @@ get_all_survey_sets <- function(species,
       print("Returning all relevant sets/events/skates including those with no catch.")
     }
     if (!is.null(major)) {
-      print(paste0(toString(species), " have been recorded by survey series ", toString(ssid),
-          "within major area(s) ", toString(major), " at least once. "))
+      print(paste0(
+        toString(species), " have been recorded by survey series ", toString(ssid),
+        "within major area(s) ", toString(major), " at least once. "
+      ))
       print("Returning all relevant sets/events/skates including those with no catch.")
     }
-
   } else {
-      # when not specifying ssid
-      # deal with NAs somehow causing duplicated rows of data
-      .d <- .d |> group_by(fishing_event_id) |>
-        mutate(speed_mpm = ifelse(is.logical(na.omit(speed_mpm)), NA, na.omit(speed_mpm)),
-               doorspread_m = ifelse(is.logical(na.omit(doorspread_m)), NA, na.omit(doorspread_m)),
-               # make sure updated codes are from the original survey design and purge others
-               grouping_desc_updated = ifelse(grouping_code_updated == grouping_code_original, grouping_desc_updated, NA),
-               grouping_desc_updated = ifelse(is.logical(na.omit(grouping_desc_updated)), NA, na.omit(grouping_desc_updated)),
-               grouping_code_updated = ifelse(grouping_code_updated == grouping_code_original, grouping_code_updated, NA),
-               grouping_code_updated = mean(grouping_code_updated, na.rm = TRUE),
-               grouping_code_updated = ifelse(is.nan(grouping_code_updated), NA, grouping_code_updated)
-               ) |> dplyr::distinct() |> ungroup()
+    # when not specifying ssid
+    # deal with NAs somehow causing duplicated rows of data
+    .d <- .d |>
+      group_by(fishing_event_id) |>
+      mutate(
+        speed_mpm = ifelse(is.logical(na.omit(speed_mpm)), NA, na.omit(speed_mpm)),
+        doorspread_m = ifelse(is.logical(na.omit(doorspread_m)), NA, na.omit(doorspread_m)),
+        # make sure updated codes are from the original survey design and purge others
+        grouping_desc_updated = ifelse(grouping_code_updated == grouping_code_original, grouping_desc_updated, NA),
+        grouping_desc_updated = ifelse(is.logical(na.omit(grouping_desc_updated)), NA, na.omit(grouping_desc_updated)),
+        grouping_code_updated = ifelse(grouping_code_updated == grouping_code_original, grouping_code_updated, NA),
+        grouping_code_updated = mean(grouping_code_updated, na.rm = TRUE),
+        grouping_code_updated = ifelse(is.nan(grouping_code_updated), NA, grouping_code_updated)
+      ) |>
+      dplyr::distinct() |>
+      ungroup()
 
     if (is.null(major)) {
       print(
-        paste0("Returning all sets/events/skates (including those with no catch) from all survey series that recorded ",
-               toString(species), " at least once.")
+        paste0(
+          "Returning all sets/events/skates (including those with no catch) from all survey series that recorded ",
+          toString(species), " at least once."
+        )
       )
     }
     if (!is.null(major)) {
       print(
-        paste0("Returning all sets/events/skates (including those with no catch) from all survey series that recorded ",
-               toString(species), " within major area(s) ", toString(major), " at least once.")
+        paste0(
+          "Returning all sets/events/skates (including those with no catch) from all survey series that recorded ",
+          toString(species), " within major area(s) ", toString(major), " at least once."
+        )
       )
     }
   }
 
   # check if there are duplicate fishing_event ids
   if (length(.d$fishing_event_id) > length(unique(.d$fishing_event_id))) {
-
     if (remove_duplicates) {
-
       # if so, separate original_ind from not
       .dy <- filter(.d, original_ind == "Y")
       .dn <- filter(.d, original_ind != "Y" | is.na(original_ind))
@@ -512,9 +519,11 @@ get_all_survey_sets <- function(species,
     }
   }
 
-  if(nrow(.d[.d$survey_series_id %in% c(35, 41, 42, 43),])> 0){
-    warning("All sablefish research related sets are returned as survey_series_id 35. ",
-            "To separate types of sets, use reason_desc and grouping_code variables.")
+  if (nrow(.d[.d$survey_series_id %in% c(35, 41, 42, 43), ]) > 0) {
+    warning(
+      "All sablefish research related sets are returned as survey_series_id 35. ",
+      "To separate types of sets, use reason_desc and grouping_code variables."
+    )
   }
 
   surveys <- get_ssids()
@@ -592,7 +601,6 @@ get_all_survey_sets <- function(species,
   }
 
   if (any(ssid_with_catch %in% ll)) {
-
     .d <- hook_area_swept(.d)
     # .d$hook_area_swept_km2 <- ifelse(.d$survey_series_id == 14,
     #   0.0054864 * 0.009144 * .d$minor_id_count,
@@ -609,28 +617,28 @@ get_all_survey_sets <- function(species,
     species_common_name = tolower(species_common_name)
   )
 
-  if(grouping_only){
+  if (grouping_only) {
     .d <- filter(.d, !is.na(grouping_code_original))
 
     if (nrow(.d) < 1) {
-
-      if(is.null(ssid)&is.null(major)){
+      if (is.null(ssid) & is.null(major)) {
         stop(paste0("No survey set data with expected grouping codes."))
       } else {
-        if(!is.null(ssid)&is.null(major)){
+        if (!is.null(ssid) & is.null(major)) {
           stop(paste0("No survey set data with expected grouping codes from ssid(s) ", toString(ssid), "."))
         }
-        if(is.null(ssid)&!is.null(major)){
+        if (is.null(ssid) & !is.null(major)) {
           stop(paste0("No survey set data with expected grouping codes from major area(s) ", toString(major), "."))
         }
-        if(!is.null(ssid)&!is.null(major)){
+        if (!is.null(ssid) & !is.null(major)) {
           stop(paste0("No survey set data with expected grouping codes from ssid(s) ", toString(ssid), " in major area(s) ", toString(major), "."))
         }
       }
     }
   }
 
-  .d <- .d |> relocate(species_common_name, catch_count, catch_weight, survey_series_id, survey_abbrev, year, fishing_event_id) |>
+  .d <- .d |>
+    relocate(species_common_name, catch_count, catch_weight, survey_series_id, survey_abbrev, year, fishing_event_id) |>
     arrange(species_common_name, survey_series_id, -year, -fishing_event_id)
 
   # not sure where things are getting duplicated, but this will get rid of any complete duplication
@@ -646,8 +654,8 @@ get_all_survey_sets <- function(species,
   .d <- filter(.d, survey_series_id %in% ssid_with_catch)
 
   # this drops any columns entirely populated with NAs
-  if(drop_na_columns){
-  .d <- .d %>% select(where(~ !all(is.na(.x))))
+  if (drop_na_columns) {
+    .d <- .d %>% select(where(~ !all(is.na(.x))))
   }
 
 

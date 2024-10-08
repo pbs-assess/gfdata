@@ -78,12 +78,16 @@ inject_filter <- function(sql_precode, species, sql_code,
 }
 
 first_cap <- function(s, strict = FALSE) {
-  cap <- function(s) paste(toupper(substring(s, 1, 1)), {
-      s <- substring(s, 2)
-      if (strict) tolower(s) else s
-    },
-    sep = "", collapse = " "
+  cap <- function(s) {
+    paste(toupper(substring(s, 1, 1)),
+      {
+        s <- substring(s, 2)
+        if (strict) tolower(s) else s
+      },
+      sep = "",
+      collapse = " "
     )
+  }
   sapply(strsplit(s, split = " "), cap, USE.NAMES = !is.null(names(s)))
 }
 
@@ -156,8 +160,10 @@ codes2common <- function(spp_code) {
 #' @param area_regex A vector of regular expressions describing the areas group.
 #' @export
 #' @examples
-#' x <- c("5D: NORTHERN HECATE STRAIT", "3C: S.W. VANCOUVER ISLAND",
-#'   "3D: N.W. VANCOUVER ISLAND")
+#' x <- c(
+#'   "5D: NORTHERN HECATE STRAIT", "3C: S.W. VANCOUVER ISLAND",
+#'   "3D: N.W. VANCOUVER ISLAND"
+#' )
 #' assign_areas(x)
 assign_areas <- function(major_stat_area_description,
                          area_regex = c("3[CD]+", "5[AB]+", "5[CDE]+")) {
@@ -188,7 +194,7 @@ get_spp_sample_length_type <- function(species) {
       value = "count"
     )
   .d <- .d %>% dplyr::filter(count == max(count))
-  if (nrow(.d) > 1L) .d <- .d[1L, ,drop = FALSE] # happens if all 0! pick any
+  if (nrow(.d) > 1L) .d <- .d[1L, , drop = FALSE] # happens if all 0! pick any
   .d$length_type
 }
 
@@ -199,17 +205,17 @@ add_version <- function(x) {
 }
 
 trawl_area_swept <- function(.d) {
-.d$area_swept1 <- .d$doorspread_m * .d$tow_length_m
-.d$area_swept2 <- .d$doorspread_m * (.d$speed_mpm * .d$duration_min)
-.d$area_swept <- ifelse(!is.na(.d$area_swept1), .d$area_swept1, .d$area_swept2)
-.d$area_swept_km2 <- .d$area_swept / 1000000
-.d
+  .d$area_swept1 <- .d$doorspread_m * .d$tow_length_m
+  .d$area_swept2 <- .d$doorspread_m * (.d$speed_mpm * .d$duration_min)
+  .d$area_swept <- ifelse(!is.na(.d$area_swept1), .d$area_swept1, .d$area_swept2)
+  .d$area_swept_km2 <- .d$area_swept / 1000000
+  .d
 }
 
 hook_area_swept <- function(.d) {
-.d$hook_area_swept_km2 <- ifelse(.d$survey_series_id == 14,
-                                 0.0054864 * 0.009144 * .d$minor_id_count,
-                                 0.0024384 * 0.009144 * .d$minor_id_count
-)
-.d
+  .d$hook_area_swept_km2 <- ifelse(.d$survey_series_id == 14,
+    0.0054864 * 0.009144 * .d$minor_id_count,
+    0.0024384 * 0.009144 * .d$minor_id_count
+  )
+  .d
 }
