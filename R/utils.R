@@ -197,3 +197,19 @@ add_version <- function(x) {
   attr(x, "date") <- Sys.time()
   x
 }
+
+trawl_area_swept <- function(.d) {
+.d$area_swept1 <- .d$doorspread_m * .d$tow_length_m
+.d$area_swept2 <- .d$doorspread_m * (.d$speed_mpm * .d$duration_min)
+.d$area_swept <- ifelse(!is.na(.d$area_swept1), .d$area_swept1, .d$area_swept2)
+.d$area_swept_km2 <- .d$area_swept / 1000000
+.d
+}
+
+hook_area_swept <- function(.d) {
+.d$hook_area_swept_km2 <- ifelse(.d$survey_series_id == 14,
+                                 0.0054864 * 0.009144 * .d$minor_id_count,
+                                 0.0024384 * 0.009144 * .d$minor_id_count
+)
+.d
+}

@@ -147,8 +147,7 @@ get_all_survey_samples <- function(species, ssid = NULL,
       distinct()
   }
 
-
-  ### needs testing ----
+  ## populate length and length_type variables with most common type for each species ----
 
   .d$length <- NA
   .d$length_type <- NA
@@ -166,7 +165,7 @@ get_all_survey_samples <- function(species, ssid = NULL,
     .d[.d$species_code == tolower(species_code[i]), ]$length_type <- length_type
   }
 
-  ### ----
+  ## ----
 
   # if using include_activity_matches = TRU`then remove_duplicates = TRUE
   if (include_activity_matches & !is.null(ssid)) {
@@ -318,15 +317,6 @@ get_all_survey_samples <- function(species, ssid = NULL,
         }
       }
     }
-
-
-  } else {
-
-    ## added this to sql
-    # .st <- get_table("Sample_Type") |> select(-ROW_VERSION)
-    # names(.st) <- tolower(names(.st))
-    # .d <- left_join(.d, .st, by = "sample_type_code")
-
   }
 
   # remove ages from unaccepted ageing methods:
@@ -383,8 +373,6 @@ get_all_survey_samples <- function(species, ssid = NULL,
     options(scipen=999)
     # needed for big skate because of a MSA set with an id that was getting converted
 
-    # .d <- select(.d, -minor_stat_area_code) # clashes with wrangled fe data because some sub level events have NAs here
-
     .f <- .d %>% filter(!is.na(fishing_event_id))
     fe_vector <- unique(na.omit(.f$fishing_event_id))
 
@@ -425,13 +413,8 @@ get_all_survey_samples <- function(species, ssid = NULL,
                          search_flag = "-- insert ssid here", conversion_func = I
     )
 
-    ## these don't work if we want all the sub level and minor level ids
+    ## this didn't work if we want all the sub level and minor level ids
     # .fe <- inject_filter("AND FE.FE_PARENT_EVENT_ID IS NULL OR IN", fe_vector,
-    #                      sql_code = .fe,
-    #                      search_flag = "-- insert fe_vector here", conversion_func = I
-    # )
-    #
-    # .fe <- inject_filter("OR FE.FISHING_EVENT_ID IN", fe_vector,
     #                      sql_code = .fe,
     #                      search_flag = "-- insert fe_vector here", conversion_func = I
     # )
@@ -453,8 +436,6 @@ get_all_survey_samples <- function(species, ssid = NULL,
 
     fe <- run_sql("GFBioSQL", .fe)
 
-    # browser()
-
     if(any(!is.na(fe$FE_SUB_LEVEL_ID))) {
      if(any(na.omit(fe$FE_SUB_LEVEL_ID) > 1)) {
        # get both parent and skate level counts
@@ -472,7 +453,7 @@ get_all_survey_samples <- function(species, ssid = NULL,
       -SURVEY_SERIES_ID,
       -SURVEY_SERIES_OG,
       -SURVEY_ID,
-      -MINOR_STAT_AREA_CODE,
+      -MINOR_STAT_AREA_CODE, # some sub level events had NAs here
       -REASON_DESC, -USABILITY_CODE,
       -GROUPING_CODE_ORIGINAL, -GROUPING_DESC_ORIGINAL,
       -GROUPING_CODE_UPDATED, -GROUPING_DESC_UPDATED, -ORIGINAL_IND) |> distinct() # avoid clashing with values for samples
@@ -520,7 +501,7 @@ get_all_survey_samples <- function(species, ssid = NULL,
       # but only replace event level when fe_sub_level_ids are present
       .d2 <- .d2 |>
         select(-catch_count) |>
-        # rename(event_level_count = catch_count) |>
+        # rename(event_level_count = catch_count) |> # used as a temporary check
         left_join(slc, by = c(
           "trip_id"="trip_id",
           "fishing_event_id"="fe_parent_event_id",
@@ -549,15 +530,17 @@ get_all_survey_samples <- function(species, ssid = NULL,
     .d$catch_count <- ifelse(.d$catch_weight > 0 & .d$catch_count == 0, NA, .d$catch_count)
     .d$catch_weight <- ifelse(.d$catch_count > 0 & .d$catch_weight == 0, NA, .d$catch_weight)
 
+    .d <- trawl_area_swept(.d)
+    # .d$area_swept1 <- .d$doorspread_m * .d$tow_length_m
+    # .d$area_swept2 <- .d$doorspread_m * (.d$speed_mpm * .d$duration_min)
+    # .d$area_swept <- ifelse(!is.na(.d$area_swept1), .d$area_swept1, .d$area_swept2)
+    # .d$area_swept_km2 <- .d$area_swept / 1000000
 
-    .d$area_swept1 <- .d$doorspread_m * .d$tow_length_m
-    .d$area_swept2 <- .d$doorspread_m * (.d$speed_mpm * .d$duration_min)
-    .d$area_swept <- ifelse(!is.na(.d$area_swept1), .d$area_swept1, .d$area_swept2)
-    .d$area_swept_km2 <- .d$area_swept / 1000000
-    .d$hook_area_swept_km2 <- ifelse(.d$survey_series_id == 14,
-      0.0054864 * 0.009144 * .d$minor_id_count,
-      0.0024384 * 0.009144 * .d$minor_id_count
-    )
+    .d <- hook_area_swept(.d)
+    # .d$hook_area_swept_km2 <- ifelse(.d$survey_series_id == 14,
+    #   0.0054864 * 0.009144 * .d$minor_id_count,
+    #   0.0024384 * 0.009144 * .d$minor_id_count
+    # )
   }
   , classes = quiet_option)
 

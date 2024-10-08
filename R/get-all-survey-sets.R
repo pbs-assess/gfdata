@@ -77,12 +77,13 @@ get_all_survey_sets <- function(species,
                                 drop_na_columns = TRUE,
                                 quiet_option = "message"
                                 ) {
+
+
   .q <- read_sql("get-all-survey-sets.sql")
 
   if (!is.null(species)) {
     .q <- inject_filter("AND SP.SPECIES_CODE IN", species, sql_code = .q)
   }
-
 
   if (!is.null(ssid)) {
 
@@ -126,6 +127,15 @@ get_all_survey_sets <- function(species,
 
   .d <- run_sql("GFBioSQL", .q)
 
+  species_codes <- common2codes(species)
+  missing_species <- setdiff(species_codes, .d$species_code)
+  if (length(missing_species) > 0) {
+    warning(
+      "The following species codes are not supported or do not have survey set data in GFBio.",
+      paste(missing_species, collapse = ", ")
+    )
+  }
+
   if (!is.null(years)) {
     .d <- filter(.d, YEAR %in% years)
   }
@@ -133,7 +143,7 @@ get_all_survey_sets <- function(species,
   if (join_sample_ids) {
     # give us each sample_id associated with each fishing_event_id and species:
     # sample_trip_ids <- get_sample_trips()
-    # areas <- get_strata_areas()
+    # areas <- get_strata_areas() # this now done in get-event-data.sql
     #
     # .d <- left_join(.d, sample_trip_ids,
     #   by = c("SPECIES_CODE", "FISHING_EVENT_ID")
@@ -148,7 +158,7 @@ get_all_survey_sets <- function(species,
   }
 
   # Just to pull out up to date list of ssids associated with trawl/ll gear type.
-  # Sys.sleep(0.05) # might be useful if server has difficulty
+  Sys.sleep(0.05) # might be useful if server has difficulty
 
   trawl <- run_sql("GFBioSQL", "SELECT
     S.SURVEY_SERIES_ID
@@ -165,7 +175,7 @@ get_all_survey_sets <- function(species,
     ORDER BY S.SURVEY_SERIES_ID")
   trawl <- unique(trawl$SURVEY_SERIES_ID)
 
-  # Sys.sleep(0.05)
+  Sys.sleep(0.05)
 
   ll <- run_sql("GFBioSQL", "SELECT
     S.SURVEY_SERIES_ID
@@ -182,10 +192,12 @@ get_all_survey_sets <- function(species,
     ORDER BY S.SURVEY_SERIES_ID")
   ll <- unique(ll$SURVEY_SERIES_ID)
 
+  Sys.sleep(0.05)
+
   # if(!is.null(ssid)){
   #   bad_ssid <- c(46, 81)
   #   if(any(ssid %in% bad_ssid)){
-  #     warning("Ssid(s) ", ssid[ssid %in% bad_ssid], " is/are not currently supported. ",
+  #     warning("SSID(s) ", ssid[ssid %in% bad_ssid], " is/are not currently supported. ",
   #          "See the function `get_ssids()` for help identifying ",
   #          "survey series IDs."
   #     )
@@ -300,8 +312,6 @@ get_all_survey_sets <- function(species,
 
     fe1 <- get_skate_level_counts(fe)
 
-    # browser()
-
     if((max(fe$FE_SUB_LEVEL_ID, na.rm = TRUE) > 1) & (sum(!is.na(unique(fe1$HOOK_CODE))) > 1 | sum(!is.na(unique(fe1$HOOKSIZE_DESC))) > 1)) {
 
         .h <- read_sql("get-ll-sub-level-hook-data.sql")
@@ -337,7 +347,7 @@ get_all_survey_sets <- function(species,
             sql_code = .slc,
             search_flag = "-- insert species again here"
           )
-          ## this didn't work, not sure why, but suspect it isn't working for get-all-survey-sets.sql either
+          ## this didn't work, not sure why; isn't working for get-all-survey-sets.sql either
           # .slc <- inject_filter("AND FE.FE_PARENT_EVENT_ID IN", fe_vector,
           #                      sql_code = .slc,
           #                      search_flag = "-- insert fe_vector here", conversion_func = I
@@ -352,7 +362,7 @@ get_all_survey_sets <- function(species,
         .d2 <- .d %>%
           filter(skate_count > 1) |>
           select(-catch_count) |>
-          # rename(event_level_count = catch_count) |>
+          # rename(event_level_count = catch_count) |> # used as a temporary check
           left_join(slc, by = c(
             "trip_id"="trip_id",
             "fishing_event_id"="fe_parent_event_id",
@@ -364,7 +374,6 @@ get_all_survey_sets <- function(species,
       } else {
 
     ## if hooks do not differ between skates, get hook data and catch for whole event
-
     .h <- read_sql("get-ll-hook-data-generalized.sql")
 
     .h <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid_with_catch,
@@ -377,7 +386,6 @@ get_all_survey_sets <- function(species,
 
     .hd <- dplyr::distinct(.hd)
 
-    ## old sub_level function moved from utils.R
     fe3 <- get_parent_level_counts(fe)
     names(fe3) <- tolower(names(fe3))
 
@@ -392,7 +400,6 @@ get_all_survey_sets <- function(species,
     ) |>
       left_join(fe3) |>
       left_join(.d)
-
   }
   }
   , classes = quiet_option)
@@ -405,7 +412,7 @@ get_all_survey_sets <- function(species,
   , classes = quiet_option)
 
   if (!is.null(ssid)){
-
+    # deal with NAs somehow causing duplicated rows of data
     .d <- .d |> group_by(fishing_event_id) |>
       mutate(doorspread_m = ifelse(is.logical(na.omit(doorspread_m)), NA, na.omit(doorspread_m)),
              speed_mpm = ifelse(is.logical(na.omit(speed_mpm)), NA, na.omit(speed_mpm))) |>
@@ -431,9 +438,9 @@ get_all_survey_sets <- function(species,
       print("Returning all relevant sets/events/skates including those with no catch.")
     }
 
-
   } else {
       # when not specifying ssid
+      # deal with NAs somehow causing duplicated rows of data
       .d <- .d |> group_by(fishing_event_id) |>
         mutate(speed_mpm = ifelse(is.logical(na.omit(speed_mpm)), NA, na.omit(speed_mpm)),
                doorspread_m = ifelse(is.logical(na.omit(doorspread_m)), NA, na.omit(doorspread_m)),
@@ -461,7 +468,6 @@ get_all_survey_sets <- function(species,
 
   # check if there are duplicate fishing_event ids
   if (length(.d$fishing_event_id) > length(unique(.d$fishing_event_id))) {
-
 
     if (remove_duplicates) {
 
@@ -538,7 +544,6 @@ get_all_survey_sets <- function(species,
     by = "species_code"
   )
 
-
   # create zeros
   .d$catch_count <- ifelse(is.na(.d$catch_count), 0, .d$catch_count)
   .d$catch_weight <- ifelse(is.na(.d$catch_weight), 0, .d$catch_weight)
@@ -551,7 +556,6 @@ get_all_survey_sets <- function(species,
     .d$catch_count <- ifelse(.d$catch_weight > 0 & .d$catch_count == 0, NA, .d$catch_count)
     .d$catch_weight <- ifelse(.d$catch_count > 0 & .d$catch_weight == 0, NA, .d$catch_weight)
   }
-
 
   if (!is.null(usability)) {
     .d <- filter(.d, usability_code %in% usability)
@@ -573,14 +577,14 @@ get_all_survey_sets <- function(species,
   if (any(ssid_with_catch %in% trawl)) {
     # calculate area_swept for trawl exactly as it has been done for the density values in this dataframe
     # note: is NA if doorspread_m is missing and duration_min may be time in water (not just bottom time)
-
-    .d$area_swept1 <- .d$doorspread_m * .d$tow_length_m
-    .d$area_swept2 <- .d$doorspread_m * (.d$speed_mpm * .d$duration_min)
-    .d$area_swept <- ifelse(!is.na(.d$area_swept1), .d$area_swept1, .d$area_swept2)
-    .d$area_swept_km2 <- .d$area_swept / 1000000
-    # won't do this here because there may be ways of using mean(.d$doorspread_m) to fill in some NAs
-    # .d <- dplyr::filter(.d, !is.na(area_swept))
-    # instead use this to make sure false 0 aren't included
+    .d <- trawl_area_swept(.d)
+    # .d$area_swept1 <- .d$doorspread_m * .d$tow_length_m
+    # .d$area_swept2 <- .d$doorspread_m * (.d$speed_mpm * .d$duration_min)
+    # .d$area_swept <- ifelse(!is.na(.d$area_swept1), .d$area_swept1, .d$area_swept2)
+    # .d$area_swept_km2 <- .d$area_swept / 1000000
+    # # won't do this here because there may be ways of using mean(.d$doorspread_m) to fill in some NAs
+    # # .d <- dplyr::filter(.d, !is.na(area_swept))
+    # # instead use this to make sure false 0 aren't included
     .d$density_kgpm2 <- .d$catch_weight / .d$area_swept
     .d$density_kgpm2 <- ifelse(!is.na(.d$area_swept), .d$density_kgpm2, NA) # don't think this is doing anything
     .d$density_pcpm2 <- .d$catch_count / .d$area_swept2 # using area_swept2 is how it's done in "poc_catmat_2011"
@@ -588,10 +592,12 @@ get_all_survey_sets <- function(species,
   }
 
   if (any(ssid_with_catch %in% ll)) {
-    .d$hook_area_swept_km2 <- ifelse(.d$survey_series_id == 14,
-      0.0054864 * 0.009144 * .d$minor_id_count,
-      0.0024384 * 0.009144 * .d$minor_id_count
-    )
+
+    .d <- hook_area_swept(.d)
+    # .d$hook_area_swept_km2 <- ifelse(.d$survey_series_id == 14,
+    #   0.0054864 * 0.009144 * .d$minor_id_count,
+    #   0.0024384 * 0.009144 * .d$minor_id_count
+    # )
 
     .d$density_ppkm2 <- .d$catch_count / (.d$hook_area_swept_km2)
     # .d$density_pppm2 <- .d$catch_count/(.d$hook_area_swept_km2*1000000)
@@ -624,13 +630,6 @@ get_all_survey_sets <- function(species,
     }
   }
 
-  # return only events from surveys that have recorded any of the species selected
-  # rechecking this after SSID corrections
-  .dpos <- filter(.d, catch_count > 0 | catch_weight > 0)
-  ssid_with_catch <- unique(.dpos$survey_series_id)
-  .d <- filter(.d, survey_series_id %in% ssid_with_catch)
-
-
   .d <- .d |> relocate(species_common_name, catch_count, catch_weight, survey_series_id, survey_abbrev, year, fishing_event_id) |>
     arrange(species_common_name, survey_series_id, -year, -fishing_event_id)
 
@@ -640,19 +639,18 @@ get_all_survey_sets <- function(species,
   # we will use grouping_code_original as the primary grouping_code returned
   .d <- dplyr::rename(.d, grouping_code = grouping_code_original, grouping_desc = grouping_desc_original)
 
+  # return only events from surveys that have recorded any of the species selected
+  # rechecking this after SSID corrections
+  .dpos <- filter(.d, catch_count > 0 | catch_weight > 0)
+  ssid_with_catch <- unique(.dpos$survey_series_id)
+  .d <- filter(.d, survey_series_id %in% ssid_with_catch)
+
   # this drops any columns entirely populated with NAs
   if(drop_na_columns){
   .d <- .d %>% select(where(~ !all(is.na(.x))))
   }
 
-  species_codes <- common2codes(species)
-  missing_species <- setdiff(species_codes, .d$species_code)
-  if (length(missing_species) > 0) {
-    warning(
-      "The following species codes are not supported or do not have survey set data in GFBio.",
-      paste(missing_species, collapse = ", ")
-    )
-  }
+
   # TODO: could add a check to see if ssid and ssog are identical and drop ssog if so? But might be useful to keep...
   add_version(as_tibble(.d))
 }
