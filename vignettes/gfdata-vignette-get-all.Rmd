@@ -74,17 +74,6 @@ The original functions were not built to retrieve data that differed at the skat
 The `get_all_*()` functions will automatically return catch information at the skate level, instead of the fishing event level, for sets within a single function call whenever gear variables (currently checking for differences in hook code and size) differ between skates.
 
 
-### Beware of duplication of fishing events and specimens
-
-A risk in using `get_all_*()` functions is that, in the attempt to return a comprehensive data set, some fishing events and specimen ids may be duplicated (this also occurs with the original functions but usually for different reasons). 
-Some vessel trips conduct sampling for multiple survey series, and unless joining is based on grouping codes (which aren't used consistently for some surveys) the only way to connect a fishing event to a survey series id is through the vessel trip. 
-This can result in events and specimens getting assigned to both surveys that were conducted on the same trip. 
-The most common instances of this (e.g., sablefish, jig, and offshore shrimp surveys) have custom corrections coded into an internal function `correct_ssids()` that is applied within the `get_all_*()` functions. 
-Duplication can also occur due to missing covariates (e.g., both event level and survey defaults are missing for `doorspread_m` on a couple sets for some trawl survey series), or for specimens when multiple vials of DNA were collected and `return_dna_info = TRUE`. 
-It is recommended to always check for unexpected duplication of observations (usually `fishing_event_id` or `specimen_id`) before beginning any analysis. 
-Two return both copies of each duplicated record the following can be used: `d[duplicated(d$specimen_id) | duplicated(d$specimen_id, fromLast=TRUE), ]`.
-
-
 ```{r}
 ```
 
@@ -313,7 +302,21 @@ NOTE: All activity matches are always returned by default whenever any one of th
 This is because SSIDs for that survey were inconsistently assigned and frequently share trip ids, which results in duplication and or assignment to the wrong survey series. 
 In order to accurately separate the types of sablefish surveys one needs to split data from this survey by the `reason_desc` variable. 
 
+
 ## Troubleshooting
+
+### Beware of duplication of fishing events and specimens
+
+A risk in using `get_all_*()` functions is that, in the attempt to return a comprehensive data set, some fishing events and specimen ids may be duplicated (this also occurs with the original functions but usually for different reasons). 
+Some vessel trips conduct sampling for multiple survey series, and unless joining is based on grouping codes (which aren't used consistently for some surveys) the only way to connect a fishing event to a survey series id is through the vessel trip. 
+This can result in events and specimens getting assigned to both surveys that were conducted on the same trip. 
+The most common instances of this (e.g., sablefish, jig, and offshore shrimp surveys) have custom corrections coded into an internal function `correct_ssids()` that is applied within the `get_all_*()` functions. 
+Duplication can also occur due to missing covariates (e.g., both event level and survey defaults are missing for `doorspread_m` on a couple sets for some trawl survey series), or for specimens when multiple vials of DNA were collected and `return_dna_info = TRUE`. 
+It is recommended to always check for unexpected duplication of observations (usually `fishing_event_id` or `specimen_id`) before beginning any analysis. 
+Two return both copies of each duplicated record the following can be used: `d[duplicated(d$specimen_id) | duplicated(d$specimen_id, fromLast=TRUE), ]`.
+
+
+### Error messages
 
 Any error message that mentions SQL Server suggests either that the network connection or server timed out, or that the SQL query was flawed. One way this can happen is providing an invalid ssid (e.g., a character "4" instead of a numeric 4), invalid major area code (e.g., a numeric 1 instead of a character "01"), or a search that is insufficiently limited in its scope.
 
