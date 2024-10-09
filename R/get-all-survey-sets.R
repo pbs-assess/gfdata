@@ -305,7 +305,14 @@ get_all_survey_sets <- function(species,
 
       fe1 <- get_skate_level_counts(fe)
 
-      if ((max(fe$FE_SUB_LEVEL_ID, na.rm = TRUE) > 1) & (sum(!is.na(unique(fe1$HOOK_CODE))) > 1 | sum(!is.na(unique(fe1$HOOKSIZE_DESC))) > 1)) {
+      count_gear_types <- fe1 |> group_by(fishing_event_id) |>
+        summarise(max = max(
+          ### can add any more gear variables needed here
+          sum(!is.na(unique(HOOK_CODE))),
+          sum(!is.na(unique(HOOKSIZE_DESC)))
+        ))
+
+      if (max(count_gear_types$max, na.rm = TRUE) > 1) {
         .h <- read_sql("get-ll-sub-level-hook-data.sql")
 
         .h <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid_with_catch,

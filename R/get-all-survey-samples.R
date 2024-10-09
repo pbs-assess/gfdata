@@ -467,11 +467,18 @@ get_all_survey_samples <- function(species, ssid = NULL,
           ) |>
           distinct() # avoid clashing with values for samples
 
+        count_gear_types <- fe2 |> group_by(fishing_event_id) |>
+          summarise(max = max(
+            ### can add any more gear variables needed here
+            sum(!is.na(unique(HOOK_CODE))),
+            sum(!is.na(unique(HOOKSIZE_DESC)))
+          ))
+
         names(fe2) <- tolower(names(fe2))
 
         # do any of those sub levels differ in gear type?
         ## TODO: other possible variables and tests for difference could be added
-        if (sum(!is.na(unique(fe2$hook_code))) < 2 | sum(!is.na(unique(fe2$hooksize_desc))) < 2) {
+        if (max(count_gear_types$max, na.rm = TRUE) < 2) {
           # NO, then use only the parent level values
           .d <- left_join(.d, fe1)
         } else {
