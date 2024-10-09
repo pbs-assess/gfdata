@@ -66,10 +66,23 @@ compare_survey_samples <- function (
     Sys.sleep(0.05)
 
     # Get all survey samples
-    d2_safe <- do.call(safe_get_survey_samples, get_all_args)
+    d2_safe <- do.call(safe_get_all_survey_samples, get_all_args)
     # Extract result and (first) error message
     d2_all <- d2_safe$result
     d2e <- d2_safe$error[[1]][1] # Extract first list element
+
+    if(is.null(d1_all)){
+      d1_all <- tibble::tibble(
+        survey_series_id = numeric(0),
+        survey_series_desc = character(0)
+      )
+    }
+    if(is.null(d2_all)){
+      d2_all <- tibble::tibble(
+        survey_series_id = numeric(0),
+        survey_series_desc = character(0)
+      )
+    }
 
     ssids_found <- dplyr::bind_rows(
       dplyr::select(d1_all, survey_series_id, survey_series_desc),
