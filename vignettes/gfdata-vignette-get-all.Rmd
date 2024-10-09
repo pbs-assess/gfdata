@@ -55,7 +55,7 @@ If a character string of major stat area codes is provided to the argument `majo
 Because the original `get_*()` survey functions were intended to only return sets and specimen samples that conform to current survey design specifications, they cannot retrieve sets and samples from cells that fall outside the latest definition of a particular survey's design. 
 When this behaviour is desired, it can be reproduced using the `get_all_*()` functions with the filtering options `usability = c(0, 1, 2, 6)` and `grouping_only = TRUE`.
 This works reliably for most groundfish bottom trawl and longline surveys (`ssid = c(1, 2, 3, 4, 16, 22, 36, 39, 40)`). 
-However, when these filtering options are applied to certain surveys, a small proportion of the data returned by the original function may be missed (e.g., IPHC: `ssid = c(14)`) and no data is returned for surveys for which these codes have not been generated (e.g., the jig survey: `ssid = c(82:87)`).
+However, when these filtering options are applied to certain surveys, a small proportion of the data returned by the original function may be missed (e.g., IPHC: `ssid = 14`) and no data is returned for surveys for which these codes have not been generated (e.g., the jig survey: `ssid = c(82:87)`).
 If using the `get_all_*()` functions to generate design-based indices, the strata area variable is now called `grouping_area_km2` (instead of `area_km2` to avoid confusion with `area_swept*` variables) and, in case design changes occur that are not incorporated into the usability codes, one should also always check for differences between the `grouping_code` and `grouping_code_updated` variables. 
 This is currently the case for the offshore shrimp, also known as multi-species small-mesh (MSSM), surveys (`ssid = c(6, 7)`), which need to be filtered for only those sets with updated grouping codes (`!is.na(grouping_code_updated)`) in order to match the current survey design.
 
@@ -76,12 +76,12 @@ The `get_all_*()` functions will automatically return catch information at the s
 
 ### Beware of duplication of fishing events and specimens
 
-A risk in using `get_all_*()` functions is that, in the attempt to return a comprehensive data set, some fishing events and specimen ids may be duplicated (note: this is also true of the original functions but often for different reasons). 
-Duplication sometimes occurs because some vessel trips conduct sampling for multiple survey series, and unless joining is based on grouping codes (which aren't used consistently for some surveys) the only way to connect a fishing event to a survey series id is through the vessel trip. 
+A risk in using `get_all_*()` functions is that, in the attempt to return a comprehensive data set, some fishing events and specimen ids may be duplicated (this also occurs with the original functions but usually for different reasons). 
+Some vessel trips conduct sampling for multiple survey series, and unless joining is based on grouping codes (which aren't used consistently for some surveys) the only way to connect a fishing event to a survey series id is through the vessel trip. 
 This can result in events and specimens getting assigned to both surveys that were conducted on the same trip. 
-The most common instances of this (e.g., sablefish, jig, and offshore shrimp surveys) have custom corrections coded into an internal function `correct_ssids()` that is applied automatically by the `get_all_*()` functions. 
-Other ways duplication occurs can be due to missing covariates (e.g., both event level and survey defaults are missing for `doorspread_m` on a couple sets for some trawl series), or when multiple vials of DNA were collected and `return_dna_info = TRUE`. 
-Duplication can also be an issue with the original functions, so it is recommended to always check for unexpected duplication of observations (usually `fishing_event_id` or `specimen_id`) before beginning any analysis. 
+The most common instances of this (e.g., sablefish, jig, and offshore shrimp surveys) have custom corrections coded into an internal function `correct_ssids()` that is applied within the `get_all_*()` functions. 
+Duplication can also occur due to missing covariates (e.g., both event level and survey defaults are missing for `doorspread_m` on a couple sets for some trawl survey series), or for specimens when multiple vials of DNA were collected and `return_dna_info = TRUE`. 
+It is recommended to always check for unexpected duplication of observations (usually `fishing_event_id` or `specimen_id`) before beginning any analysis. 
 Two return both copies of each duplicated record the following can be used: `d[duplicated(d$specimen_id) | duplicated(d$specimen_id, fromLast=TRUE), ]`.
 
 
