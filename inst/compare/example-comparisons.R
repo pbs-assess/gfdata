@@ -18,8 +18,8 @@ ssids <-  c(1,2,7,14,22) # shortlist spanning common types of surveys
 de <- compare_survey_sets(spp = spp,
                          ssids = ssids, # NULL here (default) returns default ssids for og fn
                          ## settings for get_all function that match more closely behaviour of og fn
-                         # usability = c(0, 1, 2, 6), # not default
-                         # grouping_only = TRUE, # not default
+                         usability = c(0, 1, 2, 6), # not default
+                         grouping_only = TRUE, # not default
                          remove_false_zeros = FALSE # not default
                          )
 

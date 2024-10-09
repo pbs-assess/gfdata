@@ -59,7 +59,8 @@ However, when these filtering options are applied to certain surveys, a small pr
 If using the `get_all_*()` functions to generate design-based indices, the strata area variable is now called `grouping_area_km2` (instead of `area_km2` to avoid confusion with `area_swept*` variables) and, in case design changes occur that are not incorporated into the usability codes, one should also always check for differences between the `grouping_code` and `grouping_code_updated` variables. 
 This is currently the case for the offshore shrimp, also known as multi-species small-mesh (MSSM), surveys (`ssid = c(6, 7)`), which need to be filtered for only those sets with updated grouping codes (`!is.na(grouping_code_updated)`) in order to match the current survey design.
 
-When using these same design filtering options to retrieve samples, the `get_all_survey_samples()` function will return > 70 additional specimens over the original function for each of the longline surveys (`ssid = c(22, 36, 39, 40)`). 
+To retrieve specimen samples that conform to design specifications, the arguments `unsorted_only = TRUE` and `random_only = TRUE` should be used in addition to usability and grouping options. 
+When doing so `get_all_survey_samples()` function will return > 70 additional specimens over the original function for each of the longline surveys (`ssid = c(22, 36, 39, 40)`). 
 This is because the original `get_survey_samples()` function used a stricter method for filtering based on grouping codes. 
 This stricter filtering matches how `get_survey_sets()` filtered for the current trawl survey footprint, but not how it filtered sets for longline surveys. 
 If desired, this stricter filtering can be achieved for both sets and samples from any survey by filtering for only those with updated grouping codes.
