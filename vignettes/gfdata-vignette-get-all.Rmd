@@ -27,7 +27,6 @@ options(width = 100,
   rows.print = 7)
 ```
 
-
 ## Why use a `get_all_*()` function?
 
 The original `get_*()` survey functions are limited to returning sets and specimen samples that conform to current survey design specifications based on assigned grouping and usability codes.
@@ -92,10 +91,9 @@ library(dplyr)
 library(tibble)
 ```
 
-```{r, echo=FALSE, eval = TRUE, cache=FALSE}
+```{r, echo=FALSE, cache=FALSE}
 .error <- tryCatch(get_ssids(), error = function(e) "Error")
 .eval <- !identical(class(.error), "character")
-.eval <- TRUE
 ```
 
 The available arguments are described in the help documentation:
@@ -122,7 +120,7 @@ By default this function returns just the most commonly used groundfish surveys:
 The first thing to note here is that this function will only return one row per fishing event (unless overlapping survey series or sample_ids were requested).
 This function will also return all sets for any survey series, even when the species has never been recorded on that survey. 
 
-```{r, eval=TRUE, warning=TRUE}
+```{r, eval=.eval, warning=TRUE}
 d0 <- get_survey_sets("Bluntnose Sixgill Shark")
 nrow(d0) #> number of rows
 length(unique(d0$fishing_event_id)) #> number of fishing events
@@ -133,7 +131,7 @@ In contrast, `get_all_survey_sets()` only returns set data for survey series tha
 Both `*_survey_sets()` functions return all sets for any survey series returned, including those that did not record the species. 
 So, to make sets that did capture the species visible to `head()`, we will sort by descending `catch_count`. 
 
-```{r, eval=TRUE, warning=TRUE}
+```{r, eval=.eval, warning=TRUE}
 d0 <- d0 |> rename(ssid = survey_series_id) |> 
   relocate(year, fishing_event_id, catch_count, catch_weight, ssid, survey_abbrev) |> 
   arrange(-catch_count) 
@@ -153,7 +151,7 @@ For example, this function call results in multiple rows of data that share the 
 In this case, the number of rows of data exceeds the number of fishing events because catch is being returned at the skate level for some fishing events. 
 This will happen any time skates within a fishing event differ in their gear (currently just working off differences in hook type and size). 
 
-```{r, eval=TRUE, warning=TRUE}
+```{r, eval=.eval, warning=TRUE}
 d <- get_all_survey_sets("Bluntnose Sixgill Shark")
 nrow(d) #> number of rows
 length(unique(d$fishing_event_id)) #> number of fishing events
@@ -163,7 +161,7 @@ sort(unique(d$survey_series_id)) #> only returns survey series that caught the s
 Now, when we view the data `catch_weight` appears appropriately as `NA` when this data was not collected. 
 We now also get catches at the skate level (multiple skates make up each fishing event) for the dogfish comparison work (`ssid = c(48)`) which was not (and cannot be) returned by `get_survey_sets()` due to the gear differences between skates.  
 
-```{r, eval=TRUE, warning=TRUE}
+```{r, eval=.eval, warning=TRUE}
 d <- d |> rename(ssid = survey_series_id) |> 
   relocate(year, fishing_event_id, skate_id, catch_count, catch_weight, 
            ssid, survey_abbrev, activity_desc) |> 
@@ -173,7 +171,7 @@ head(d, n = 10L)
 So, which surveys encountered the most of this species? 
 Some surveys only count individuals and others only weigh the total catch, so we will summarize both count and weight variables.
 
-```{r, message=FALSE, cache=FALSE}
+```{r, eval=.eval, message=FALSE, cache=FALSE}
 d |> group_by(ssid, survey_series_desc) |> 
   mutate(event_skate_id = paste0(fishing_event_id, "-", skate_id)) |>
   summarise(individuals = sum(catch_count, na.rm = TRUE),
@@ -190,7 +188,7 @@ This was the case for SSID `48`.
 The vast majority of records for Bluntnose Sixgill Shark come from the IPHC, followed by the Dogfish and Hard Bottom Longline surveys, both conducted in the Strait of Georgia (aka. Inside South). 
 Because the IPHC covers a wider area, we can explore the spatial distribution of catches within that survey only, and confirm that they are most frequently caught in the Strait of Georgia, major stat area `"01"`. 
 
-```{r, message=FALSE}
+```{r, eval=.eval, message=FALSE}
 d |> filter(ssid == 14) |> 
   group_by(major_stat_area_code) |> 
   summarise(individuals = sum(catch_count, na.rm = TRUE),
