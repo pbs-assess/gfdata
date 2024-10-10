@@ -313,6 +313,7 @@ get_all_survey_sets <- function(species,
         ))
 
       if (max(count_gear_types$max, na.rm = TRUE) > 1) {
+
         .h <- read_sql("get-ll-sub-level-hook-data.sql")
 
         .h <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid_with_catch,
@@ -325,11 +326,14 @@ get_all_survey_sets <- function(species,
         names(.hd) <- tolower(names(.hd))
         names(fe1) <- tolower(names(fe1))
 
-        fe2 <- left_join(fe1, .hd) |>
+        fe2 <- filter(count_gear_types, max > 1) |>
+          left_join(fe1) |>
+          left_join(.hd) |>
           # select(-survey_series_id) |>
+          select(-max) |>
           distinct()
 
-        .d <- expand.grid(
+        .d2 <- expand.grid(
           fishing_event_id = unique(fe2$fishing_event_id),
           species_code = unique(.d$species_code)
         ) |>
@@ -342,6 +346,7 @@ get_all_survey_sets <- function(species,
         for (i in seq_along(spp_codes)) {
           .slc <- read_sql("get-sub-level-catch.sql")
           .slc <- inject_filter("", spp_codes[i], sql_code = .slc)
+          # TODO: this filter is currently not doing anything... don't know why!
           .slc <- inject_filter("AND C.SPECIES_CODE IN", spp_codes[i],
             sql_code = .slc,
             search_flag = "-- insert species again here"
@@ -356,10 +361,7 @@ get_all_survey_sets <- function(species,
         slc <- do.call(rbind, slc_list) |> distinct()
         names(slc) <- tolower(names(slc))
 
-        .d1 <- .d %>% filter((skate_count <= 1) | is.na(skate_count))
-
-        .d2 <- .d %>%
-          filter(skate_count > 1) |>
+        .d2 <- .d2 %>%
           select(-catch_count) |>
           # rename(event_level_count = catch_count) |> # used as a temporary check
           left_join(slc, by = c(
@@ -369,10 +371,9 @@ get_all_survey_sets <- function(species,
             "fe_sub_level_id" = "fe_sub_level_id",
             "species_code" = "species_code"
           ))
+      }
 
-        .d <- bind_rows(.d1, .d2)
-      } else {
-        ## if hooks do not differ between skates, get hook data and catch for whole event
+        ## when hooks do not differ between skates, get hook data and catch for whole event
         .h <- read_sql("get-ll-hook-data-generalized.sql")
 
         .h <- inject_filter("AND S.SURVEY_SERIES_ID IN", ssid_with_catch,
@@ -389,17 +390,22 @@ get_all_survey_sets <- function(species,
         names(fe3) <- tolower(names(fe3))
 
 
-        fe3 <- left_join(fe3, .hd) |>
+        fe3 <- filter(count_gear_types, max < 2) |>
+          left_join(fe3) |>
+          left_join(.hd) |>
           # select(-survey_series_id) |>
+          select(-max) |>
           dplyr::distinct()
 
-        .d <- expand.grid(
+        .d1 <- expand.grid(
           fishing_event_id = unique(fe3$fishing_event_id),
           species_code = unique(.d$species_code)
         ) |>
           left_join(fe3) |>
           left_join(.d)
-      }
+
+        .d <- bind_rows(.d1, .d2)
+
     },
     classes = quiet_option
   )
@@ -594,10 +600,6 @@ get_all_survey_sets <- function(species,
     # calculate area_swept for trawl exactly as it has been done for the density values in this dataframe
     # note: is NA if doorspread_m is missing and duration_min may be time in water (not just bottom time)
     .d <- trawl_area_swept(.d)
-    # .d$area_swept1 <- .d$doorspread_m * .d$tow_length_m
-    # .d$area_swept2 <- .d$doorspread_m * (.d$speed_mpm * .d$duration_min)
-    # .d$area_swept <- ifelse(!is.na(.d$area_swept1), .d$area_swept1, .d$area_swept2)
-    # .d$area_swept_km2 <- .d$area_swept / 1000000
     # # won't do this here because there may be ways of using mean(.d$doorspread_m) to fill in some NAs
     # # .d <- dplyr::filter(.d, !is.na(area_swept))
     # # instead use this to make sure false 0 aren't included
@@ -609,10 +611,6 @@ get_all_survey_sets <- function(species,
 
   if (any(ssid_with_catch %in% ll)) {
     .d <- hook_area_swept(.d)
-    # .d$hook_area_swept_km2 <- ifelse(.d$survey_series_id == 14,
-    #   0.0054864 * 0.009144 * .d$minor_id_count,
-    #   0.0024384 * 0.009144 * .d$minor_id_count
-    # )
 
     .d$density_ppkm2 <- .d$catch_count / (.d$hook_area_swept_km2)
     # .d$density_pppm2 <- .d$catch_count/(.d$hook_area_swept_km2*1000000)
@@ -664,7 +662,6 @@ get_all_survey_sets <- function(species,
   if (drop_na_columns) {
     .d <- .d %>% select(where(~ !all(is.na(.x))))
   }
-
 
   # TODO: could add a check to see if ssid and ssog are identical and drop ssog if so? But might be useful to keep...
   add_version(as_tibble(.d))
