@@ -262,7 +262,7 @@ d4 <- get_all_survey_samples("north pacific spiny dogfish",
 ```{r, eval=.eval, message=FALSE, cache=FALSE}
 d4 |> group_by(survey_series_id, activity_desc, hook_desc, hooksize_desc) |> 
   summarise(specimens = length(unique(specimen_id)),
-            year_range = paste(min(year, na.rm = TRUE), "-", max(year, na.rm = TRUE))) |>
+            years = paste(min(year, na.rm = TRUE), "-", max(year, na.rm = TRUE))) |>
   arrange(-specimens) |> 
   rename(ssid = survey_series_id, hooksize = hooksize_desc) |>
   print()
