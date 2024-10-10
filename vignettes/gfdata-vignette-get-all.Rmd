@@ -229,6 +229,7 @@ However, this column could have been retained by using the argument `drop_na_col
 
 If you want to focus on specimens that come from design-based survey sets you can add arguments that filter for unsorted random samples that come from events that have grouping codes that match those expected for the current survey design. 
 Alternatively, this can be achieved by filtering for specimens where `!is.na(grouping_code)` or `!is.na(grouping_code_updated)` and checking that the `sample_type_comment` and `sample_source_desc` notes are consistent with the specimens being from random samples.
+Here, we will use the built in filter arguments, but also add the additional constraint of filtering based on the updated grouping codes.
 Note: Some surveys do not use grouping codes, and therefore won't be returned when the `grouping_only` option is used. 
 In this case, all of SSID `51` and `82:87` are now missing. 
 
@@ -239,8 +240,11 @@ d3 <- get_all_survey_samples("north pacific spiny dogfish",
                              unsorted_only = TRUE,
                              random_only = TRUE,
                              grouping_only = TRUE)
+```
 
-d3 |> group_by(survey_series_id, survey_series_desc) |> 
+```{r, eval=.eval, message=FALSE}
+d3 |> filter(!is.na(grouping_code_updated)) |>
+  group_by(survey_series_id, survey_series_desc) |> 
   summarise(specimens = length(unique(specimen_id)),
             lengths = sum(!is.na(length)),
             weights = sum(!is.na(weight)),
@@ -267,11 +271,13 @@ d4 |> group_by(survey_series_id, activity_desc, hook_desc, hooksize_desc) |>
   rename(ssid = survey_series_id, hooksize = hooksize_desc) |>
   print()
 ```
+
 These are the variables returned by default: 
 
 ```{r, eval=.eval, message=FALSE}
 glimpse(d2)
 ```
+
 And these additional variables were returned for longline surveys when `include_event_info = TRUE`:
 
 ```{r, eval=.eval, message=FALSE}
@@ -290,7 +296,9 @@ d5 <- get_all_survey_sets("north pacific spiny dogfish",
                           include_activity_matches = TRUE,
                           remove_duplicates = TRUE #> default
                           )
+```
 
+```{r, eval=.eval, message=FALSE}
 d5 |> group_by(survey_series_id, survey_abbrev, activity_desc) |> 
   summarise(events = length(unique(fishing_event_id)),
             years = paste(min(year), "-", max(year)),

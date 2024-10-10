@@ -119,16 +119,16 @@ get_all_survey_samples <- function(species, ssid = NULL,
 
   if (nrow(.d) < 1) {
     if (is.null(ssid) & is.null(major)) {
-      stop(paste0("No survey samples for ", toString(species), "."))
+      stop(paste0("No survey specimens for ", toString(species), "."))
     } else {
       if (!is.null(ssid) & is.null(major)) {
-        stop(paste0("No survey samples for ", toString(species), " from ssid(s) ", toString(ssid), "."))
+        stop(paste0("No survey specimens for ", toString(species), " from ssid(s) ", toString(ssid), "."))
       }
       if (is.null(ssid) & !is.null(major)) {
-        stop(paste0("No survey samples for ", toString(species), " from major area(s) ", toString(major), "."))
+        stop(paste0("No survey specimens for ", toString(species), " from major area(s) ", toString(major), "."))
       }
       if (!is.null(ssid) & !is.null(major)) {
-        stop(paste0("No survey samples for ", toString(species), " from ssid(s) ", toString(ssid), " in major area(s) ", toString(major), "."))
+        stop(paste0("No survey specimens for ", toString(species), " from ssid(s) ", toString(ssid), " in major area(s) ", toString(major), "."))
       }
     }
   }
@@ -190,6 +190,18 @@ get_all_survey_samples <- function(species, ssid = NULL,
 
     .d <- filter(.d, survey_series_id %in% ssid)
 
+
+    if(!is.null(usability)|unsorted_only|random_only|grouping_only) {
+      print(
+        paste0("Looking for samples that are",
+               ifelse(!is.null(usability), paste0( " usable (", usability, ")"), ""),
+               ifelse(unsorted_only, " unsorted", ""),
+               ifelse(random_only, " random", ""),
+               ifelse(grouping_only, " with originally specified grouping codes.", ".")
+        )
+      )
+    }
+
     if (is.null(major)) {
       print(
         paste0("Returning all ", toString(species), " specimens from survey series ", toString(ssid), ".")
@@ -226,7 +238,6 @@ get_all_survey_samples <- function(species, ssid = NULL,
       )
     }
   }
-
 
   if (unsorted_only) {
     # # .d <- filter(.d, sampling_desc == "UNSORTED")
@@ -357,7 +368,7 @@ get_all_survey_samples <- function(species, ssid = NULL,
   .d <- .d %>% filter(!is.na(specimen_id))
 
   if (include_event_info) {
-    print("Samples found. Fetching additional event info.")
+    print("Specimens found. Fetching additional event info.")
   }
 
   suppressMessages(
