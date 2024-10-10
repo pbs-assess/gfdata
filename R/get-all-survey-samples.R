@@ -482,16 +482,7 @@ get_all_survey_samples <- function(species, ssid = NULL,
           # NO, then use only the parent level values
           .d <- left_join(.d, fe1)
         } else {
-          # YES, then use both depending whether a given record has a sub level id, or not
-
-          .d1 <- .d |>
-            filter(is.na(fe_sub_level_id)) |>
-            left_join(fe1)
-          .d2 <- .d |>
-            filter(!is.na(fe_sub_level_id)) |>
-            left_join(fe2)
-
-          # get skate level catch for each species
+          # YES, then get skate level catch for each species
           slc_list <- list()
           spp_codes <- unique(.d$species_code)
           for (i in seq_along(spp_codes)) {
@@ -506,10 +497,18 @@ get_all_survey_samples <- function(species, ssid = NULL,
           slc <- do.call(rbind, slc_list) |> distinct()
           names(slc) <- tolower(names(slc))
 
-          # but only replace event level when fe_sub_level_ids are present
-          .d2 <- .d2 |>
-            select(-catch_count) |>
-            # rename(event_level_count = catch_count) |> # used as a temporary check
+          .d2 <- .d |>
+            left_join(count_gear_types) |>
+            filter(max > 1) |>
+            left_join(fe2) |>
+            # select(-survey_series_id) |>
+            select(-max) |>
+            distinct()
+
+          # but only replace event level when multiple gear types are present
+          .d2 <- .d2 %>%
+            # select(-catch_count) |>
+            rename(event_level_count = catch_count) |> # used as a temporary check
             left_join(slc, by = c(
               "trip_id" = "trip_id",
               "fishing_event_id" = "fe_parent_event_id",
@@ -518,7 +517,36 @@ get_all_survey_samples <- function(species, ssid = NULL,
               "species_code" = "species_code"
             ))
 
-          .d <- bind_rows(.d1, .d2)
+          check_counts <- select(.d2, fishing_event_id, skate_id, event_level_count, catch_count) |>
+            distinct() |>
+            group_by(fishing_event_id) |>
+            mutate(missing_skates = event_level_count - catch_count) |>
+            ungroup()
+
+          # check if any skate-level catch_counts exceed event_level_counts or are missing
+          if(min(check_counts$missing_skates)<0|any(is.na(.d2$catch_count))) {
+            warning("Some skate-level counts are inconsistent with counts for events with gear differences.")
+          } else {
+            # .d2 <- .d2 |> select(-event_level_count)
+          }
+
+          .d1 <- .d |>
+            left_join(count_gear_types) |>
+            filter(max < 2) |>
+            left_join(fe1) |>
+            # select(-survey_series_id) |>
+            select(-max) |>
+            distinct()
+
+          # check for missing data
+          if(nrow(.d1) + nrow(.d2) == nrow(.d)) {
+            .d <- bind_rows(.d1, .d2)
+          } else {
+            warning("Event data appears to be missing for some specimens. Check output carefully.")
+            .d3 <- bind_rows(.d1, .d2)
+            .d <- left_join(.d, .d3)
+          }
+
         }
       } else {
         .d <- left_join(.d, fe1)
@@ -543,16 +571,9 @@ get_all_survey_samples <- function(species, ssid = NULL,
       .d$catch_weight <- ifelse(.d$catch_count > 0 & .d$catch_weight == 0, NA, .d$catch_weight)
 
       .d <- trawl_area_swept(.d)
-      # .d$area_swept1 <- .d$doorspread_m * .d$tow_length_m
-      # .d$area_swept2 <- .d$doorspread_m * (.d$speed_mpm * .d$duration_min)
-      # .d$area_swept <- ifelse(!is.na(.d$area_swept1), .d$area_swept1, .d$area_swept2)
-      # .d$area_swept_km2 <- .d$area_swept / 1000000
 
       .d <- hook_area_swept(.d)
-      # .d$hook_area_swept_km2 <- ifelse(.d$survey_series_id == 14,
-      #   0.0054864 * 0.009144 * .d$minor_id_count,
-      #   0.0024384 * 0.009144 * .d$minor_id_count
-      # )
+
     },
     classes = quiet_option
   )
