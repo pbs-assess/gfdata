@@ -340,7 +340,6 @@ get_all_survey_sets <- function(species,
           left_join(fe2) |>
           left_join(.d)
 
-
         slc_list <- list()
         spp_codes <- unique(.d$species_code)
         for (i in seq_along(spp_codes)) {
@@ -362,15 +361,25 @@ get_all_survey_sets <- function(species,
         names(slc) <- tolower(names(slc))
 
         .d2 <- .d2 %>%
-          select(-catch_count) |>
-          # rename(event_level_count = catch_count) |> # used as a temporary check
+          filter(count_gear_types, max > 1) |>
+          left_join(.d) |>
+          # select(-catch_count) |>
+          rename(event_level_count = catch_count) |> # used as a temporary check
           left_join(slc, by = c(
             "trip_id" = "trip_id",
             "fishing_event_id" = "fe_parent_event_id",
             "fe_major_level_id" = "fe_major_level_id",
             "fe_sub_level_id" = "fe_sub_level_id",
             "species_code" = "species_code"
-          ))
+          )) |> group_by(fishing_event_id) |>
+          mutate(counts_diff = event_level_count - sum(catch_count, na.rm = TRUE)) |>
+          ungroup()
+
+        if(sum(.d2$counts_diff)!=0) {
+          warning("Some skate-level counts are inconsistent with counts for events with gear differences.")
+        } else {
+          .d2 <- .d2 |> select(-counts_diff, -event_level_count)
+        }
       }
 
         ## when hooks do not differ between skates, get hook data and catch for whole event
