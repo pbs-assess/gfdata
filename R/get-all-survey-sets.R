@@ -124,10 +124,11 @@ get_all_survey_sets <- function(species,
   .d <- run_sql("GFBioSQL", .q)
 
   species_codes <- common2codes(species)
-  missing_species <- setdiff(species_codes, .d$species_code)
+  missing_species <- setdiff(species_codes, .d$SPECIES_CODE)
+
   if (length(missing_species) > 0) {
     warning(
-      "The following species codes are not supported or do not have survey set data in GFBio.",
+      "The following species codes are not supported or do not have survey set data in GFBio: ",
       paste(missing_species, collapse = ", ")
     )
   }
@@ -361,8 +362,6 @@ get_all_survey_sets <- function(species,
         names(slc) <- tolower(names(slc))
 
         .d2 <- .d2 %>%
-          filter(count_gear_types, max > 1) |>
-          left_join(.d) |>
           # select(-catch_count) |>
           rename(event_level_count = catch_count) |> # used as a temporary check
           left_join(slc, by = c(
@@ -375,7 +374,7 @@ get_all_survey_sets <- function(species,
           mutate(counts_diff = event_level_count - sum(catch_count, na.rm = TRUE)) |>
           ungroup()
 
-        if(sum(.d2$counts_diff)!=0) {
+        if(sum(.d2$counts_diff, na.rm = TRUE) != 0) {
           warning("Some skate-level counts are inconsistent with counts for events with gear differences.")
         } else {
           .d2 <- .d2 |> select(-counts_diff, -event_level_count)
