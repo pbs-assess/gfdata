@@ -137,7 +137,7 @@ So, to make sets that did capture the species visible to `head()`, we will sort 
 d0 <- d0 |> rename(ssid = survey_series_id) |> 
   relocate(year, fishing_event_id, catch_count, catch_weight, ssid, survey_abbrev) |> 
   arrange(-catch_count) 
-head(d0)
+head(d0, n = 10L)
 ```
 
 Notice that `catch_weight` sometimes contains zeros when `catch_count` is at least 1. 
@@ -150,8 +150,8 @@ Both `*_survey_sets()` functions have the option to set `remove_false_zeros = TR
 
 Messages and warnings will alert the user about nuances in the data requested and returned. 
 For example, this function call results in multiple rows of data that share the same fishing_event_id and a warning that suggests possible reasons for this. 
-In this case, the number of rows of data far exceeds the number of fishing events because catch is being returned at the skate level for some surveys. 
-This will happen any time one of the surveys being returned has skates that differ in the gear (currently just working off differences in hook type) used within the same fishing event, which triggers all fishing events with skate level data to be returned at the skate level. 
+In this case, the number of rows of data exceeds the number of fishing events because catch is being returned at the skate level for some fishing events. 
+This will happen any time skates within a fishing event differ in their gear (currently just working off differences in hook type and size). 
 
 ```{r, eval=TRUE, warning=TRUE}
 d <- get_all_survey_sets("Bluntnose Sixgill Shark")
@@ -160,15 +160,15 @@ length(unique(d$fishing_event_id)) #> number of fishing events
 sort(unique(d$survey_series_id)) #> only returns survey series that caught the species
 ```
 
-Now, when we view the data sorted by `catch_count`, the total catches are smaller because they are at the skate level (multiple skates make up each fishing event for some longline and trap surveys) and `catch_weight` appears appropriately as `NA` when this data was not collected. 
-We now also get catches from the dogfish comparison work (`ssid = c(48)`) which was not (and cannot be) returned by `get_survey_sets()`.  
+Now, when we view the data `catch_weight` appears appropriately as `NA` when this data was not collected. 
+We now also get catches at the skate level (multiple skates make up each fishing event) for the dogfish comparison work (`ssid = c(48)`) which was not (and cannot be) returned by `get_survey_sets()` due to the gear differences between skates.  
 
 ```{r, eval=TRUE, warning=TRUE}
 d <- d |> rename(ssid = survey_series_id) |> 
   relocate(year, fishing_event_id, skate_id, catch_count, catch_weight, 
            ssid, survey_abbrev, activity_desc) |> 
   arrange(-catch_count) 
-head(d)
+head(d, n = 10L)
 ```
 So, which surveys encountered the most of this species? 
 Some surveys only count individuals and others only weigh the total catch, so we will summarize both count and weight variables.
@@ -223,6 +223,10 @@ d2 |> group_by(survey_series_id, survey_series_desc) |>
 ```
 
 This should return all fishery-independent specimen records.
+We haven't counted actual ages for this species, because none are available. 
+For both `get_all_*` functions, the default is to drop all columns with no data, so in this case the column named `age` is missing. 
+However, this column could have been retained by using the argument `drop_na_columns = FALSE`.
+
 If you want to focus on specimens that come from design-based survey sets you can add arguments that filter for unsorted random samples that come from events that have grouping codes that match those expected for the current survey design. 
 Alternatively, this can be achieved by filtering for specimens where `!is.na(grouping_code)` or `!is.na(grouping_code_updated)` and checking that the `sample_type_comment` and `sample_source_desc` notes are consistent with the specimens being from random samples.
 Note: Some surveys do not use grouping codes, and therefore won't be returned when the `grouping_only` option is used. 
