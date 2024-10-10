@@ -185,8 +185,7 @@ d |> group_by(ssid, survey_series_desc) |>
 ```
 
 We can also tally the number of unique fishing events versus the number of rows of data returned to see which surveys have been returned at the skate level. 
-This was the case for SSID `48`, but this also results in all other surveys with skate level records returning data at this level too. 
-If one preferred the other surveys with skate level data, which do not have hook differences between skates, to be summarized at the event level, they could be called separately using the argument `ssid = c(14, 35)`.  
+This was the case for SSID `48`. 
 
 The vast majority of records for Bluntnose Sixgill Shark come from the IPHC, followed by the Dogfish and Hard Bottom Longline surveys, both conducted in the Strait of Georgia (aka. Inside South). 
 Because the IPHC covers a wider area, we can explore the spatial distribution of catches within that survey only, and confirm that they are most frequently caught in the Strait of Georgia, major stat area `"01"`. 
