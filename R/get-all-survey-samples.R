@@ -499,7 +499,8 @@ get_all_survey_samples <- function(species, ssid = NULL,
 
           .d2 <- .d |>
             left_join(count_gear_types) |>
-            filter(max > 1) |>
+            # need to include both tests because rarely fe_sub_level_ids can be missing
+            filter(max > 1 & !is.na(fe_sub_level_id)) |>
             left_join(fe2) |>
             # select(-survey_series_id) |>
             select(-max) |>
@@ -532,7 +533,8 @@ get_all_survey_samples <- function(species, ssid = NULL,
 
           .d1 <- .d |>
             left_join(count_gear_types) |>
-            filter(max < 2) |>
+            # need to include both tests because rarely fe_sub_level_ids can be missing
+            filter(max < 2 | is.na(fe_sub_level_id)) |>
             left_join(fe1) |>
             # select(-survey_series_id) |>
             select(-max) |>
