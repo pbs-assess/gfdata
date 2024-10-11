@@ -1,5 +1,5 @@
 ---
-title: "gfdata `get_all*` vignette"
+title: "gfdata `get_all` vignette"
 author: "Philina English"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
@@ -34,8 +34,8 @@ This works well for some surveys and data uses that depend on sampling a consist
 Other uses can harness information from samples that were collected outside the current survey footprint or from different types of surveys, some of which don't consistently apply these codes. 
 The `get_all_*()` functions have been designed to retrieve all fishery-independent survey data relevant to a particular species, or set of species, and to do so more quickly and comprehensively than the original functions. 
 When retrieving data for multiple species at once, these functions will be dramatically faster than the original `get_*()` functions. 
-This is because sql scripts are called once rather than repeatedly for each species. 
-When retrieving data for single species time savings will depend on which surveys and arguments are used. 
+This is because sql scripts are called once for all species rather than repeatedly for each species. 
+When retrieving data for single species run times will depend on which surveys and arguments are used. 
 The extent of the data returned can be specific to a single survey, a single major stat area, any combination of these, or generalized to get everything in the database that is appropriately formatted. 
 <!-- Currently, Nearshore Shrimp trawl and IPES survey data are not available.  -->
 Additional variables are also returned to support modelling objectives and decisions regarding which data should be retained for specific purposes.
@@ -44,7 +44,7 @@ Additional variables are also returned to support modelling objectives and decis
 
 The original functions required the user to specify survey series ids (`ssid`) and were limited in which they could accept and return. 
 <!-- They were primarily designed to pull the contemporary synoptic trawl surveys (`ssid = c(1, 3, 4, 16)`), the historic Hecate Strait Multispecies Assemblage trawl survey (`ssid = c(2)`), IPHC (`ssid = c(14)`), and four Hard Bottom Longline surveys (`ssid = c(22, 36, 39, 40)`). -->
-For `get_all_*()` functions, we have the option to set `ssid = NULL` which will return all fishery-independent samples and catch data in the database, as long as the survey series ids (and for catch data survey ids as well) have been assigned.
+For `get_all_*()` functions, we have the option to set `ssid = NULL` which will return all fishery-independent samples and catch data in the database, as long as the survey series ids (and for catch data, survey ids as well) have been assigned in the database.
 These include trap (sablefish), longline, jig, and most contemporary and historic trawl surveys (exceptions include the Nearshore Shrimp trawl survey for which survey ids are missing).
 If a character string of major stat area codes is provided to the argument `major`, than all sets or samples from that area will be returned. 
 
@@ -54,12 +54,12 @@ If a character string of major stat area codes is provided to the argument `majo
 Because the original `get_*()` survey functions were intended to only return sets and specimen samples that conform to current survey design specifications, they cannot retrieve sets and samples from cells that fall outside the latest definition of a particular survey's design. 
 When this behaviour is desired, it can be reproduced using the `get_all_*()` functions with the filtering options `usability = c(0, 1, 2, 6)` and `grouping_only = TRUE`.
 This works reliably for most groundfish bottom trawl and longline surveys (`ssid = c(1, 2, 3, 4, 16, 22, 36, 39, 40)`). 
-However, when these filtering options are applied to certain surveys, a small proportion of the data returned by the original function may be missed (e.g., IPHC: `ssid = 14`) and no data is returned for surveys for which grouping or usability codes have not been generated (e.g., the jig survey: `ssid = c(82:87)`).
+However, when these filtering options are applied to certain surveys, a small proportion of the data returned by the original function may be missed (e.g., IPHC: `ssid = 14`) and no data is returned for surveys for which grouping or usability codes do not appear in the database (e.g., the jig survey: `ssid = c(82:87)`).
 
 If using the `get_all_*()` functions to generate design-based indices, the strata area variable is now called `grouping_area_km2` (instead of `area_km2` to avoid confusion with `area_swept*` variables) and, in case design changes occur that are not incorporated into the usability codes, one should also always check for differences between the `grouping_code` and `grouping_code_updated` variables. 
 The `grouping_code_updated` generally contains a subset of the former, likely as a result of a shrinking footprint or the dropping an entire strata from a survey's definition. 
 This is currently the case for the offshore shrimp, also known as multi-species small-mesh (MSSM), surveys (`ssid = c(6, 7)`), which needs to be filtered for only those sets with updated grouping codes (`!is.na(grouping_code_updated)`) in order to match the current survey design.
-Consulting data stewards may be helpful in understanding differences between grouping codes for specific surveys.
+Consulting data stewards for specific surveys may be helpful in understanding differences between grouping codes.
 
 To retrieve specimen samples that conform to design specifications, the arguments `unsorted_only = TRUE` and `random_only = TRUE` should be used in addition to usability and grouping options. 
 When doing so `get_all_survey_samples()` function will return > 70 additional specimens over the original function for each of the longline surveys (`ssid = c(22, 36, 39, 40)`). 
@@ -134,7 +134,7 @@ So, to make sets that did capture the species visible to `head()`, we will sort 
 ```{r, eval=.eval, warning=TRUE}
 d0 <- d0 |> rename(ssid = survey_series_id) |> 
   relocate(year, fishing_event_id, catch_count, catch_weight, ssid, survey_abbrev) |> 
-  arrange(-catch_count) 
+  arrange(-catch_count, -fishing_event_id) 
 head(d0, n = 10L)
 ```
 
@@ -142,7 +142,7 @@ Notice that `catch_weight` sometimes contains zeros when `catch_count` is at lea
 This is because the original SQL code assume NULL values to be zeros. 
 In many cases catch weights are missing because they are not collected on that type of survey.
 However, even for surveys where weights are the usual unit of measurement, a particular catch may have been too large or small for the scale and therefore recorded only as a count. 
-Both `*_survey_sets()` functions have the option to set `remove_false_zeros = TRUE` to remove these misleading zeros from the data, but this is the default setting for `get_all_survey_sets()`.
+For `get_all_survey_sets()`, the default setting is `remove_false_zeros = TRUE`, which removes these misleading zeros from the data. 
 
 #### Using `get_all_survey_sets()`
 
@@ -163,9 +163,9 @@ We now also get catches at the skate level (multiple skates make up each fishing
 
 ```{r, eval=.eval, warning=TRUE}
 d <- d |> rename(ssid = survey_series_id) |> 
-  relocate(year, fishing_event_id, skate_id, catch_count, catch_weight, 
-           ssid, survey_abbrev, activity_desc) |> 
-  arrange(-catch_count) 
+  relocate(year, fishing_event_id, catch_count, catch_weight, ssid, survey_abbrev, 
+           skate_id, activity_desc) |> 
+  arrange(-catch_count, -fishing_event_id) 
 head(d, n = 10L)
 ```
 So, which surveys encountered the most of this species? 
