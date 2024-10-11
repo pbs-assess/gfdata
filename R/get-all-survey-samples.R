@@ -172,6 +172,19 @@ get_all_survey_samples <- function(species, ssid = NULL,
     classes = quiet_option
   )
 
+
+  if(!is.null(usability)|unsorted_only|random_only|grouping_only) {
+    print(
+      paste0("Looking for samples that are",
+             ifelse(!is.null(usability), paste0( " usable (", toString(usability), ")"), ""),
+             ifelse(unsorted_only, " unsorted", ""),
+             ifelse(random_only, " random", ""),
+             ifelse(grouping_only, " with originally specified grouping codes.", ".")
+      )
+    )
+  }
+
+
   if (!is.null(ssid) & !include_activity_matches) {
     .d <- .d |>
       group_by(specimen_id, survey_series_id) |>
@@ -189,18 +202,6 @@ get_all_survey_samples <- function(species, ssid = NULL,
     }
 
     .d <- filter(.d, survey_series_id %in% ssid)
-
-
-    if(!is.null(usability)|unsorted_only|random_only|grouping_only) {
-      print(
-        paste0("Looking for samples that are",
-               ifelse(!is.null(usability), paste0( " usable (", usability, ")"), ""),
-               ifelse(unsorted_only, " unsorted", ""),
-               ifelse(random_only, " random", ""),
-               ifelse(grouping_only, " with originally specified grouping codes.", ".")
-        )
-      )
-    }
 
     if (is.null(major)) {
       print(
@@ -631,7 +632,7 @@ get_all_survey_samples <- function(species, ssid = NULL,
 
       # and only keep those not original_ind = Y when the specimen id was missing
       .d <- bind_rows(.dy, filter(.dn, !(specimen_id %in% c(unique(.dy$specimen_id)))))
-
+      .d <- filter(.d, !(survey_series_id == 0 & (specimen_id %in% c(unique(.dy[duplicated(.dy$specimen_id),]$specimen_id)))))
       # check if there are still duplicated specimen ids
       if (length(.d$specimen_id) > length(unique(.d$specimen_id))) {
         warning(
