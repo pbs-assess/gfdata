@@ -133,9 +133,10 @@ So, to make sets that did capture the species visible to `head()`, we will sort 
 
 ```{r, eval=.eval, warning=TRUE}
 d0 <- d0 |> rename(ssid = survey_series_id) |> 
-  relocate(year, fishing_event_id, catch_count, catch_weight, ssid, survey_abbrev) |> 
+  relocate(year, fishing_event_id, catch_count, catch_weight, ssid, survey_abbrev,
+           survey_series_desc) |> 
   arrange(-catch_count, -fishing_event_id) 
-head(d0, n = 10L)
+head(d0, n = 8L)
 ```
 
 Notice that `catch_weight` sometimes contains zeros when `catch_count` is at least 1. 
@@ -164,9 +165,9 @@ We now also get catches at the skate level (multiple skates make up each fishing
 ```{r, eval=.eval, warning=TRUE}
 d <- d |> rename(ssid = survey_series_id) |> 
   relocate(year, fishing_event_id, catch_count, catch_weight, ssid, survey_abbrev, 
-           skate_id, activity_desc) |> 
+           activity_desc, skate_id) |> 
   arrange(-catch_count, -fishing_event_id) 
-head(d, n = 10L)
+head(d, n = 8L)
 ```
 So, which surveys encountered the most of this species? 
 Some surveys only count individuals and others only weigh the total catch, so we will summarize both count and weight variables.
