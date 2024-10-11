@@ -4,3 +4,4 @@
 ^NEWS\.md$
 ^\.github$
 ^data-raw$
+^vignettes/get-all-cache
