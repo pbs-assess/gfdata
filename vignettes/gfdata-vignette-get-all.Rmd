@@ -721,3 +721,4 @@ If the SQL search is successfully returned to R, but your computer has insuffici
 
 >Error: cannot allocate vector of size XXX Mb
 
+
