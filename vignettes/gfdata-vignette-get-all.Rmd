@@ -102,37 +102,622 @@ By default this function returns just the most commonly used groundfish surveys:
 The first thing to note here is that this function will only return one row per fishing event (unless overlapping survey series or sample_ids were requested).
 This function will also return all sets for any survey series, even when the species has never been recorded on that survey.
 
+ 
+ ``` r
+ d0 <- get_survey_sets("Bluntnose Sixgill Shark")
+ nrow(d0) #> number of rows
+ ```
+ 
+ ```
+ #> [1] 15349
+ ```
+ 
+ ``` r
+ length(unique(d0$fishing_event_id)) #> number of fishing events
+ ```
+ 
+ ```
+ #> [1] 15349
+ ```
+ 
+ ``` r
+ sort(unique(d0$survey_series_id)) #> all default survey series were returned
+ ```
+ 
+ ```
+ #>  [1]  1  2  3  4 14 16 22 36 39 40
+ ```
+
+In contrast, `get_all_survey_sets()` only returns set data for survey series that have captured the species at least once.
+Both `*_survey_sets()` functions return all sets for any survey series returned, including those that did not record the species.
+So, to make sets that did capture the species visible to `head()`, we will sort by descending `catch_count`.
+
+ 
+ ``` r
+ d0 <- d0 |> rename(ssid = survey_series_id) |>
+   relocate(year, fishing_event_id, catch_count, catch_weight, ssid, survey_abbrev,
+            survey_series_desc) |>
+   arrange(-catch_count, -fishing_event_id)
+ head(d0, n = 8L)
+ ```
+ 
+ ```
+ #> # A tibble: 8 x 36
+ #>    year fishing_event_id catch_count catch_weight  ssid survey_abbrev survey_series_desc   survey_id
+ #>   <int>            <dbl>       <dbl>        <dbl> <dbl> <chr>         <chr>                    <int>
+ #> 1  2018          5092608          24            0    14 IPHC FISS     International Pacif~       538
+ #> 2  2018          5087665          14            0    14 IPHC FISS     International Pacif~       538
+ #> 3  2018          5093313          13            0    14 IPHC FISS     International Pacif~       538
+ #> 4  2018          5089779          10            0    14 IPHC FISS     International Pacif~       538
+ #> 5  2018          5074269          10            0    14 IPHC FISS     International Pacif~       538
+ #> 6  2018          5090481           9            0    14 IPHC FISS     International Pacif~       538
+ #> 7  2018          5074976           8            0    14 IPHC FISS     International Pacif~       538
+ #> 8  2018          5091185           6            0    14 IPHC FISS     International Pacif~       538
+ #> # i 28 more variables: species_code <chr>, survey_desc <chr>, trip_id <dbl>,
+ #> #   fe_major_level_id <dbl>, latitude <dbl>, longitude <dbl>, grouping_code <dbl>,
+ #> #   major_stat_area_code <chr>, minor_stat_area_code <chr>, depth_m <dbl>, duration_min <int>,
+ #> #   doorspread_m <dbl>, speed_mpm <dbl>, tow_length_m <dbl>, density_kgpm2 <dbl>,
+ #> #   density_pcpm2 <dbl>, skate_count <int>, hook_count <int>, density_ppkm2 <dbl>, month <int>,
+ #> #   day <int>, time_deployed <dttm>, time_retrieved <dttm>, latitude_end <dbl>,
+ #> #   longitude_end <dbl>, species_common_name <chr>, species_science_name <chr>, ...
+ ```
+
+Notice that `catch_weight` sometimes contains zeros when `catch_count` is at least 1.
+This is because the original SQL code assume NULL values to be zeros.
+In many cases catch weights are missing because they are not collected on that type of survey.
+However, even for surveys where weights are the usual unit of measurement, a particular catch may have been too large or small for the scale and therefore recorded only as a count.
+For `get_all_survey_sets()`, the default setting is `remove_false_zeros = TRUE`, which removes these misleading zeros from the data.
+
+#### Using `get_all_survey_sets()`
+
+Messages and warnings will alert the user about nuances in the data requested and returned.
+For example, this function call results in multiple rows of data that share the same fishing_event_id and a warning that suggests possible reasons for this.
+In this case, the number of rows of data exceeds the number of fishing events because catch is being returned at the skate level for some fishing events.
+This will happen any time skates within a fishing event differ in their gear (currently just working off differences in hook type and size).
+
+ 
+ ``` r
+ d <- get_all_survey_sets("Bluntnose Sixgill Shark")
+ ```
+ 
+ ```
+ #> [1] "Returning all sets/events/skates (including those with no catch) from all survey series that recorded Bluntnose Sixgill Shark at least once."
+ ```
+ 
+ ```
+ #> Warning in get_all_survey_sets("Bluntnose Sixgill Shark"): Duplicate fishing_event_ids are still
+ #> present despite `remove_duplicates = TRUE`. This may be because of overlapping survey
+ #> stratifications or multiple skates per event (specifically when at least one survey included used
+ #> skates with differences in gear type), but could also be due to trips participating in more than
+ #> one type of survey. If the latter, location, gear, or `reason_desc` columns should be used to
+ #> choose which events to keep. After selecting specific survey stratifications and determining that
+ #> all relevant variables are accurate, the remaining duplications can be filtered using `dat <-
+ #> dat[!duplicated(dat$fishing_event_id), ]`.
+ ```
+ 
+ ```
+ #> Warning in get_all_survey_sets("Bluntnose Sixgill Shark"): All sablefish research related sets are
+ #> returned as survey_series_id 35. To separate types of sets, use reason_desc and grouping_code
+ #> variables.
+ ```
+ 
+ ``` r
+ nrow(d) #> number of rows
+ ```
+ 
+ ```
+ #> [1] 18967
+ ```
+ 
+ ``` r
+ length(unique(d$fishing_event_id)) #> number of fishing events
+ ```
+ 
+ ```
+ #> [1] 18840
+ ```
+ 
+ ``` r
+ sort(unique(d$survey_series_id)) #> only returns survey series that caught the species
+ ```
+ 
+ ```
+ #>  [1]  4  6  7 14 34 35 36 39 40 45 48 76 80
+ ```
+
+Now, when we view the data `catch_weight` appears appropriately as `NA` when this data was not collected.
+We now also get catches at the skate level (multiple skates make up each fishing event) for the dogfish comparison work (`ssid = c(48)`) which was not (and cannot be) returned by `get_survey_sets()` due to the gear differences between skates.
+
+ 
+ ``` r
+ d <- d |> rename(ssid = survey_series_id) |>
+   relocate(year, fishing_event_id, catch_count, catch_weight, ssid, survey_abbrev,
+            activity_desc, skate_id) |>
+   arrange(-catch_count, -fishing_event_id)
+ head(d, n = 8L)
+ ```
+ 
+ ```
+ #> # A tibble: 8 x 75
+ #>    year fishing_event_id catch_count catch_weight  ssid survey_abbrev activity_desc         skate_id
+ #>   <int>            <dbl>       <dbl>        <dbl> <dbl> <chr>         <chr>                    <dbl>
+ #> 1  2018          5092608          24           NA    14 IPHC FISS     INTERNATIONAL PACIFI~       NA
+ #> 2  2018          5087665          14           NA    14 IPHC FISS     INTERNATIONAL PACIFI~       NA
+ #> 3  2018          5093313          13           NA    14 IPHC FISS     INTERNATIONAL PACIFI~       NA
+ #> 4  2018          5089779          10           NA    14 IPHC FISS     INTERNATIONAL PACIFI~       NA
+ #> 5  2018          5074269          10           NA    14 IPHC FISS     INTERNATIONAL PACIFI~       NA
+ #> 6  2018          5090481           9           NA    14 IPHC FISS     INTERNATIONAL PACIFI~       NA
+ #> 7  2018          5074976           8           NA    14 IPHC FISS     INTERNATIONAL PACIFI~       NA
+ #> 8  2023          5795618           6           NA    48 OTHER         DOGFISH GEAR/TIMING ~  5788696
+ #> # i 67 more variables: species_common_name <chr>, species_code <chr>, fe_major_level_id <dbl>,
+ #> #   trip_id <dbl>, survey_series_og <dbl>, survey_id <int>, activity_code <dbl>, reason_desc <chr>,
+ #> #   trip_year <int>, month <int>, day <int>, time_deployed <dttm>, time_retrieved <dttm>,
+ #> #   time_end_deployment <dttm>, time_begin_retrieval <dttm>, latitude <dbl>, longitude <dbl>,
+ #> #   latitude_end <dbl>, longitude_end <dbl>, major_stat_area_code <chr>,
+ #> #   minor_stat_area_code <chr>, depth_m <dbl>, depth_begin <dbl>, depth_end <dbl>, vessel_id <dbl>,
+ #> #   captain_id <dbl>, duration_min <int>, tow_length_m <dbl>, mouth_width_m <dbl>, ...
+ ```
+So, which surveys encountered the most of this species?
+Some surveys only count individuals and others only weigh the total catch, so we will summarize both count and weight variables.
+
+ 
+ ``` r
+ d |> group_by(ssid, survey_series_desc) |>
+   mutate(event_skate_id = paste0(fishing_event_id, "-", skate_id)) |>
+   summarise(individuals = sum(catch_count, na.rm = TRUE),
+             weight = sum(catch_weight),
+             events = length(unique(fishing_event_id)),
+             skates = length(unique(event_skate_id)),
+             rows = n()) |>
+   arrange(-individuals, -weight)
+ ```
+ 
+ ```
+ #> # A tibble: 13 x 7
+ #> # Groups:   ssid [13]
+ #>     ssid survey_series_desc                                   individuals weight events skates  rows
+ #>    <dbl> <chr>                                                      <dbl>  <dbl>  <int>  <int> <int>
+ #>  1    14 "International Pacific Halibut Commission Fishery-I~         175  NA      3278   3278  3278
+ #>  2    48 "Dogfish Gear/Timing Comparison Surveys"                      38  NA       145    271   271
+ #>  3    40 "Hard Bottom Longline Inside South "                          16  NA       528    528   528
+ #>  4    76 "Strait of Georgia Dogfish Longline"                          13  NA       351    351   351
+ #>  5    45 "Strait of Georgia Synoptic Bottom Trawl"                      2  19.4      98     98    98
+ #>  6    39 "Hard Bottom Longline Inside North "                           1 200       769    769   769
+ #>  7    34 "Strait of Georgia Ecosystem Research Initiative Ac~           1  36.7     167    167   167
+ #>  8     6 "Queen Charlotte Sound Multispecies Small-mesh Bott~           1   7.14   1295   1295  1295
+ #>  9    35 "Sablefish Research and Assessment"                            1   5.8    3582   3582  3582
+ #> 10     4 "West Coast Vancouver Island Synoptic Bottom Trawl"            1   1.52   1737   1737  1737
+ #> 11    36 "Hard Bottom Longline Outside South"                           1  NA      1536   1536  1536
+ #> 12     7 "West Coast Vancouver Island Multispecies Small-mes~           0  15.7    5084   5084  5084
+ #> 13    80 "Eulachon Migration Study Bottom Trawl (South)"                0   4.5     271    271   271
+ ```
+
+We can also tally the number of unique fishing events versus the number of rows of data returned to see which surveys have been returned at the skate level.
+This was the case for SSID `48`.
+
+The vast majority of records for Bluntnose Sixgill Shark come from the IPHC, followed by the Dogfish and Hard Bottom Longline surveys, both conducted in the Strait of Georgia (aka. Inside South).
+Because the IPHC covers a wider area, we can explore the spatial distribution of catches within that survey only, and confirm that they are most frequently caught in the Strait of Georgia, major stat area `"01"`.
+
+ 
+ ``` r
+ d |> filter(ssid == 14) |>
+   group_by(major_stat_area_code) |>
+   summarise(individuals = sum(catch_count, na.rm = TRUE),
+             weight = sum(catch_weight),
+             events = length(unique(fishing_event_id))) |>
+   arrange(-individuals, -weight)
+ ```
+ 
+ ```
+ #> # A tibble: 8 x 4
+ #>   major_stat_area_code individuals weight events
+ #>   <chr>                      <dbl>  <dbl>  <int>
+ #> 1 01                           137     NA     43
+ #> 2 06                            14     NA    831
+ #> 3 03                            10     NA    383
+ #> 4 04                            10     NA    262
+ #> 5 07                             2     NA    757
+ #> 6 05                             1     NA    362
+ #> 7 09                             1     NA    201
+ #> 8 08                             0      0    439
+ ```
 
 
+### What survey samples are available for a species within a specific area?
+
+As an example, we might want to determine what survey sample data exists for Pacific Spiny Dogfish in the Strait of Georgia.
+The area argument is `major` and accepts character vectors of major stat area codes.
+A table of options can be retrieved with `get_major_area()`.
+
+ 
+ ``` r
+ d2 <- get_all_survey_samples("north pacific spiny dogfish",
+                              major = c("01"))
+ ```
+ 
+ ```
+ #> [1] "Returning all north pacific spiny dogfish specimens from major area(s) 01 from any survey series."
+ ```
+
+ 
+ ``` r
+ d2 |> group_by(survey_series_id, survey_series_desc) |>
+   summarise(specimens = length(unique(specimen_id)),
+             lengths = sum(!is.na(length)),
+             weights = sum(!is.na(weight)),
+             age_structures = sum(age_specimen_collected)
+             ) |>
+   arrange(-specimens)|>
+   rename(ssid = survey_series_id)
+ ```
+ 
+ ```
+ #> # A tibble: 15 x 6
+ #> # Groups:   ssid [15]
+ #>     ssid survey_series_desc                                 specimens lengths weights age_structures
+ #>    <dbl> <chr>                                                  <int>   <int>   <int>          <int>
+ #>  1    76 "Strait of Georgia Dogfish Longline"                   54716   54690    6582          19053
+ #>  2    40 "Hard Bottom Longline Inside South "                   36566   36561       3              0
+ #>  3    39 "Hard Bottom Longline Inside North "                   35624   35497     408            400
+ #>  4    48 "Dogfish Gear/Timing Comparison Surveys"               16695   16681    3322            884
+ #>  5    45 "Strait of Georgia Synoptic Bottom Trawl"               1721    1721    1243            505
+ #>  6    15 "Strait of Georgia Lingcod Young-of-year Bottom T~      1371    1181       0              0
+ #>  7    34 "Strait of Georgia Ecosystem Research Initiative ~       925     877     402              0
+ #>  8    50 "Yelloweye Rockfish Genetics"                            786     786       0              0
+ #>  9    87 "Jig Survey - 4B Stat Area 19"                           314     300       0              0
+ #> 10    86 "Jig Survey - 4B Stat Area 18"                           176     164       0              0
+ #> 11    51 "Combined Submersible And Longline Fishing Survey"       169     169     168              0
+ #> 12    82 "Jig Survey - 4B Stat Area 12"                            14      14       0              0
+ #> 13    85 "Jig Survey - 4B Stat Area 16"                             5       4       0              0
+ #> 14    68 "Joint Canada/US Hake Acoustic"                            1       1       1              0
+ #> 15    84 "Jig Survey - 4B Stat Area 15"                             1       0       0              0
+ ```
+
+This should return all fishery-independent specimen records.
+We haven't counted actual ages for this species, because none are available.
+For both `get_all_*` functions, the default is to drop all columns with no data, so in this case the column named `age` is missing.
+However, this column could have been retained by using the argument `drop_na_columns = FALSE`.
+
+If you want to focus on specimens that come from design-based survey sets you can add arguments that filter for unsorted random samples that come from events that have grouping codes that match those expected for the current survey design.
+Alternatively, this can be achieved by filtering for specimens where `!is.na(grouping_code)` or `!is.na(grouping_code_updated)` and checking that the `sample_type_comment` and `sample_source_desc` notes are consistent with the specimens being from random samples.
+Here, we will use the built in filter arguments, but also add the additional constraint of filtering based on the updated grouping codes.
+Note: Some surveys do not use grouping codes, and therefore won't be returned when the `grouping_only` option is used.
+In this case, all of SSID `51` and `82:87` are now missing.
+
+ 
+ ``` r
+ d3 <- get_all_survey_samples("north pacific spiny dogfish",
+                              major = c("01"),
+                              usability = c(0, 1, 2, 6),
+                              unsorted_only = TRUE,
+                              random_only = TRUE,
+                              grouping_only = TRUE)
+ ```
+ 
+ ```
+ #> [1] "Looking for samples that are usable (0, 1, 2, 6) unsorted random with originally specified grouping codes."
+ #> [1] "Returning all north pacific spiny dogfish specimens from major area(s) 01 from any survey series."
+ ```
+
+ 
+ ``` r
+ d3 |> filter(!is.na(grouping_code_updated)) |>
+   group_by(survey_series_id, survey_series_desc) |>
+   summarise(specimens = length(unique(specimen_id)),
+             lengths = sum(!is.na(length)),
+             weights = sum(!is.na(weight)),
+             age_structures = sum(age_specimen_collected)) |>
+   arrange(-specimens) |>
+   rename(ssid = survey_series_id)
+ ```
+ 
+ ```
+ #> # A tibble: 7 x 6
+ #> # Groups:   ssid [7]
+ #>    ssid survey_series_desc                                  specimens lengths weights age_structures
+ #>   <dbl> <chr>                                                   <int>   <int>   <int>          <int>
+ #> 1    40 "Hard Bottom Longline Inside South "                    35070   35065       3              0
+ #> 2    39 "Hard Bottom Longline Inside North "                    29149   29027     399            400
+ #> 3    76 "Strait of Georgia Dogfish Longline"                    18384   18376       0          15521
+ #> 4    45 "Strait of Georgia Synoptic Bottom Trawl"                1721    1721    1243            505
+ #> 5    15 "Strait of Georgia Lingcod Young-of-year Bottom Tr~      1071    1071       0              0
+ #> 6    34 "Strait of Georgia Ecosystem Research Initiative A~       215     215       0              0
+ #> 7    68 "Joint Canada/US Hake Acoustic"                             1       1       1              0
+ ```
+
+If you want to retrieve additional event or skate-level covariates for use in model-based analyses, than use the argument `include_event_info = TRUE`.
+For example, when this is applied to the various longline surveys in the Strait of Georgia, one can test the effects of variables like depth, date, hook type and size on the sex and sizes of fish caught.
+
+ 
+ ``` r
+ d4 <- get_all_survey_samples("north pacific spiny dogfish",
+                              major = c("01"),
+                              ssid = c(39, 40, 48, 76),
+                              include_event_info = TRUE)
+ ```
+ 
+ ```
+ #> [1] "Returning all north pacific spiny dogfish specimens from within major area(s) 01 and belonging to survey series 39, 40, 48, 76."
+ #> [1] "Specimens found. Fetching additional event info."
+ ```
+
+ 
+ ``` r
+ d4 |> group_by(survey_series_id, activity_desc, hook_desc, hooksize_desc) |>
+   summarise(specimens = length(unique(specimen_id)),
+             years = paste(min(year, na.rm = TRUE), "-", max(year, na.rm = TRUE))) |>
+   arrange(-specimens) |>
+   rename(ssid = survey_series_id, hooksize = hooksize_desc) |>
+   print()
+ ```
+ 
+ ```
+ #> # A tibble: 8 x 6
+ #> # Groups:   ssid, activity_desc, hook_desc [7]
+ #>    ssid activity_desc                                   hook_desc   hooksize specimens years      
+ #>   <dbl> <chr>                                           <chr>       <chr>        <int> <chr>      
+ #> 1    40 HARD BOTTOM LONGLINE HOOK SURVEY - INSIDE SOUTH CIRCLE HOOK 13/0         36566 2005 - 2022
+ #> 2    76 STRAIT OF GEORGIA DOGFISH LONGLINE SURVEY       CIRCLE HOOK 14/0         36332 2005 - 2019
+ #> 3    39 HARD BOTTOM LONGLINE HOOK SURVEY - INSIDE NORTH CIRCLE HOOK 13/0         35624 2003 - 2023
+ #> 4    76 STRAIT OF GEORGIA DOGFISH LONGLINE SURVEY       J-HOOK      12/0         18384 1986 - 1989
+ #> 5    48 DOGFISH GEAR/TIMING COMPARISON SURVEYS          CIRCLE HOOK 14/0          8474 2004 - 2023
+ #> 6    48 DOGFISH GEAR/TIMING COMPARISON SURVEYS          CIRCLE HOOK 13/0          7254 2019 - 2023
+ #> 7    48 DOGFISH GEAR/TIMING COMPARISON SURVEYS          J-HOOK      12/0           948 2004 - 2023
+ #> 8    48 DOGFISH GEAR/TIMING COMPARISON SURVEYS          <NA>        <NA>            19 2004 - 2004
+ ```
+
+These are the variables returned by default:
+
+ 
+ ``` r
+ glimpse(d2)
+ ```
+ 
+ ```
+ #> Rows: 149,084
+ #> Columns: 50
+ #> $ species_common_name          <chr> "north pacific spiny dogfish", "north pacific spiny dogfish",~
+ #> $ survey_series_id             <dbl> 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 1~
+ #> $ sex                          <dbl> 1, 2, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 2, 1, 2, 1, 2, 1, 1, 2~
+ #> $ length                       <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+ #> $ weight                       <int> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+ #> $ survey_series_og             <dbl> 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 1~
+ #> $ activity_desc                <chr> "STRAIT OF GEORGIA LINGCOD YOUNG-OF-YEAR BOTTOM TRAWL SURVEY"~
+ #> $ activity_code                <dbl> 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 3~
+ #> $ fishing_event_id             <dbl> 3132875, 3132875, 3132875, 3132875, 3132875, 3132875, 3132875~
+ #> $ trip_year                    <int> 2006, 2006, 2006, 2006, 2006, 2006, 2006, 2006, 2006, 2006, 2~
+ #> $ sample_date                  <dttm> 2006-08-04, 2006-08-04, 2006-08-04, 2006-08-04, 2006-08-04, ~
+ #> $ species_code                 <chr> "044", "044", "044", "044", "044", "044", "044", "044", "044"~
+ #> $ species_science_name         <chr> "squalus suckleyi", "squalus suckleyi", "squalus suckleyi", "~
+ #> $ specimen_id                  <dbl> 12291537, 12291539, 12291540, 12291542, 12291543, 12291544, 1~
+ #> $ sample_id                    <dbl> 399729, 399729, 399729, 399729, 399729, 399729, 399729, 39972~
+ #> $ fork_length                  <dbl> 72, 72, 73, 74, 75, 75, 76, 80, 85, 88, 89, 70, 77, 77, 78, 7~
+ #> $ total_length                 <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+ #> $ maturity_code                <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0~
+ #> $ maturity_name                <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+ #> $ maturity_desc                <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+ #> $ maturity_convention_code     <dbl> 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9~
+ #> $ maturity_convention_desc     <chr> "MATURITIES NOT LOOKED AT", "MATURITIES NOT LOOKED AT", "MATU~
+ #> $ maturity_convention_maxvalue <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0~
+ #> $ major_stat_area_code         <chr> "01", "01", "01", "01", "01", "01", "01", "01", "01", "01", "~
+ #> $ major_stat_area_name         <chr> "4B: STRAIT OF GEORGIA", "4B: STRAIT OF GEORGIA", "4B: STRAIT~
+ #> $ minor_stat_area_code         <chr> "14", "14", "14", "14", "14", "14", "14", "14", "14", "14", "~
+ #> $ gear                         <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1~
+ #> $ reason_desc                  <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+ #> $ survey_id                    <int> 481, 481, 481, 481, 481, 481, 481, 481, 481, 481, 481, 481, 4~
+ #> $ trip_id                      <dbl> 73330, 73330, 73330, 73330, 73330, 73330, 73330, 73330, 73330~
+ #> $ trip_sub_type_code           <dbl> 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2~
+ #> $ fe_parent_event_id           <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+ #> $ fe_major_level_id            <dbl> 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 4~
+ #> $ fe_sub_level_id              <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+ #> $ sample_type_code             <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1~
+ #> $ sample_type_comment          <chr> "TOTAL  CATCH", "TOTAL  CATCH", "TOTAL  CATCH", "TOTAL  CATCH~
+ #> $ species_category_code        <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1~
+ #> $ sample_source_code           <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1~
+ #> $ age_specimen_collected       <int> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0~
+ #> $ usability_code               <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1~
+ #> $ grouping_code                <dbl> 101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 1~
+ #> $ grouping_desc                <chr> "Lingcod YOY depth stratum 1: 16 - 25 m", "Lingcod YOY depth ~
+ #> $ grouping_code_updated        <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+ #> $ grouping_desc_updated        <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+ #> $ original_ind                 <chr> "Y", "Y", "Y", "Y", "Y", "Y", "Y", "Y", "Y", "Y", "Y", "Y", "~
+ #> $ length_type                  <chr> "total_length", "total_length", "total_length", "total_length~
+ #> $ sample_source_desc           <chr> "Unsorted", "Unsorted", "Unsorted", "Unsorted", "Unsorted", "~
+ #> $ usability_desc               <chr> "FULLY USABLE", "FULLY USABLE", "FULLY USABLE", "FULLY USABLE~
+ #> $ survey_series_desc           <chr> "Strait of Georgia Lingcod Young-of-year Bottom Trawl", "Stra~
+ #> $ survey_abbrev                <chr> "OTHER", "OTHER", "OTHER", "OTHER", "OTHER", "OTHER", "OTHER"~
+ ```
+
+And these additional variables were returned for longline surveys when `include_event_info = TRUE`:
+
+ 
+ ``` r
+ glimpse(d4[, !names(d4) %in% names(d2)])
+ ```
+ 
+ ```
+ #> Rows: 143,601
+ #> Columns: 34
+ #> $ catch_weight         <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+ #> $ catch_count          <dbl> 53, 53, 53, 53, 53, 53, 53, 53, 53, 53, 53, 53, 53, 53, 53, 53, 53, 5~
+ #> $ year                 <int> 2023, 2023, 2023, 2023, 2023, 2023, 2023, 2023, 2023, 2023, 2023, 202~
+ #> $ month                <int> 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, ~
+ #> $ day                  <int> 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, ~
+ #> $ time_deployed        <dttm> 2023-09-02 14:43:16, 2023-09-02 14:43:16, 2023-09-02 14:43:16, 2023-~
+ #> $ time_retrieved       <dttm> 2023-09-02 16:42:55, 2023-09-02 16:42:55, 2023-09-02 16:42:55, 2023-~
+ #> $ time_end_deployment  <dttm> 2023-09-02 14:43:16, 2023-09-02 14:43:16, 2023-09-02 14:43:16, 2023-~
+ #> $ time_begin_retrieval <dttm> 2023-09-02 16:42:55, 2023-09-02 16:42:55, 2023-09-02 16:42:55, 2023-~
+ #> $ latitude             <dbl> 50.21935, 50.21935, 50.21935, 50.21935, 50.21935, 50.21935, 50.21935,~
+ #> $ longitude            <dbl> -125.3644, -125.3644, -125.3644, -125.3644, -125.3644, -125.3644, -12~
+ #> $ latitude_end         <dbl> 50.22198, 50.22198, 50.22198, 50.22198, 50.22198, 50.22198, 50.22198,~
+ #> $ longitude_end        <dbl> -125.3671, -125.3671, -125.3671, -125.3671, -125.3671, -125.3671, -12~
+ #> $ depth_m              <dbl> 79, 79, 79, 79, 79, 79, 79, 79, 79, 79, 79, 79, 79, 79, 79, 79, 79, 7~
+ #> $ depth_begin          <dbl> 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 6~
+ #> $ depth_end            <dbl> 101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101,~
+ #> $ vessel_id            <dbl> 2018, 2018, 2018, 2018, 2018, 2018, 2018, 2018, 2018, 2018, 2018, 201~
+ #> $ captain_id           <dbl> 969, 969, 969, 969, 969, 969, 969, 969, 969, 969, 969, 969, 969, 969,~
+ #> $ duration_min         <int> 119, 119, 119, 119, 119, 119, 119, 119, 119, 119, 119, 119, 119, 119,~
+ #> $ tow_length_m         <dbl> 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350,~
+ #> $ hook_code            <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ~
+ #> $ lglsp_hook_count     <dbl> 225, 225, 225, 225, 225, 225, 225, 225, 225, 225, 225, 225, 225, 225,~
+ #> $ hook_desc            <chr> "CIRCLE HOOK", "CIRCLE HOOK", "CIRCLE HOOK", "CIRCLE HOOK", "CIRCLE H~
+ #> $ hooksize_desc        <chr> "13/0", "13/0", "13/0", "13/0", "13/0", "13/0", "13/0", "13/0", "13/0~
+ #> $ grouping_depth_id    <chr> "2", "2", "2", "2", "2", "2", "2", "2", "2", "2", "2", "2", "2", "2",~
+ #> $ grouping_area_km2    <int> 844, 844, 844, 844, 844, 844, 844, 844, 844, 844, 844, 844, 844, 844,~
+ #> $ skate_count          <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ~
+ #> $ mean_per_skate       <dbl> 236, 236, 236, 236, 236, 236, 236, 236, 236, 236, 236, 236, 236, 236,~
+ #> $ minor_id_count       <int> 236, 236, 236, 236, 236, 236, 236, 236, 236, 236, 236, 236, 236, 236,~
+ #> $ minor_id_max         <dbl> 236, 236, 236, 236, 236, 236, 236, 236, 236, 236, 236, 236, 236, 236,~
+ #> $ diff                 <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ~
+ #> $ event_level_count    <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+ #> $ skate_id             <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+ #> $ hook_area_swept_km2  <dbl> 0.005262028, 0.005262028, 0.005262028, 0.005262028, 0.005262028, 0.00~
+ ```
+
+The collection of variables that are returned can change depending on the records that are retrieved. For example, variables that are specific to longline surveys are omitted when only trawl survey sets are returned.
+
+### Surveys with overlapping stratifications
+
+Some fishing events are assigned to multiple surveys, which may or may not be fully or partially overlapping, and are defined by the same activity code in the database. To get all sets with matching activity codes one can use `include_activity_matches = TRUE`. It will return all events that share the same `activity_code` as any SSIDs requested. This works when retrieving either sets or samples.
+
+ 
+ ``` r
+ d5 <- get_all_survey_sets("north pacific spiny dogfish",
+                           ssid = c(7),
+                           include_activity_matches = TRUE,
+                           remove_duplicates = TRUE #> default
+                           )
+ ```
+ 
+ ```
+ #> [1] "north pacific spiny dogfish have been recorded by survey series 7, 6, 67 at least once. "
+ #> [1] "Returning all relevant sets/events/skates including those with no catch."
+ ```
+ 
+ ```
+ #> Warning in get_all_survey_sets("north pacific spiny dogfish", ssid = c(7), : Duplicate
+ #> fishing_event_ids are still present despite `remove_duplicates = TRUE`. This may be because of
+ #> overlapping survey stratifications or multiple skates per event (specifically when at least one
+ #> survey included used skates with differences in gear type), but could also be due to trips
+ #> participating in more than one type of survey. If the latter, location, gear, or `reason_desc`
+ #> columns should be used to choose which events to keep. After selecting specific survey
+ #> stratifications and determining that all relevant variables are accurate, the remaining
+ #> duplications can be filtered using `dat <- dat[!duplicated(dat$fishing_event_id), ]`.
+ ```
+
+ 
+ ``` r
+ d5 |> group_by(survey_series_id, survey_abbrev, activity_desc) |>
+   summarise(events = length(unique(fishing_event_id)),
+             years = paste(min(year), "-", max(year)),
+             rows = n()) |>
+   arrange(-events) |>
+   rename(ssid = survey_series_id)
+ ```
+ 
+ ```
+ #> # A tibble: 2 x 6
+ #> # Groups:   ssid, survey_abbrev [2]
+ #>    ssid survey_abbrev activity_desc                                            events years     rows
+ #>   <dbl> <chr>         <chr>                                                     <int> <chr>    <int>
+ #> 1     7 MSSM WCVI     MULTISPECIES SMALL-MESH (AKA SHRIMP) BOTTOM TRAWL SURVEY   5084 1975 - ~  5084
+ #> 2     6 MSSM QCS      MULTISPECIES SMALL-MESH (AKA SHRIMP) BOTTOM TRAWL SURVEY   1295 1998 - ~  1295
+ ```
+
+You will get a warning that some fishing events are duplicated even though `remove_duplicates = TRUE`. We can look at one of the duplicated events and see that it lacks location information, which means that it couldn't be accurately assigned to either region of shrimp survey, so it has been returned as potentially belonging to both.
+
+ 
+ ``` r
+ dd <- d5[duplicated(d5$fishing_event_id),]
+ glimpse(dd)
+ ```
+ 
+ ```
+ #> Rows: 1
+ #> Columns: 54
+ #> $ species_common_name   <chr> "north pacific spiny dogfish"
+ #> $ catch_count           <dbl> NA
+ #> $ catch_weight          <dbl> 1.9
+ #> $ survey_series_id      <dbl> 7
+ #> $ survey_abbrev         <chr> "MSSM WCVI"
+ #> $ year                  <int> 2000
+ #> $ fishing_event_id      <dbl> 901698
+ #> $ species_code          <chr> "044"
+ #> $ fe_major_level_id     <dbl> 9
+ #> $ trip_id               <dbl> 60021
+ #> $ survey_series_og      <dbl> 7
+ #> $ activity_desc         <chr> "MULTISPECIES SMALL-MESH (AKA SHRIMP) BOTTOM TRAWL SURVEY"
+ #> $ activity_code         <dbl> 25
+ #> $ reason_desc           <chr> "QUANT. BIOMASS SURVEY"
+ #> $ trip_year             <int> 2000
+ #> $ month                 <int> NA
+ #> $ day                   <int> NA
+ #> $ time_deployed         <dttm> NA
+ #> $ time_retrieved        <dttm> NA
+ #> $ time_end_deployment   <dttm> NA
+ #> $ time_begin_retrieval  <dttm> NA
+ #> $ latitude              <dbl> NA
+ #> $ longitude             <dbl> NA
+ #> $ latitude_end          <dbl> NA
+ #> $ longitude_end         <dbl> NA
+ #> $ major_stat_area_code  <chr> "00"
+ #> $ minor_stat_area_code  <chr> "00"
+ #> $ depth_m               <dbl> NA
+ #> $ depth_begin           <dbl> NA
+ #> $ depth_end             <dbl> NA
+ #> $ vessel_id             <dbl> 2000
+ #> $ captain_id            <dbl> NA
+ #> $ duration_min          <int> NA
+ #> $ tow_length_m          <dbl> NA
+ #> $ mouth_width_m         <dbl> 10.6
+ #> $ doorspread_m          <dbl> 29.6
+ #> $ speed_mpm             <dbl> 86.66668
+ #> $ usability_code        <dbl> 13
+ #> $ grouping_code         <dbl> NA
+ #> $ grouping_desc         <chr> NA
+ #> $ grouping_code_updated <dbl> NA
+ #> $ grouping_desc_updated <chr> NA
+ #> $ grouping_area_km2     <int> NA
+ #> $ original_ind          <chr> "Y"
+ #> $ survey_series_desc    <chr> "West Coast Vancouver Island Multispecies Small-mesh Bottom Trawl"
+ #> $ species_science_name  <chr> "squalus suckleyi"
+ #> $ species_desc          <chr> "north pacific spiny dogfish"
+ #> $ usability_desc        <chr> "UNUSABLE FOR CPUE ESTIMATION"
+ #> $ area_swept1           <dbl> NA
+ #> $ area_swept2           <dbl> NA
+ #> $ area_swept            <dbl> NA
+ #> $ area_swept_km2        <dbl> NA
+ #> $ density_kgpm2         <dbl> NA
+ #> $ density_pcpm2         <dbl> NA
+ ```
+
+NOTE: All activity matches are always returned by default whenever any one of the sablefish surveys (ssid = 35, 41, 42, 43) is requested.
+This is because SSIDs for that survey were inconsistently assigned and frequently share trip ids, which results in duplication and or assignment to the wrong survey series.
+In order to accurately separate the types of sablefish surveys one needs to split data from this survey by the `reason_desc` variable.
 
 
+## Troubleshooting
+
+### Beware of duplication of fishing events and specimens
+
+A risk in using `get_all_*()` functions is that, in the attempt to return a comprehensive data set, some fishing events and specimen ids may be duplicated (this also occurs with the original functions but usually for different reasons).
+Some vessel trips conduct sampling for multiple survey series, and unless joining is based on grouping codes (which aren't used consistently for some surveys) the only way to connect a fishing event to a survey series id is through the vessel trip.
+This can result in events and specimens getting assigned to both surveys that were conducted on the same trip.
+The most common instances of this (e.g., sablefish, jig, and offshore shrimp surveys) have custom corrections coded into an internal function `correct_ssids()` that is applied within the `get_all_*()` functions.
+Duplication can also occur due to missing covariates (e.g., both event level and survey defaults are missing for `doorspread_m` on a couple sets for some trawl survey series), or for specimens when multiple vials of DNA were collected and `return_dna_info = TRUE`.
+It is recommended to always check for unexpected duplication of observations (usually `fishing_event_id` or `specimen_id`) before beginning any analysis.
+Two return both copies of each duplicated record the following can be used: `d[duplicated(d$specimen_id) | duplicated(d$specimen_id, fromLast=TRUE), ]`.
 
 
+### Error messages
 
+Any error message that mentions SQL Server suggests either that the network connection or server timed out, or that the SQL query was flawed. One way this can happen is providing an invalid ssid (e.g., a character "4" instead of a numeric 4), invalid major area code (e.g., a numeric 1 instead of a character "01"), or a search that is insufficiently limited in its scope.
 
+>Error: nanodbc/nanodbc.cpp:2823: 08S01
+>[Microsoft][ODBC SQL Server Driver][DBNETLIB]ConnectionRead (recv()).
+>[Microsoft][ODBC SQL Server Driver][DBNETLIB]General network error. Check your network documentation.
 
+If the SQL search is successfully returned to R, but your computer has insufficient memory to handle the amount of data returned, you may see an error like this:
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+>Error: cannot allocate vector of size XXX Mb
 
