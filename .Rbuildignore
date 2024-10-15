@@ -4,3 +4,5 @@
 ^NEWS\.md$
 ^\.github$
 ^data-raw$
+^vignettes/get-all-cache
+^vignettes/knitr-cache

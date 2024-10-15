@@ -27,6 +27,7 @@ as documented in \code{data-raw/survey_blocks.R}.
 }
 \examples{
 \dontshow{if (requireNamespace("sf", quietly = TRUE)) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+requireNamespace("ggplot2", quietly = TRUE)
 library(sf)
 library(ggplot2)
 gfdata::survey_blocks |>

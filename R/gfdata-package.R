@@ -7,10 +7,11 @@ NULL
 
 #' @importFrom dplyr filter mutate summarise select group_by n arrange ungroup
 #' @importFrom dplyr inner_join left_join right_join anti_join full_join
-#' @importFrom dplyr semi_join
+#' @importFrom dplyr semi_join relocate where distinct
 #' @importFrom dplyr bind_rows case_when pull contains tibble rename as_tibble
 #' @importFrom magrittr %>%
 #' @importFrom rlang .data
+#' @importFrom stats na.omit
 #'
 NULL
 
@@ -67,7 +68,71 @@ if (getRversion() >= "2.15.1") {
       "DEPTH_M",
       "LATITUDE",
       "LONGITUDE",
-      "VESSEL_ID"
+      "VESSEL_ID",
+      "FE_MAJOR_LEVEL_ID",
+      "FE_MINOR_LEVEL_ID",
+      "FE_PARENT_EVENT_ID",
+      "FE_SUB_LEVEL_ID",
+      "GROUPING_CODE",
+      "GROUPING_DESC",
+      "GROUPING_CODE_ORIGINAL",
+      "GROUPING_DESC_ORIGINAL",
+      "GROUPING_CODE_UPDATED",
+      "GROUPING_DESC_UPDATED",
+      "HOOKSIZE_DESC",
+      "HOOK_CODE",
+      "HOOK_DESC",
+      "LGLSP_HOOK_COUNT",
+      "MINOR_ID_COUNT",
+      "MINOR_ID_MAX",
+      "MINOR_STAT_AREA_CODE",
+      "ORIGINAL_IND",
+      "REASON_DESC",
+      "ROW_VERSION",
+      "SKATE_COUNT",
+      "SURVEY_ID",
+      "SURVEY_SERIES_OG",
+      "TRIP_ID",
+      "USABILITY_CODE",
+      "YEAR",
+      "age",
+      "catch_count",
+      "catch_weight",
+      "dna_container_id",
+      "dna_sample_type",
+      "doorspread_m",
+      "fe_minor_level_id",
+      "fe_parent_event_id",
+      "fe_sub_level_id",
+      "fishing_event_id",
+      "grouping_code",
+      "grouping_desc",
+      "grouping_code_original",
+      "grouping_desc_original",
+      "grouping_code_updated",
+      "grouping_desc_updated",
+      "hook_code",
+      "hook_desc",
+      "hooksize_desc",
+      "lglsp_hook_count",
+      "minor_id_count",
+      "minor_id_max",
+      "original_ind",
+      "sample_source_code",
+      "sample_type_code",
+      "sex",
+      "skate_count",
+      "skate_id",
+      "species_category_code",
+      "specimen_id",
+      "speed_mpm",
+      "survey_abbrev",
+      "survey_series_desc",
+      "survey_series_id",
+      "usability_desc",
+      "weight",
+      "counts_diff",
+      "event_level_count"
     )
   )
 }
