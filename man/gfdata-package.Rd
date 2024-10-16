@@ -18,14 +18,14 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Sean C. Anderson \email{sean.anderson@dfo-mpo.gc.ca}
+\strong{Maintainer}: Philina A. English \email{philina.english@dfo-mpo.gc.ca}
 
 Authors:
 \itemize{
   \item Elise A. Keppel
+  \item Sean C. Anderson \email{sean.anderson@dfo-mpo.gc.ca}
   \item Andrew M. Edwards
   \item Chris Grandin
-  \item Philina A. English
 }
 
 }

@@ -3,11 +3,12 @@ Title: Data Extraction for DFO PBS Groundfish Stocks
 Version: 0.1.3
 Authors@R: c(
     person(c("Elise", "A."), "Keppel", role = "aut"),
+    person(c("Philina", "A."), "English", 
+      email = "philina.english@dfo-mpo.gc.ca", role = c("aut", "cre")),
     person(c("Sean", "C."), "Anderson",
-      email = "sean.anderson@dfo-mpo.gc.ca", role = c("aut", "cre")),
+      email = "sean.anderson@dfo-mpo.gc.ca", role = "aut"),
     person(c("Andrew", "M."), "Edwards", role = "aut"),
-    person("Chris", "Grandin", role = "aut"),
-    person(c("Philina", "A."), "English", role = "aut"))
+    person("Chris", "Grandin", role = "aut"))
 Description: Facilitates groundfish data extraction at the Canadian Department
     of Fisheries and Oceans (DFO) Pacific Biological Station (PBS).
 Encoding: UTF-8
