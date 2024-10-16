@@ -1,9 +1,8 @@
-#' summarize fishing event data at the skate level
-#' retrieves missing fishing_event_ids for sablefish surveys using major_level_ids
-#'
-#' @param fe df retrieved with get-event-data.sql
-#'
-
+# summarize fishing event data at the skate level
+# retrieves missing fishing_event_ids for sablefish surveys using major_level_ids
+#
+# @param fe df retrieved with get-event-data.sql
+#
 get_skate_level_counts <- function(fe) {
   fe <- fe |> distinct()
 

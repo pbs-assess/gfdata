@@ -1,17 +1,19 @@
 ---
-title: "gfdata Vignette"
+title: "Introduction to gfdata"
 author: "Elise Keppel"
 date: "2024-10-15"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{gfdata Vignette}
+  %\VignetteIndexEntry{Introduction to gfdata}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
-
-
-
+<style type="text/css">
+  body{
+  font-size: 11pt;
+}
+</style>
 
 # Setup
 

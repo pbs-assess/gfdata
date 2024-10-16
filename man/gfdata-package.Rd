@@ -12,6 +12,7 @@ Facilitates groundfish data extraction at the Canadian Department of Fisheries a
 Useful links:
 \itemize{
   \item \url{https://github.com/pbs-assess/gfdata}
+  \item \url{https://pbs-assess.github.io/gfdata/}
   \item Report bugs at \url{https://github.com/pbs-assess/gfdata/issues}
 }
 

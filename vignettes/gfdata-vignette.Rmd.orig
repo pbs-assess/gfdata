@@ -1,13 +1,19 @@
 ---
-title: "gfdata Vignette"
+title: "Introduction to gfdata"
 author: "Elise Keppel"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{gfdata Vignette}
+  %\VignetteIndexEntry{Introduction to gfdata}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
+
+<style type="text/css">
+  body{
+  font-size: 11pt;
+}
+</style>
 
 ```{r, echo = FALSE}
 knitr::opts_chunk$set(
@@ -34,7 +40,7 @@ If you don't already have the package installed, then run:
 # install.packages("devtools")
 devtools::install_github("pbs-assess/gfdata")
 ```
-    
+
 First we will load the package along with dplyr since we will use it within our code later.
 
 ```{r, cache=FALSE, warning = FALSE, message = FALSE}
@@ -47,11 +53,11 @@ library(dplyr)
 
 Commercial and research catch, effort, and biological data for groundfish are
 archived by the DFO Pacific Groundfish Data Unit (Fisheries and Oceans Canada, Science
-Branch, Pacific Region) and housed in a number of relational databases archived 
-on-site at the Pacific Biological Station, Nanaimo, BC). 
+Branch, Pacific Region) and housed in a number of relational databases archived
+on-site at the Pacific Biological Station, Nanaimo, BC).
 
-The gfdata package was 
-develeoped to automate data extraction from these databases in a consistent, 
+The gfdata package was
+develeoped to automate data extraction from these databases in a consistent,
 reproducible manner with a series of `get_*()` functions. The functions extract
 data using SQL queries, developed with support from the Groundfish Data Unit.
 The standardized datasets are designed to feed directly into functions in the
@@ -78,9 +84,9 @@ sort(fns[grepl("get", fns)])
 ```
 
 
-The `get_*()` functions extract data by species, and some 
-functions have arguments for additional filtering, such as survey series, 
-management area, years, gear type, or environmental data type. In all cases, 
+The `get_*()` functions extract data by species, and some
+functions have arguments for additional filtering, such as survey series,
+management area, years, gear type, or environmental data type. In all cases,
 the `get_*()` functions can extract data for one or multiple species.
 
 All functions can be viewed with the available arguments in the help
@@ -93,14 +99,14 @@ documentation for each set of functions with:
 ```
 
 
-In addition, a number of the `get` functions retain many relevant database 
+In addition, a number of the `get` functions retain many relevant database
 columns that users can filter on with, for example, `dplyr::filter(dat, x = "y")`.
 
 
 # Example
 
 As an example, we could extract Pacific cod survey sample data with the
-following function call if we were on a DFO laptop, with appropriate database 
+following function call if we were on a DFO laptop, with appropriate database
 permissions, and on the PBS network.
 
 ```{r, eval=.eval}
@@ -108,8 +114,8 @@ dat <- get_survey_samples("pacific cod")
 head(dat)
 ```
 
-Note that there are some duplicate records in the databases due to relating a 
-record to multiple stratification schemes for alternative analyses. If this 
+Note that there are some duplicate records in the databases due to relating a
+record to multiple stratification schemes for alternative analyses. If this
 occurs, a warning is given.
 
 > "Duplicate specimen IDs are present because of overlapping survey stratifications. If working with the data yourelf, filter them after selecting specific surveys. For example, `dat <- dat[!duplicated(dat$specimen_id), ]`. The tidying and plotting functions within gfplot will do this for you."
@@ -133,7 +139,7 @@ get_survey_samples(c(396, 222))
 get_survey_samples(c(222, "pacific cod"))
 ```
 
-We can further restrict the data extraction to a single trawl survey series 
+We can further restrict the data extraction to a single trawl survey series
 by including the ssid (survey series id) argument. For a list of
 survey series id codes, run the lookup function `get_ssids()`.
 
@@ -160,16 +166,16 @@ glimpse(dat)
 
 # Caching the data from the SQL servers
 
-In addition to the individual `get_*()` functions, there is a function 
-`cache_pbs_data()` that runs all the `get_*()` functions and caches the data 
+In addition to the individual `get_*()` functions, there is a function
+`cache_pbs_data()` that runs all the `get_*()` functions and caches the data
 in a folder that you specify. This is useful to be able to have the data
 available for working on later when not on the PBS network, and it saves
-running the SQL queries (though the data do get updated occassionally and the 
+running the SQL queries (though the data do get updated occassionally and the
 most up-to-date data should usually be extracted for analysis).
 
 The helper function `cache_pbs_data()` will extract all of the data for the
 given species into a series of `.rds` files into whatever folder you specify to
-the `path` argument. I'll wrap it in a quick check just to make sure we don't 
+the `path` argument. I'll wrap it in a quick check just to make sure we don't
 download the data twice if we build this document again.
 
 ```{r, eval = FALSE, eval=.eval}

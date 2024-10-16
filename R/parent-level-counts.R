@@ -1,9 +1,9 @@
-#' summarize sub/minor level counts from fishing event data at the parent event level
-#' includes correction for a typo in dataframe
-#' retrieves missing fishing_event_ids for sablefish surveys using major_level_ids
-#'
-#' @param fe df retrieved with get-event-data.sql
-#'
+# summarize sub/minor level counts from fishing event data at the parent event level
+# includes correction for a typo in dataframe
+# retrieves missing fishing_event_ids for sablefish surveys using major_level_ids
+#
+# @param fe df retrieved with get-event-data.sql
+#
 get_parent_level_counts <- function(fe) {
   # just actual parent-level events
   fe_A_no_parent <- filter(fe, is.na(FE_PARENT_EVENT_ID), is.na(FE_MINOR_LEVEL_ID), is.na(FE_SUB_LEVEL_ID))

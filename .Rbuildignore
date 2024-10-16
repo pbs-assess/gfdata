@@ -6,3 +6,6 @@
 ^data-raw$
 ^vignettes/get-all-cache
 ^vignettes/knitr-cache
+^_pkgdown\.yml$
+^docs$
+^pkgdown$

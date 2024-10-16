@@ -1,22 +1,22 @@
 citHeader("To cite gfdata in publications use:")
 
-citEntry(
-  entry    = "manual",
+bibentry(
+  bibtype    = "manual",
   title    = "{gfdata}: Data Extraction for {DFO} {PBS} Groundfish Stocks",
-  year     = "2022",
-  note     = "R package version 0.0.0.9000",
-  author = "Keppel, E. A. and Anderson, S.C. and Edwards, A. M. and Grandin, C.",
+  year     = "2024",
+  note     = "R package version 0.1.3",
+  author = "Keppel, E. A. and Anderson, S.C. and Edwards, A. M. and Grandin, C. and English, P. A.",
   url      = "https://github.com/pbs-assess/gfdata",
   textVersion = paste(
-  "Keppel, E.A., S.C. Anderson, A.M. Edwards, and C. Grandin. 2022.
+  "Keppel, E.A., S.C. Anderson, A.M. Edwards, C. Grandin, and P.A. English. 2024.
   gfdata: Data Extraction for DFO PBS Groundfish Stocks. R package version
-  0.0.0.9000. https://github.com/pbs-assess/gfdata"
+  0.1.3. https://github.com/pbs-assess/gfdata"
   )
 )
 
 
-citEntry(
-  entry    = "article",
+bibentry(
+  bibtype    = "article",
   title    = "A Reproducible Data Synopsis for over 100 Species of {British Columbia} Groundfish",
   author = "Anderson, S.C. and Keppel, E. A. and Edwards, A. M.",
   year     = "2019",

@@ -1,13 +1,19 @@
 ---
-title: "gfdata `get_all` vignette"
+title: "Using 'get_all' functions"
 author: "Philina English"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{gfdata `get_all' Vignette}
+  %\VignetteIndexEntry{Using 'get_all' functions}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
+
+<style type="text/css">
+  body{
+  font-size: 11pt;
+}
+</style>
 
 ```{r, echo = FALSE}
 knitr::opts_chunk$set(

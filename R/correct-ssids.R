@@ -1,9 +1,9 @@
-#' Custom fixes for problem surveys with shared trip ids resulting in assignment to wrong ssid
-#'
-#' @param dat df containing these columns: fishing_event_ids, survey_series_id, survey_id,
-#'  major_stat_area_code, minor_stat_area_code
-#' @param specimens Defaults to FALSE where checks for duplication of fishing_event_ids
-#'
+# Custom fixes for problem surveys with shared trip ids resulting in assignment to wrong ssid
+#
+# @param dat df containing these columns: fishing_event_ids, survey_series_id, survey_id,
+#  major_stat_area_code, minor_stat_area_code
+# @param specimens Defaults to FALSE where checks for duplication of fishing_event_ids
+#
 correct_ssids <- function(dat, specimens = FALSE) {
   try(dat[dat$survey_series_id %in% c(6, 7), ]$survey_id <- NA, silent = TRUE)
   try(dat[((dat$survey_series_id == 6 & dat$major_stat_area_code %in% c("03", "04"))), ]$survey_series_id <- 7, silent = TRUE)
