@@ -405,14 +405,14 @@ get_all_survey_sets <- function(species,
           select(-max) |>
           dplyr::distinct()
 
-        .d1 <- expand.grid(
+        .d <- expand.grid(
           fishing_event_id = unique(fe3$fishing_event_id),
           species_code = unique(.d$species_code)
         ) |>
           left_join(fe3) |>
           left_join(.d)
 
-        .d <- bind_rows(.d1, .d2)
+        if (max(count_gear_types$max, na.rm = TRUE) > 1) {.d <- bind_rows(.d, .d2)}
 
     },
     classes = quiet_option
