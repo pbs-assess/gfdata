@@ -43,6 +43,9 @@
 #' @param return_dna_info Should DNA container ids and sample type be returned?
 #'   This can create duplication of specimen ids for some species.  Defaults to
 #'   FALSE.
+#' @param return_specimen_type Should non-otolith structure types be returned?
+#'   This can create duplication of specimen ids for some species.  Defaults to
+#'   FALSE.
 #' @param quiet_option Default option, `"message"`, suppresses messages from
 #'   sections of code with lots of `join_by` messages. Any other string will allow
 #'   messages.
@@ -63,6 +66,7 @@ get_all_survey_samples <- function(species, ssid = NULL,
                                    remove_bad_data = TRUE,
                                    remove_duplicates = TRUE,
                                    return_dna_info = FALSE,
+                                   return_specimen_type = FALSE,
                                    drop_na_columns = TRUE,
                                    quiet_option = "message") {
   .q <- read_sql("get-all-survey-samples.sql")
@@ -114,6 +118,14 @@ get_all_survey_samples <- function(species, ssid = NULL,
                   ")
 
   .d <- run_sql("GFBioSQL", .q)
+
+  ## ALTERNATE_SPECIMEN_TYPE can cause duplication for some species with multiple types collected per individual
+  ## Could do something about record duplication with multiple samples like combining or not returning them?
+  if (!return_specimen_type) {
+    .d <- .d |>
+      select(-ALTERNATE_SPECIMEN_TYPE) |>
+      distinct()
+  }
 
   names(.d) <- tolower(names(.d))
 
