@@ -1,3 +1,4 @@
+#' Similar to main version but with option to return event info
 #' @export
 #'
 #' @param unsorted_only Remove sorted biological data ('keepers' and 'discards'
@@ -8,17 +9,20 @@
 #'  (location, timing, effort, catch, etc.). Default = FALSE.
 #' @param return_dna_info  Should DNA container ids and sample type be returned?
 #'  This can create duplication of specimen ids for some species. Default = FALSE.
-#' @param major
+#' @param major Character string (or vector, though doesn't work yet with
+#'  `cache_pbs_data`) of major stat area code to include (characters). Use
+#'  get_major_areas() to lookup area codes with descriptions.
 #' @param usability A vector of usability codes to include. Defaults to all.
 #'  IPHC codes may be different to other surveys.
 #'
 #' @rdname get_data
-get_commercial_samples2 <- function(species, unsorted_only = TRUE,
-                                   return_all_lengths = FALSE,
-                                   include_event_info = FALSE,
-                                   return_dna_info = FALSE,
-                                   major = NULL,
-                                   usability = NULL) {
+get_commercial_samples2 <- function(species,
+                                    unsorted_only = TRUE,
+                                    return_all_lengths = FALSE,
+                                    include_event_info = FALSE,
+                                    return_dna_info = FALSE,
+                                    major = NULL,
+                                    usability = NULL) {
   .q <- read_sql("get-comm-samples.sql")
   .q <- inject_filter("AND SM.SPECIES_CODE IN", species, sql_code = .q)
 
@@ -62,6 +66,14 @@ get_commercial_samples2 <- function(species, unsorted_only = TRUE,
         values_drop_na = TRUE
       ) %>% dplyr::relocate(tidyr::all_of(.n))
   }
+
+  .other_wts <- .d[!duplicated(.d$specimen_id), , drop = FALSE] %>% # removes duplicates
+    select(gutted, jcut, glazed_jcut) # keep only alternate weight types
+
+  dw <- colSums(!is.na(.other_wts)) # tally each type
+
+  .d$weight_other <- .d[names(dw[dw == max(dw)])]
+  .d$weight_other_type <- names(dw[dw == max(dw)])
 
   ## dna_container_id and dna_sample_type can cause duplication for some species with multiple samples collected per individual
   ## Could do something about record duplication with multiple DNA samples like combining or not returning them?
@@ -133,26 +145,6 @@ get_commercial_samples2 <- function(species, unsorted_only = TRUE,
   if(include_event_info){
 
     fe_vector <- unique(.d$fishing_event_id)
-
-    ## already included in original sql
-    # .q2 <- read_sql("get-survey-sets.sql")
-    # .q2 <- inject_filter("AND SP.SPECIES_CODE IN", species, sql_code = .q2)
-    # .q2 <- inject_filter("AND FE.FISHING_EVENT_ID IN", fe_vector,
-    #                      sql_code = .q2,
-    #                      search_flag = "-- insert fe vector here", conversion_func = I
-    # )
-    # .c <- run_sql("GFBioSQL", .q2)
-    #
-    # names(.c) <- tolower(names(.c))
-    # .d <- left_join(.d,
-    #                 unique(select(
-    #                   .c,
-    #                   fishing_event_id,
-    #                   species_code,
-    #                   catch_weight,
-    #                   catch_count
-    #                 ))
-    # )
 
     # get all fishing event info
     .fe <- read_sql("get-event-data.sql")
