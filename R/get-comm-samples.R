@@ -71,9 +71,17 @@ get_commercial_samples2 <- function(species,
     select(gutted, jcut, glazed_jcut) # keep only alternate weight types
 
   dw <- colSums(!is.na(.other_wts)) # tally each type
-
+  if(max(dw == 0)){
+    .d$weight_other <- NA
+    .d$weight_other_type <- NA
+  } else {
   .d$weight_other <- .d[names(dw[dw == max(dw)])]
   .d$weight_other_type <- names(dw[dw == max(dw)])
+  }
+
+  ## not sure if we want to keep these?
+  .d <- .d %>% select(-gutted, -jcut, -glazed_jcut)
+
 
   ## dna_container_id and dna_sample_type can cause duplication for some species with multiple samples collected per individual
   ## Could do something about record duplication with multiple DNA samples like combining or not returning them?
