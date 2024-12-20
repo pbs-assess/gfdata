@@ -53,6 +53,8 @@ get_commercial_samples2 <- function(species,
   .d$species_science_name <- tolower(.d$species_science_name)
   .d <- mutate(.d, year = lubridate::year(trip_start_date))
 
+  .d <- mutate(.d, sample_type = ifelse(fe_major_level_id >= 900 & trip_sub_type_code == 1, "PORT", "EVENT"))
+
   if (!return_all_lengths){
     .d <- .d %>% mutate(length_type = length_type)
   } else {
@@ -156,7 +158,7 @@ get_commercial_samples2 <- function(species,
 
     # get all fishing event info
     .fe <- read_sql("get-event-data.sql")
-    fe <- run_sql("GFBioSQL", .fe) %>% select(-USABILITY_CODE, -GROUPING_CODE) # avoid classing with values for samples
+    fe <- run_sql("GFBioSQL", .fe) %>% select(-USABILITY_CODE, -GROUPING_CODE, -FE_MAJOR_LEVEL_ID) # avoid classing with values for samples
 
     fe2 <- get_sub_level_counts(fe)
     names(fe2) <- tolower(names(fe2))
