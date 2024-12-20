@@ -1,5 +1,11 @@
 # Updates to gfdata
 
+## 0.1.4 2024-12-20
+
+- Comment out SQL that was dropping midwater trawl discard weights before 2006.
+  See line in `inst/sql/get-catch.sql` about trip category `OPT B`.
+  Currently line 22. We see no reason to remove these.
+
 ## 0.1.3 2024-07-17
 
 - For commercial biological samples: discards with a null sample source code are
