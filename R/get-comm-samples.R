@@ -160,7 +160,7 @@ get_commercial_samples2 <- function(species,
     .fe <- read_sql("get-event-data.sql")
     fe <- run_sql("GFBioSQL", .fe) %>% select(-USABILITY_CODE, -FE_MAJOR_LEVEL_ID) # avoid classing with values for samples
 
-    fe2 <- get_sub_level_counts(fe)
+    fe2 <- get_parent_level_counts(fe)
     names(fe2) <- tolower(names(fe2))
     .d <- left_join(.d, unique(select(fe2,
                                       -time_deployed, -time_retrieved,
