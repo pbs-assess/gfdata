@@ -158,12 +158,14 @@ get_commercial_samples2 <- function(species,
 
     # get all fishing event info
     .fe <- read_sql("get-event-data.sql")
-    fe <- run_sql("GFBioSQL", .fe) %>% select(-USABILITY_CODE, -FE_MAJOR_LEVEL_ID) # avoid classing with values for samples
+    fe <- run_sql("GFBioSQL", .fe) %>% select(-USABILITY_CODE) # avoid classing with values for samples
 
     fe2 <- get_parent_level_counts(fe)
     names(fe2) <- tolower(names(fe2))
     .d <- left_join(.d, unique(select(fe2,
-                                      -time_deployed, -time_retrieved,
+                          -fe_major_level_id,
+                          -time_deployed,
+                          -time_retrieved,
                           -latitude,
                           -longitude,
                           -major_stat_area_code,
