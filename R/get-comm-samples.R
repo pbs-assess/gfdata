@@ -53,6 +53,8 @@ get_commercial_samples2 <- function(species,
   .d$species_science_name <- tolower(.d$species_science_name)
   .d <- mutate(.d, year = lubridate::year(trip_start_date))
 
+  .d <- mutate(.d, sample_type = ifelse(fe_major_level_id >= 900 & trip_sub_type_code == 1, "PORT", "EVENT"))
+
   if (!return_all_lengths){
     .d <- .d %>% mutate(length_type = length_type)
   } else {
@@ -76,9 +78,13 @@ get_commercial_samples2 <- function(species,
     .d$weight_other <- NA
     .d$weight_other_type <- NA
   } else {
-    .d$weight_other <- .d[names(dw[dw == max(dw)])]
-    .d$weight_other_type <- names(dw[dw == max(dw)])
+
+  .d$weight_other <- .d[names(dw[dw == max(dw)])]
+  .d$weight_other_type <- names(dw[dw == max(dw)])
   }
+
+  ## not sure if we want to keep these?
+  .d <- .d %>% select(-gutted, -jcut, -glazed_jcut)
 
   ## dna_container_id and dna_sample_type can cause duplication for some species with multiple samples collected per individual
   ## Could do something about record duplication with multiple DNA samples like combining or not returning them?
@@ -153,12 +159,14 @@ get_commercial_samples2 <- function(species,
 
     # get all fishing event info
     .fe <- read_sql("get-event-data.sql")
-    fe <- run_sql("GFBioSQL", .fe) %>% select(-USABILITY_CODE, -GROUPING_CODE) # avoid classing with values for samples
+    fe <- run_sql("GFBioSQL", .fe) %>% select(-USABILITY_CODE) # avoid classing with values for samples
 
-    fe2 <- get_sub_level_counts(fe)
+    fe2 <- get_parent_level_counts(fe)
     names(fe2) <- tolower(names(fe2))
     .d <- left_join(.d, unique(select(fe2,
-                                      -time_deployed, -time_retrieved,
+                          -fe_major_level_id,
+                          -time_deployed,
+                          -time_retrieved,
                           -latitude,
                           -longitude,
                           -major_stat_area_code,
