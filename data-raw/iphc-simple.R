@@ -16,8 +16,14 @@
 # - repeat for 'Set and Pacific halibut data'
 # - move these 2 .xlsx files into this folder
 # - Set the date you did this download here:
-DOWNLOAD_DATE <- "2024-05-23"
+DOWNLOAD_DATE <- "2025-01-22"
 # - run the following code
+
+old_set_filename <- "2024-05-Set and Pacific halibut data.xlsx"
+new_set_filename <- "2025-01-Set and Pacific halibut data.xlsx"
+
+old_non_filename <- "2024-05-Non-Pacific halibut data.xlsx"
+new_non_filename <- "2025-01-Non-Pacific halibut data.xlsx"
 
 # There shouldn't be any tweaks needed unless the IPHC makes changes to their
 # survey design (which I'm sure they will!).
@@ -25,14 +31,59 @@ DOWNLOAD_DATE <- "2024-05-23"
 
 library(dplyr)
 library(ggplot2)
-devtools::load_all("../gfsynopsis")
+# devtools::load_all("../gfsynopsis")
 theme_set(theme_light())
+
+# ------------------------------------------------------------------------------
+# Code example to check for differences between last download and latest download
+# old_set <- readxl::read_xlsx(file.path("data-raw", old_set_filename)) |>
+#   select(-`Row number`) |>
+#   filter(Year != 2024) # Harder to interpret differences if new year of data are included
+# new_set0 <- readxl::read_xlsx(file.path("data-raw", new_set_filename))
+# new_set <- new_set0 |>
+#   select(-`Row number`) |> # easier to compare diffs without row number
+#   select(-Bait) |> # "Bait" column was added in late 2024, but does not have bait for 2012...
+#   filter(Year != 2024) # Harder to interpret differences if new year of data are included
+# all.equal(old_set, new_set)
+# Option to save the data to csv so you can check for differences with diff
+# checker of your choice (e.g., VSCode has built in compare feature)
+# Round floating point numbers so that these don't clutter the diff checker
+# old_set |>
+#   mutate(across(c(contains("Lat"), contains("Lon"), contains("weight"),
+#   `Effective skates hauled`, `Temp C`, pH, `Salinity PSU`, Oxygen_ml), \(x) round(x, 4))) |>
+# readr::write_csv("data-raw/old-set.csv")
+# new_set |>
+#   mutate(across(c(contains("Lat"), contains("Lon"), contains("weight"),
+#   `Effective skates hauled`, `Temp C`, pH, `Salinity PSU`, Oxygen_ml), \(x) round(x, 4))) |>
+# readr::write_csv("data-raw/new-set.csv")
+# all.equal(old_set, new_set)
+
+# old_non <- readxl::read_xlsx(file.path("data-raw", old_non_filename)) |>
+#   select(-`Row number`) |>
+#   filter(Year != 2024)
+# new_non <- readxl::read_xlsx(file.path("data-raw", new_non_filename)) |>
+#   filter(Year != 2024) |>
+#   select(-`Row number`)
+# all.equal(old_non, new_non)
+# #
+# readr::write_csv(old_non, "data-raw/old-non-halibut.csv")
+# readr::write_csv(new_non, "data-raw/new-non-halibut.csv")
+
+# New in 2025-01 set data:
+# - Bait column added; though they are all 'SA' or NA, and as of 2025-01 the bait
+#   was not identified for the 2012 sets (when there was a bait experiment)
+# - Some missing values in environmental data were added
+# - Negligible floating point differences
+# New in 2025-01 non-halibut data:
+# - Additional non halibut species were added - looks like data for extra stations
+#   mostly in 2018 and 2020
+# ------------------------------------------------------------------------------
 
 # read in and clean up IPHC .xlsx downloads ---------------------------------
 # load station meta-data and halibut data
 # all stations; 2B
-if (file.exists("data-raw/Set and Pacific halibut data.xlsx")) {
-  set <- readxl::read_xlsx("data-raw/Set and Pacific halibut data.xlsx")
+if (file.exists(file.path("data-raw", new_set_filename))) {
+  set <- readxl::read_xlsx(file.path("data-raw", new_set_filename))
   saveRDS(set, file = "data-raw/Set and Pacific halibut data.rds")
 } else {
   set <- readRDS("data-raw/Set and Pacific halibut data.rds")
@@ -49,8 +100,8 @@ names(set) <- gsub("___", "_", names(set))
 set$date <- lubridate::dmy(set$date)
 
 # download 2B:
-if (file.exists("data-raw/Non-Pacific halibut data.xlsx")) {
-  d <- readxl::read_xlsx("data-raw/Non-Pacific halibut data.xlsx")
+if (file.exists(file.path("data-raw", new_non_filename))) {
+  d <- readxl::read_xlsx(file.path("data-raw", new_non_filename))
   saveRDS(d, file = "data-raw/Non-Pacific halibut data.rds")
 } else {
   d <- readRDS("data-raw/Non-Pacific halibut data.rds")
@@ -114,6 +165,7 @@ re_bs <- filter(d, scientific_name %in% c("sebastes aleutianus", "sebastes melan
   summarise(number_observed = sum(number_observed)
   ) |> ungroup()
 # Replace rougheye/blackspotted rows with the summed counts of rougheye and blackspotted
+d2 <- d
 d <- d |>
   filter(!(scientific_name %in% c("sebastes aleutianus", "sebastes melanostictus"))) |>
   bind_rows(re_bs)
@@ -171,7 +223,7 @@ count_dat <- transmute(count_dat,
 # bathyraja interrupta
 count_dat <- count_dat |>
   group_by(year, species_science_name, sample_type, station, station_key) |>
-  summarise(
+  reframe(
     hooks_fished = sum(hooks_fished),
     hooks_retrieved = as.integer(hooks_retrieved),
     hooks_observed = sum(hooks_observed),
@@ -612,6 +664,39 @@ iphc_catch <- select(
   number_observed
 )
 
+# ------------------------------------------------------------------------------
+# Worth comparing old and new iphc data diffs to make sure they make sense
+old_iphc_sets <- gfdata::iphc_sets
+old_iphc_catch <- gfdata::iphc_catch
+
+all.equal(old_iphc_catch, iphc_catch)
+all.equal(old_iphc_sets, iphc_sets)
+
+# Option to output files to look at with diff checker
+readr::write_csv(old_iphc_catch, "data-raw/old-iphc-catch.csv")
+readr::write_csv(iphc_catch |> filter(year != 2024), "data-raw/new-iphc-catch.csv")
+
+# old_iphc_sets |>
+#   mutate(across(c(latitude, longitude, depth_m, temp_c, no_skates_hauled, effective_skates), \(x) round(x, 4))) |>
+# readr::write_csv("data-raw/old-iphc-sets.csv")
+# iphc_sets |>
+#   filter(year != 2024) |>
+#   mutate(across(c(latitude, longitude, depth_m, temp_c, no_skates_hauled, effective_skates), \(x) round(x, 4))) |>
+# readr::write_csv("data-raw/new-iphc-sets.csv")
+
+# Changes in 2024-11 are consistent with the checks on the input data
+# - Widow rockfish are now in the time series because one was caught in 2018 in a
+#   set that has been recently added
+# Number of halibut observed station_key == 20220349, was decreased by one (56 -> 55)
+# - everything about the values and inclusion seem fine
+# left_join(iphc_sets, iphc_catch) |>
+#   filter(species_common_name == "widow rockfish") |>
+#   group_by(year) |>
+#   reframe(mean_count = mean(number_observed)) |>
+#   ggplot(aes(x = year, y = mean_count)) +
+#     geom_point()
+# ------------------------------------------------------------------------------
+
 attr(iphc_sets, "iphc_download_date") <- DOWNLOAD_DATE
 attr(iphc_sets, "data_preparation_date") <- lubridate::today()
 
@@ -620,5 +705,3 @@ attr(iphc_catch, "data_preparation_date") <- lubridate::today()
 
 usethis::use_data(iphc_sets, overwrite = TRUE)
 usethis::use_data(iphc_catch, overwrite = TRUE)
-
-
