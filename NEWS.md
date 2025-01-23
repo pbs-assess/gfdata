@@ -1,10 +1,31 @@
 # Updates to gfdata
 
+## 0.1.4 2025-01-22
+
+2024 IPHC data have been added. Since 2024-05 the following changes have occurred
+
+- `Bait` column added; but this does not resolve the baits used in the 2012 
+  bait experiment, these 2012 values are NA
+
+- Some missing values in environmental data columns are now included
+
+- Additional non halibut species were added, this seems to be the inclusion of
+  extra stations, mostly in 2018 and 2020 that did not have data before
+
+- Widow rockfish are now in the time series because one was caught in 2018 in a
+  set that has been recently added
+
+- The number of halibut observed station_key == 20220349, was decreased by one
+  (56 -> 55)
+
+
+
 ## 0.1.4 2024-12-20
 
 - Comment out SQL that was dropping midwater trawl discard weights before 2006.
   See line in `inst/sql/get-catch.sql` about trip category `OPT B`.
   Currently line 22. We see no reason to remove these.
+
 
 ## 0.1.3 2024-07-17
 
