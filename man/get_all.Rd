@@ -19,6 +19,7 @@ get_all_survey_samples(
   remove_bad_data = TRUE,
   remove_duplicates = TRUE,
   return_dna_info = FALSE,
+  return_specimen_type = FALSE,
   drop_na_columns = TRUE,
   quiet_option = "message"
 )
@@ -94,6 +95,10 @@ Default is FALSE. This option only remains possible when ssids are supplied
 and activity matches aren't included. Otherwise turns on automatically.}
 
 \item{return_dna_info}{Should DNA container ids and sample type be returned?
+This can create duplication of specimen ids for some species.  Defaults to
+FALSE.}
+
+\item{return_specimen_type}{Should non-otolith structure types be returned?
 This can create duplication of specimen ids for some species.  Defaults to
 FALSE.}
 
