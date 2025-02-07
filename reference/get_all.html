@@ -78,6 +78,7 @@ exact number depends on which types of surveys are being returned.</p>
 <span>  remove_bad_data <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  remove_duplicates <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  return_dna_info <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  return_specimen_type <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  drop_na_columns <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  quiet_option <span class="op">=</span> <span class="st">"message"</span></span>
 <span><span class="op">)</span></span>
@@ -180,6 +181,12 @@ and activity matches aren't included. Otherwise turns on automatically.</p></dd>
 
 <dt id="arg-return-dna-info">return_dna_info<a class="anchor" aria-label="anchor" href="#arg-return-dna-info"></a></dt>
 <dd><p>Should DNA container ids and sample type be returned?
+This can create duplication of specimen ids for some species.  Defaults to
+FALSE.</p></dd>
+
+
+<dt id="arg-return-specimen-type">return_specimen_type<a class="anchor" aria-label="anchor" href="#arg-return-specimen-type"></a></dt>
+<dd><p>Should non-otolith structure types be returned?
 This can create duplication of specimen ids for some species.  Defaults to
 FALSE.</p></dd>
 
