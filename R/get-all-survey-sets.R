@@ -241,7 +241,7 @@ get_all_survey_sets <- function(species,
   if (join_sample_ids) {
 
     areas <- get_strata_areas() |> select(-SURVEY_ID, -SURVEY_SERIES_ID)
-    fe <- left_join(fe, areas, by = join_by(GROUPING_CODE_ORIGINAL == GROUPING_CODE))
+    fe <- left_join(fe, areas, by = c("GROUPING_CODE_ORIGINAL" = "GROUPING_CODE"))
 
     warning(
       "The join_sample_ids option has been modified to only add strata area_km for weighting purposes.",
