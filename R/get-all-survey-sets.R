@@ -137,22 +137,6 @@ get_all_survey_sets <- function(species,
     .d <- filter(.d, YEAR %in% years)
   }
 
-  if (join_sample_ids) {
-    # give us each sample_id associated with each fishing_event_id and species:
-    # sample_trip_ids <- get_sample_trips()
-    # areas <- get_strata_areas() # this now done in get-event-data.sql
-    #
-    # .d <- left_join(.d, sample_trip_ids,
-    #   by = c("SPECIES_CODE", "FISHING_EVENT_ID")
-    # ) %>%
-    #   left_join(areas, by = c("SURVEY_ID", "GROUPING_CODE"))
-
-    warning(
-      "The join_sample_ids option has been removed. To bind with ",
-      "sample data, it is safer to use include_event_info = TRUE ",
-      "in get_all_survey_samples() instead."
-    )
-  }
 
   # Just to pull out up to date list of ssids associated with trawl/ll gear type.
   Sys.sleep(0.05) # might be useful if server has difficulty
@@ -254,7 +238,17 @@ get_all_survey_sets <- function(species,
 
   fe <- run_sql("GFBioSQL", .fe)
 
+  if (join_sample_ids) {
 
+    areas <- get_strata_areas() |> select(-SURVEY_ID, -SURVEY_SERIES_ID)
+    fe <- left_join(fe, areas, by = c("GROUPING_CODE_ORIGINAL" = "GROUPING_CODE"))
+
+    warning(
+      "The join_sample_ids option has been modified to only add strata area_km for weighting purposes.",
+      "To bind with sample data, it is safer to use include_event_info = TRUE ",
+      "in get_all_survey_samples() instead."
+    )
+  }
 
   fe <- fe |> distinct() |> # not sure why, but seems to be some complete duplication
     filter(FE_MAJOR_LEVEL_ID < 700 | is.na(FE_MAJOR_LEVEL_ID)) # removes CTD drops
