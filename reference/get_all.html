@@ -73,6 +73,7 @@ exact number depends on which types of surveys are being returned.</p>
 <span>  unsorted_only <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  random_only <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  grouping_only <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  keep_all_ages <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  include_event_info <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  include_activity_matches <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  remove_bad_data <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -154,6 +155,11 @@ specimens (<code>sample_type_code</code> = <code>1, 2, 6, 7, or 8</code>).</p></
 collected on research trips. TRUE returns only sets or specimens from fishing
 events with grouping codes that match that expected for a survey. Can also be
 achieved by filtering for specimens where <code>!is.na(grouping_code)</code>.</p></dd>
+
+
+<dt id="arg-keep-all-ages">keep_all_ages<a class="anchor" aria-label="anchor" href="#arg-keep-all-ages"></a></dt>
+<dd><p>Defaults to FALSE to keep only ages with standard methods
+for all surveys other than the NMFS Triennial.</p></dd>
 
 
 <dt id="arg-include-event-info">include_event_info<a class="anchor" aria-label="anchor" href="#arg-include-event-info"></a></dt>
