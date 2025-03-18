@@ -14,6 +14,7 @@ get_all_survey_samples(
   unsorted_only = FALSE,
   random_only = FALSE,
   grouping_only = FALSE,
+  keep_all_ages = FALSE,
   include_event_info = FALSE,
   include_activity_matches = FALSE,
   remove_bad_data = TRUE,
@@ -78,6 +79,9 @@ specimens (\code{sample_type_code} = \verb{1, 2, 6, 7, or 8}).}
 collected on research trips. TRUE returns only sets or specimens from fishing
 events with grouping codes that match that expected for a survey. Can also be
 achieved by filtering for specimens where \code{!is.na(grouping_code)}.}
+
+\item{keep_all_ages}{Defaults to FALSE to keep only ages with standard methods
+for all surveys other than the NMFS Triennial.}
 
 \item{include_event_info}{Logical for whether to append all relevant fishing
 event info (location, timing, effort, catch, etc.). Defaults to TRUE.}

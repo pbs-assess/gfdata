@@ -30,6 +30,8 @@
 #'   collected on research trips. TRUE returns only sets or specimens from fishing events
 #'   with grouping codes that match that expected for a survey. Can also be
 #'   achieved by filtering for specimens where `!is.na(grouping_code)`.
+#' @param keep_all_ages Defaults to FALSE to keep only ages with standard methods
+#'   for all surveys other than the NMFS Triennial.
 #' @param include_event_info Logical for whether to append all relevant fishing
 #'   event info (location, timing, effort, catch, etc.). Defaults to TRUE.
 #' @param include_activity_matches TRUE gets all records collected with activity
@@ -61,6 +63,7 @@ get_all_survey_samples <- function(species, ssid = NULL,
                                    unsorted_only = FALSE,
                                    random_only = FALSE,
                                    grouping_only = FALSE,
+                                   keep_all_ages = FALSE,
                                    include_event_info = FALSE,
                                    include_activity_matches = FALSE,
                                    remove_bad_data = TRUE,
@@ -350,6 +353,7 @@ get_all_survey_samples <- function(species, ssid = NULL,
     by = "species_code"
   )
 
+  if(!keep_all_ages){
   .d <- .d %>%
     mutate(
       age = case_when(
@@ -359,9 +363,11 @@ get_all_survey_samples <- function(species, ssid = NULL,
         species_ageing_group == "pcod_lingcod" & ageing_method_code %in% c(6) ~ .d$age,
         species_ageing_group == "pollock" & ageing_method_code %in% c(7) ~ .d$age,
         species_ageing_group == "shortraker_thornyheads" & ageing_method_code %in% c(1, 3, 4, 16, 17) ~ .d$age,
-        is.na(species_ageing_group) ~ NA_real_
+        survey_series_id == 79 ~ .d$age,
+        !is.na(species_ageing_group) & is.na(ageing_method_code) & survey_series_id != 79 ~ NA_real_
       )
     )
+  }
 
   # removes known data problems
   # if FALSE, specimens could be reported and corrected in the database
