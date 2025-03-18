@@ -185,6 +185,12 @@ get_spp_sample_length_type <- function(species) {
   .q <- read_sql("get-spp-sample-length-type.sql")
   .q <- inject_filter("WHERE SPECIES_CODE IN ", species, .q)
   .d <- run_sql("GFBioSQL", .q)
+
+  if (nrow(.d) == 0) { # return placeholder for sql if no length data
+    message("No length data - using 'Fork_Length' as placeholder")
+    return("Fork_Length")
+  }
+
   .d <- .d %>%
     tidyr::gather("Fork_Length",
       "Standard_Length",
@@ -194,7 +200,6 @@ get_spp_sample_length_type <- function(species) {
       value = "count"
     )
   .d <- .d %>% dplyr::filter(count == max(count))
-  if (nrow(.d) > 1L) .d <- .d[1L, , drop = FALSE] # happens if all 0! pick any
   .d$length_type
 }
 
