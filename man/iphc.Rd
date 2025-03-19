@@ -25,7 +25,7 @@ Once the 2 data frames are joined, a data frame with these columns:
 \item{species_common_name}{Species common name}
 }
 
-An object of class \code{tbl_df} (inherits from \code{tbl}, \code{data.frame}) with 290103 rows and 6 columns.
+An object of class \code{tbl_df} (inherits from \code{tbl}, \code{data.frame}) with 306480 rows and 6 columns.
 }
 \usage{
 iphc_sets
