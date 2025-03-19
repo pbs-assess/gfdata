@@ -1,5 +1,5 @@
 Package: gfdata
-Title: Data Extraction for DFO PBS Groundfish Stocks
+Title: Data Extraction for DFO PBS Groundfish
 Version: 0.1.4
 Authors@R: c(
     person(c("Elise", "A."), "Keppel", role = "aut"),
