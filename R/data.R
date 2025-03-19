@@ -86,7 +86,7 @@
 #' library(sf)
 #' library(ggplot2)
 #' gfdata::survey_blocks |>
-#'   filter(active_block) |>
+#'   dplyr::filter(active_block) |>
 #'   ggplot(aes(colour = survey_abbrev)) +
 #'   geom_sf() +
 #'   theme_minimal() +

@@ -4,7 +4,7 @@
 \name{gfdata-package}
 \alias{gfdata}
 \alias{gfdata-package}
-\title{gfdata: Data Extraction for DFO PBS Groundfish Stocks}
+\title{gfdata: Data Extraction for DFO PBS Groundfish}
 \description{
 Facilitates groundfish data extraction at the Canadian Department of Fisheries and Oceans (DFO) Pacific Biological Station (PBS).
 }
