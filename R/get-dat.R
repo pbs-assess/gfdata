@@ -115,7 +115,7 @@ NULL
 #' @param sleep System sleep in seconds between each survey-year
 #'   to be kind to the server.
 #' @rdname get_data
-get_survey_sets <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36, 39, 40),
+get_survey_sets <- function(species, ssid = c(1, 3, 4, 16, 2, 14, 22, 36, 39, 40, 7),
                             join_sample_ids = FALSE, verbose = FALSE,
                             sleep = 0.05) {
   # Just to pull out up to date list of ssids associated with trawl/ll gear type.
@@ -986,7 +986,8 @@ get_management <- function(species = NULL, species_group = NULL, fishery = NULL,
 #' @rdname get_data
 cache_pbs_data <- function(species, major = NULL, file_name = NULL, path = ".",
                            compress = FALSE, unsorted_only = TRUE, historical_cpue = FALSE,
-                           survey_sets = FALSE, verbose = TRUE, return_all_lengths = FALSE) {
+                           survey_sets = FALSE, verbose = TRUE, return_all_lengths = FALSE,
+                           ssid = NULL) {
   dir.create(path, showWarnings = FALSE)
   for (sp_i in seq_along(species)) {
     this_sp <- species[[sp_i]]
@@ -1002,7 +1003,8 @@ cache_pbs_data <- function(species, major = NULL, file_name = NULL, path = ".",
       message("Extracting survey sets")
       out$survey_sets <- get_survey_sets(this_sp,
         join_sample_ids = TRUE,
-        verbose = verbose
+        verbose = verbose,
+        ssid = ssid
       )
     }
     if (historical_cpue) {
