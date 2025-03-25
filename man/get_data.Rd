@@ -30,7 +30,7 @@
 \usage{
 get_survey_sets(
   species,
-  ssid = c(1, 3, 4, 16, 2, 14, 22, 36, 39, 40),
+  ssid = c(1, 3, 4, 16, 2, 14, 22, 36, 39, 40, 7),
   join_sample_ids = FALSE,
   verbose = FALSE,
   sleep = 0.05
@@ -115,7 +115,8 @@ cache_pbs_data(
   historical_cpue = FALSE,
   survey_sets = FALSE,
   verbose = TRUE,
-  return_all_lengths = FALSE
+  return_all_lengths = FALSE,
+  ssid = NULL
 )
 
 get_hake_survey_samples()
