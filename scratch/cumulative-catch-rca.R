@@ -8,7 +8,9 @@ options(future.globals.maxSize = 2000 * 1024^2)
 plan(multicore, workers = 8L)
 options(future.rng.onMisuse = "ignore")
 
-d <- readRDS("~/Downloads/ccira_sdmTMB_data_locations.rds")
+setwd(here::here("scratch"))
+
+d <- readRDS("ccira_sdmTMB_data_locations.rds")
 dat_rca_cpue <- select(d, species, date, longitude, latitude, rca_establishment) |>
   as_tibble() |>
   st_as_sf(
@@ -26,9 +28,9 @@ ggplot(dat_rca_cpue) +
   geom_sf() +
   geom_sf(data = coast_utm)
 
-catch <- readRDS("~/Downloads/catch-spatial.rds")
+catch <- readRDS("catch-spatial.rds")
 
-weights <- readr::read_csv("~/Downloads/species_weights_1.csv") |> select(-1)
+weights <- readr::read_csv("species_weights_1.csv") |> select(-1)
 weights$species_dfo <- ifelse(!is.na(weights$species_dfo), weights$species_dfo, paste(weights$species, "rockfish"))
 dat_rca_cpue <- left_join(dat_rca_cpue, weights)
 
@@ -166,3 +168,5 @@ out |>
   scale_colour_viridis_c() +
   scale_size_area() +
   facet_wrap(~species)
+
+setwd(here::here())
