@@ -5,7 +5,7 @@ library(ggplot2)
 library(dplyr)
 library(future)
 options(future.globals.maxSize = 2000 * 1024^2)
-plan(multicore, workers = 8L)
+plan(multicore, workers = 5L)
 options(future.rng.onMisuse = "ignore")
 
 setwd(here::here("scratch"))
@@ -60,12 +60,13 @@ catch_data <- catch |>
 
 catch_data <- left_join(catch_data, rename(weights, species_common_name = species_dfo))
 
-filter(catch_data, is.na(median_weight)) |>
+test <- filter(catch_data, is.na(median_weight)) |>
   pull(species_common_name) |>
   table()
+stopifnot(nrow(test) == 0L)
 
 trawl_catch <- catch_data |>
-  filter(gear == "BOTTOM TRAWL") |>
+  filter(gear %in% c("BOTTOM TRAWL", "UNKNOWN TRAWL")) |>
   mutate(catch = discarded_kg + landed_kg)
 
 midwater_catch <- catch_data |>
@@ -74,20 +75,37 @@ midwater_catch <- catch_data |>
 
 ll_catch <- catch_data |>
   # filter(year >= 2006) |>
-  filter(gear %in% c("HOOK AND LINE", "LONGLINE")) |>
-  mutate(catch = (discarded_pcs + landed_pcs) * median_weight)
+  filter(gear %in% c("HOOK AND LINE", "LONGLINE", "TRAP")) |>
+  mutate(catch = ifelse(year < 2006, discarded_kg + landed_kg, (discarded_pcs + landed_pcs) * median_weight))
 
-# ll_catch |>
-#   filter(species_common_name == "yelloweye rockfish") |>
-#   ggplot() +
-#   geom_sf(data = coast_utm) + facet_wrap(~year) +
-#   geom_sf(pch = 21, size = 0.2)
+ll_catch |>
+# midwater_catch |>
+  filter(species_common_name == "yelloweye rockfish") |>
+  # filter(species_common_name == "widow rockfish") |>
+  # filter(year < 2006) |>
+  # filter(landed_kg > 0) |>
+  # filter(landed_pcs > 0) |>
+  # filter(discarded_pcs > 0) |>
+  # filter(discarded_kg > 0) |>
+  ggplot() +
+  # geom_sf(data = coast_utm) +
+  facet_wrap(~year) +
+  geom_sf(pch = 21, mapping = aes(size = catch, colour = log(catch))) +
+  scale_size_area() +
+  scale_colour_viridis_c()
 
 combined_catch <- bind_rows(trawl_catch, midwater_catch, ll_catch) |>
   filter(best_date < max(dat_rca_cpue$date)) |>
-  select(year, best_date, species_common_name, catch, gear)
+  select(year, best_date, species_common_name, catch, gear, vessel_registration_number) |>
+  filter(catch > 0)
 
-find_catch_within_distance <- function(dat_rca_cpue_row, input_catch_data, distance = 1000) {
+get_radius <- function(area) {
+  sqrt(area / pi)
+}
+get_radius(10)
+pi * 2^2
+
+find_catch_within_distance <- function(dat_rca_cpue_row, input_catch_data, distance = 1500) {
   # sum catch within X m of each point
 
   cat(dat_rca_cpue_row, "\n")
@@ -100,6 +118,7 @@ find_catch_within_distance <- function(dat_rca_cpue_row, input_catch_data, dista
 
   if (nrow(sf2) == 0L) {
     sf1$cumulative_catch <- 0
+    sf1$nvessel <- 0
     return(sf1)
   }
 
@@ -117,20 +136,36 @@ find_catch_within_distance <- function(dat_rca_cpue_row, input_catch_data, dista
   )
   if (nrow(match_df) == 0L) {
     sf1$cumulative_catch <- 0
+    sf1$nvessel <- 0
     return(sf1)
   }
 
   summary_df <- match_df |>
     left_join(sf2, by = "obs_id") |>
+    filter(catch > 0) |>
     mutate(rca_establishment = sf1$rca_establishment[[1]]) |>
     mutate(before_rca = year < rca_establishment) |>
-    group_by(id, before_rca) %>%
-    summarise(cumulative_catch = sum(catch, na.rm = TRUE), .groups = "drop")
+    group_by(id) |>
+    mutate(
+      nvessel = length(unique(vessel_registration_number)),
+      .groups = "drop"
+    ) |>
+    group_by(id, before_rca) |>
+    summarise(
+      cumulative_catch = sum(catch, na.rm = TRUE),
+      nvessel = nvessel[1],
+      .groups = "drop"
+    )
+  if (nrow(summary_df) == 0L) {
+    sf1$cumulative_catch <- 0
+    sf1$nvessel <- 0
+    return(sf1)
+  }
 
   left_join(sf1, summary_df, by = "id")
 }
 
-# find_catch_within_distance(2, combined_catch) |> glimpse()
+find_catch_within_distance(2, combined_catch) |> glimpse()
 # find_catch_within_distance(11, combined_catch) |> glimpse()
 
 tictoc::tic()
@@ -139,15 +174,52 @@ tictoc::tic()
 out <- furrr::future_map_dfr(1:nrow(dat_rca_cpue), \(i) find_catch_within_distance(i, combined_catch))
 tictoc::toc()
 
-saveRDS(out, file = "cumulative-catch-all.rds")
+out |>
+  filter(cumulative_catch > 0) |>
+  filter(is.na(before_rca))
+
+# saveRDS(out, file = "cumulative-catch-all-1km.rds")
+saveRDS(out, file = "cumulative-catch-all-1.5km.rds")
+# saveRDS(out, file = "cumulative-catch-all-2km.rds")
 # saveRDS(out, file = "cumulative-catch-2006.rds")
 
-out <- readRDS("cumulative-catch-all.rds")
-# out <- readRDS("cumulative-catch-2006.rds")
+# out <- readRDS("cumulative-catch-all-2km.rds")
+out <- readRDS("cumulative-catch-all-1km.rds")
+out <- readRDS("cumulative-catch-all-1.5km.rds")
 
-ggplot(out) +
+ndisc <- out |>
+  filter(nvessel < 3) |>
+  nrow()
+
+nretain <- out |>
+  filter(nvessel >= 3) |>
+  nrow()
+
+round(nretain / (ndisc + nretain), 2) * 100
+
+check <- out |>
+  as.data.frame() |>
+  mutate(three_or_more = nvessel >= 3) |>
+  group_by(three_or_more) |>
+  summarise(cumulative_catch = sum(cumulative_catch))
+
+include <- filter(check, three_or_more) |> pull(cumulative_catch)
+exclude <- filter(check, !three_or_more) |> pull(cumulative_catch)
+round(include / (include + exclude), 2) * 100
+
+out |>
+  filter(cumulative_catch > 0) |>
+  ggplot() +
+  geom_sf(pch = 21, mapping = aes(colour = nvessel, size = nvessel)) +
+  scale_colour_viridis_c(trans = "log10") +
+  scale_size_area() +
+  facet_wrap(~species)
+
+out |>
+  filter(cumulative_catch > 0) |>
+  ggplot() +
   geom_sf(pch = 21, mapping = aes(colour = cumulative_catch, size = cumulative_catch)) +
-  scale_colour_viridis_c() +
+  scale_colour_viridis_c(trans = "log10") +
   scale_size_area() +
   facet_wrap(~species)
 
@@ -155,18 +227,21 @@ table(out$before_rca)
 
 out |>
   filter(before_rca) |>
+  filter(cumulative_catch > 0) |>
   ggplot() +
   geom_sf(pch = 21, mapping = aes(colour = cumulative_catch, size = cumulative_catch)) +
-  scale_colour_viridis_c() +
+  scale_colour_viridis_c(trans = "log10") +
   scale_size_area() +
   facet_wrap(~species)
 
 out |>
+  filter(cumulative_catch > 0) |>
   filter(!before_rca) |>
   ggplot() +
   geom_sf(pch = 21, mapping = aes(colour = cumulative_catch, size = cumulative_catch)) +
-  scale_colour_viridis_c() +
+  scale_colour_viridis_c(trans = "log10") +
   scale_size_area() +
   facet_wrap(~species)
+
 
 setwd(here::here())
