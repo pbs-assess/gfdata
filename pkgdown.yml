@@ -1,10 +1,10 @@
 pandoc: 3.1.11
-pkgdown: 2.1.1
+pkgdown: 2.1.3
 pkgdown_sha: ~
 articles:
   gfdata-vignette-get-all: gfdata-vignette-get-all.html
   gfdata-vignette: gfdata-vignette.html
-last_built: 2025-03-25T21:45Z
+last_built: 2025-06-02T23:58Z
 urls:
   reference: https://pbs-assess.github.io/gfdata/reference
   article: https://pbs-assess.github.io/gfdata/articles
