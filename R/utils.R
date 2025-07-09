@@ -224,3 +224,60 @@ hook_area_swept <- function(.d) {
   )
   .d
 }
+
+#' Load survey block data (polygon, point, or coordinate table)
+#'
+#' Returns the built-in `survey_blocks` dataset as either polygons, centroids, or
+#' coordinates. Survey blocks are 2x2 km square grids that may overlap with land.
+#' Note that centroid and coordinate outputs may fall on land rather than in the ocean.
+#' While suitable for visualization and basic modeling, these points should not be used
+#' directly for extracting oceanographic covariates - instead use `polygon` and extract
+#' as appropriate.
+#'
+#' @param type Character string specifying the output format. One of:
+#'   - `"polygon"` (default): returns an `sf` object with polygon geometries.
+#'   - `"centroid"`: returns an `sf` object with the centroid point for each block.
+#'   - `"XY"`: returns a `tibble` with columns `X` and `Y` (in kilometres),
+#'     representing point-on-surface coordinates extracted from each polygon.
+#' @param active_only Logical. If TRUE (default), only returns active survey blocks.
+#'
+#' @return Either an `sf` object or a `tbl` depending on `type`.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' load_survey_blocks("polygon") |>
+#'   ggplot() +
+#'   geom_sf(aes(fill = survey_abbrev)) +
+#'   theme_minimal()
+#' load_survey_blocks("centroid") |>
+#'   ggplot() +
+#'   geom_sf(aes(colour = survey_abbrev)) +
+#'   theme_minimal()
+#' load_survey_blocks("XY") |>
+#'   ggplot() +
+#'   geom_point(aes(x = X, y = Y)) +
+#'   theme_minimal()
+#' }
+load_survey_blocks <- function(type = c("polygon", "centroid", "XY"), active_only = TRUE) {
+  type <- match.arg(type)
+  dat <- gfdata::survey_blocks
+
+  if (active_only) dat <- dat |> dplyr::filter(active_block)
+
+  if (type == "centroid") {
+    return(sf::st_point_on_surface(dat)) # sf points
+  }
+
+  if (type == "XY") {
+    pts <- sf::st_point_on_surface(dat)
+    coords <- sf::st_coordinates(pts) / 1000  # convert metres to km
+    df <- sf::st_drop_geometry(pts)
+    df$X <- coords[, 1]
+    df$Y <- coords[, 2]
+    df <- dplyr::as_tibble(df)
+    return(df)
+  }
+
+  return(dat)  # default: polygon sf
+}

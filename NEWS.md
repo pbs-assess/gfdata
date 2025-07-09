@@ -1,5 +1,14 @@
 # Updates to gfdata
 
+## 0.1.5 2025-07-09
+
+- Added `load_survey_blocks()` function to return survey block data in the following formats:
+ - `"polygon"` (default): `sf` object with 2x2 km grid polygon geometries
+ - `"centroid"`: `sf` object with centroid points for each block
+ - `"XY"`: tibble with X/Y coordinates in kilometres
+- Added `active_only` parameter (default: `TRUE`) to optionally filter for active survey blocks
+- Note: centroid and XY coordinate outputs may fall on land (specifically for the HBLL surveys); use polygon format for oceanographic data extraction
+
 ## 0.1.4 2025-01-22
 
 2024 IPHC data have been added. Since 2024-05 the following changes have occurred
