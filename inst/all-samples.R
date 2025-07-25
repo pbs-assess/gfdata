@@ -117,3 +117,16 @@ x <- dplyr::select(x, survey_series_id, year = trip_year, fishing_event_id , spe
   species_science_name, sample_id, sex, fork_length, standard_length,
   total_length, second_dorsal_length, weight, age, maturity_code,
   maturity_convention_code, age_specimen_collected, usability_code)
+m <- select(gfplot::maturity_assignment, maturity_convention_code, sex, mature_at) |> distinct()
+x <- left_join(x, m) |>
+  mutate(mature = maturity_code > mature_at) |>
+  select(-maturity_code, -maturity_convention_code, -mature_at, -age_specimen_collected) |>
+  filter(usability_code %in% c(0, 1, 2, 6)) |>
+  select(-usability_code)
+x$sex <- case_when(
+  x$sex == 1 ~ "male",
+  x$sex == 2 ~ "female",
+  TRUE ~ NA
+)
+saveRDS(x, "inst/pbs-all-samples-2025-07-25.rds")
+
