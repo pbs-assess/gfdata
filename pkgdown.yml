@@ -4,7 +4,7 @@ pkgdown_sha: ~
 articles:
   gfdata-vignette-get-all: gfdata-vignette-get-all.html
   gfdata-vignette: gfdata-vignette.html
-last_built: 2025-07-25T18:27Z
+last_built: 2025-07-25T18:29Z
 urls:
   reference: https://pbs-assess.github.io/gfdata/reference
   article: https://pbs-assess.github.io/gfdata/articles
