@@ -128,5 +128,12 @@ x$sex <- case_when(
   x$sex == 2 ~ "female",
   TRUE ~ NA
 )
+
+lu <- structure(list(survey_series_id = c(1, 3, 4, 16, 45), survey_abbrev = c("SYN QCS",
+  "SYN HS", "SYN WCVI", "SYN WCHG", "SYN SOG")), row.names = c(NA,
+    -5L), class = "data.frame")
+x <- left_join(x, lu)
+x <- select(x, -survey_series_id)
+
 saveRDS(x, "inst/pbs-all-samples-2025-07-25.rds")
 
