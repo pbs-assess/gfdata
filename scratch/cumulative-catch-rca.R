@@ -10,8 +10,12 @@ options(future.rng.onMisuse = "ignore")
 
 setwd(here::here("scratch"))
 
+# talk to Maria...
+# before 2006 OK?
+# concatenate survey_id and species into an ID to join on
+
 d <- readRDS("ccira_sdmTMB_data_locations.rds")
-dat_rca_cpue <- select(d, species, date, longitude, latitude, rca_establishment) |>
+dat_rca_cpue <- select(d, survey_id, species, date, longitude, latitude, rca_establishment) |>
   as_tibble() |>
   st_as_sf(
     coords = c("longitude", "latitude"),
@@ -185,7 +189,18 @@ saveRDS(out, file = "cumulative-catch-all-1.5km.rds")
 
 # out <- readRDS("cumulative-catch-all-2km.rds")
 out <- readRDS("cumulative-catch-all-1km.rds")
+out |> filter(nvessel < 3) |> saveRDS("cumulative-catch-all-1km-nvessel.rds")
+
+
+# "black"
+# "2007-05-15
+# median weight== 1.3987
+filter(out, species == "black", date == lubridate::ymd("2007-05-15"), round(median_weight, 4) == 1.3987)
+
+
+
 out <- readRDS("cumulative-catch-all-1.5km.rds")
+out |> filter(nvessel < 3) |> saveRDS("cumulative-catch-all-1.5km-nvessel.rds")
 
 ndisc <- out |>
   filter(nvessel < 3) |>
