@@ -107,11 +107,13 @@ ORDER BY SM.SPECIES_CODE, YEAR(TRIP_START_DATE), TA.ACTIVITY_CODE, S.SURVEY_SERI
 
 d <- run_sql("GFBioSQL", sql)
 saveRDS(d, file = "inst/all-samples.rds")
+d <- readRDS("inst/all-samples.rds")
+library(dplyr)
 x <- d
 
 names(x) <- tolower(names(x))
 
 x <- dplyr::select(x, survey_series_id, year = trip_year, fishing_event_id , specimen_id,
-                   species_science_name, sample_id, sex, fork_length, standard_length,
-                   total_length, second_dorsal_length, weight, age, maturity_code,
-                   maturity_convention_code, age_specimen_collected, usability_code)
+  species_science_name, sample_id, sex, fork_length, standard_length,
+  total_length, second_dorsal_length, weight, age, maturity_code,
+  maturity_convention_code, age_specimen_collected, usability_code)
