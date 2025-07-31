@@ -8,6 +8,7 @@
  - `"XY"`: tibble with X/Y coordinates in kilometres
 - Added `active_only` parameter (default: `TRUE`) to optionally filter for active survey blocks
 - Note: centroid and XY coordinate outputs may fall on land (specifically for the HBLL surveys); use polygon format for oceanographic data extraction
+- Updated `survey_blocks` documentation to correctly reflect the actual data structure
 
 ## 0.1.4 2025-01-22
 

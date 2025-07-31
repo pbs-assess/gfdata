@@ -69,11 +69,13 @@
 #' Obtained via `gfdata::get_active_survey_blocks()` with some cleaning
 #' as documented in `data-raw/survey_blocks.R`.
 #'
-#' @format Simple feature (`sf`) collection with 66293 features and 6 fields:
+#' @format Simple feature (`sf`) collection with 66744 features and 8 fields:
 #' \describe{
 #'   \item{survey_abbrev}{Survey abbreviation.}
 #'   \item{survey_series_id}{Unique identifier for the survey series.}
-#'   \item{station_key}{Unique identifier for each grid cell}
+#'   \item{block_id}{Unique identifier for each grid cell (`BLOCK_DESIGNATION` in GFBioSQL).}
+#'   \item{grouping_code}{Strata grouping code used to join with strata data from
+#'         the GROUPING table in GFBioSQL.}
 #'   \item{depth_m}{Depth in metres.}
 #'   \item{active_block}{Is block actively fished as of date downloaded:
 #'      e.g., `attr(gfdata::survey_blocks, "date-downloaded")`)}
