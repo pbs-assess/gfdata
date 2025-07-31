@@ -55,14 +55,18 @@ as documented in <code>data-raw/survey_blocks.R</code>.</p>
 
     <div class="section level2">
     <h2 id="format">Format<a class="anchor" aria-label="anchor" href="#format"></a></h2>
-    <p>Simple feature (<code>sf</code>) collection with 66293 features and 6 fields:</p><dl><dt>survey_abbrev</dt>
+    <p>Simple feature (<code>sf</code>) collection with 66744 features and 8 fields:</p><dl><dt>survey_abbrev</dt>
 <dd><p>Survey abbreviation.</p></dd>
 
 <dt>survey_series_id</dt>
 <dd><p>Unique identifier for the survey series.</p></dd>
 
-<dt>station_key</dt>
-<dd><p>Unique identifier for each grid cell</p></dd>
+<dt>block_id</dt>
+<dd><p>Unique identifier for each grid cell (<code>BLOCK_DESIGNATION</code> in GFBioSQL).</p></dd>
+
+<dt>grouping_code</dt>
+<dd><p>Strata grouping code used to join with strata data from
+the GROUPING table in GFBioSQL.</p></dd>
 
 <dt>depth_m</dt>
 <dd><p>Depth in metres.</p></dd>
