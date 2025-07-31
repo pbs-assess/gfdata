@@ -15,7 +15,8 @@ setwd(here::here("scratch"))
 # concatenate survey_id and species into an ID to join on
 
 d <- readRDS("ccira_sdmTMB_data_locations.rds")
-dat_rca_cpue <- select(d, species, date, longitude, latitude, rca_establishment) |>
+glimpse(d)
+dat_rca_cpue <- select(d, survey_id, species, date, longitude, latitude, rca_establishment) |>
   as_tibble() |>
   st_as_sf(
     coords = c("longitude", "latitude"),
@@ -24,6 +25,8 @@ dat_rca_cpue <- select(d, species, date, longitude, latitude, rca_establishment)
   st_transform(st_crs(32609))
 dat_rca_cpue$date <- lubridate::ymd(dat_rca_cpue$date)
 dat_rca_cpue$ccira_row_id <- 1:nrow(dat_rca_cpue)
+dat_rca_cpue <- mutate(dat_rca_cpue, ccira_survey_sp_id = paste(survey_id, species, sep = "-"))
+glimpse(dat_rca_cpue)
 
 coast_utm <- pacea::bc_coast |>
   st_transform(crs = 32609) |>
@@ -299,56 +302,18 @@ find_catch_within_distance(2, combined_catch) |> glimpse()
 
 tictoc::tic()
 # out <- purrr::map_dfr(1:10, \(i) find_catch_within_distance(i, combined_catch))
-# out <- furrr::future_map_dfr(1:1000, \(i) find_catch_within_distance(i, combined_catch))
-out <- furrr::future_map_dfr(1:nrow(dat_rca_cpue), \(i) find_catch_within_distance(i, combined_catch))
+out1.0 <- furrr::future_map_dfr(1:nrow(dat_rca_cpue), \(i) find_catch_within_distance(i, combined_catch, distance = 1000))
+# out1.5 <- furrr::future_map_dfr(1:nrow(dat_rca_cpue), \(i) find_catch_within_distance(i, combined_catch, distance = 1500))
 tictoc::toc()
 
-out |>
-  filter(cumulative_catch > 0) |>
-  filter(is.na(before_rca))
+# out1.5 <- out
+saveRDS(out1.0, file = "cumulative-catch-all-1.0km.rds")
+# saveRDS(out1.5, file = "cumulative-catch-all-1.5km.rds")
 
-# saveRDS(out, file = "cumulative-catch-all-1km.rds")
-saveRDS(out, file = "cumulative-catch-all-1.5km.rds")
-# saveRDS(out, file = "cumulative-catch-all-2km.rds")
-# saveRDS(out, file = "cumulative-catch-2006.rds")
+out1.0$nvessel <- NULL
+saveRDS(out1.0, file = "cumulative-catch-all-1.0km.rds")
 
-# out <- readRDS("cumulative-catch-all-2km.rds")
-out <- readRDS("cumulative-catch-all-1km.rds")
-out |> filter(nvessel < 3) |> saveRDS("cumulative-catch-all-1km-nvessel.rds")
-
-
-# "black"
-# "2007-05-15
-# median weight== 1.3987
-filter(out, species == "black", date == lubridate::ymd("2007-05-15"), round(median_weight, 4) == 1.3987)
-
-
-
-out <- readRDS("cumulative-catch-all-1.5km.rds")
-out |> filter(nvessel < 3) |> saveRDS("cumulative-catch-all-1.5km-nvessel.rds")
-
-ndisc <- out |>
-  filter(nvessel < 3) |>
-  nrow()
-
-nretain <- out |>
-  filter(nvessel >= 3) |>
-  nrow()
-
-ndisc
-nretain
-nretain / (ndisc + nretain), 2) * 100
-
-check <- out |>
-  as.data.frame() |>
-  mutate(three_or_more = nvessel >= 3) |>
-  group_by(three_or_more) |>
-  summarise(cumulative_catch = sum(cumulative_catch))
-
-include <- filter(check, three_or_more) |> pull(cumulative_catch)
-exclude <- filter(check, !three_or_more) |> pull(cumulative_catch)
-round(include / (include + exclude), 2) * 100
-
+out <- out1.0
 out |>
   filter(cumulative_catch > 0) |>
   ggplot() +
@@ -384,6 +349,5 @@ out |>
   scale_colour_viridis_c(trans = "log10") +
   scale_size_area() +
   facet_wrap(~species)
-
 
 setwd(here::here())
