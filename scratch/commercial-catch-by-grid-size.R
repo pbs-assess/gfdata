@@ -36,10 +36,11 @@ sf_use_s2(FALSE)
   SPECIES_SCIENTIFIC_NAME,
   SPECIES_COMMON_NAME,
   LANDED_KG,
-  CASE WHEN GEAR IN ('TRAP', 'HOOK AND LINE', 'MIDWATER TRAWL') AND YEAR(BEST_DATE) < 2006 THEN 0
-	WHEN GEAR IN ('BOTTOM TRAWL', 'UNKNOWN TRAWL') AND YEAR(BEST_DATE) <1996 THEN 0
-	WHEN TRIP_CATEGORY IN ('OPT B') AND YEAR(BEST_DATE) <2006 THEN 0
-	ELSE DISCARDED_KG END AS DISCARDED_KG,
+  -- CASE WHEN GEAR IN ('TRAP', 'HOOK AND LINE', 'MIDWATER TRAWL') AND YEAR(BEST_DATE) < 2006 THEN 0
+	-- WHEN GEAR IN ('BOTTOM TRAWL', 'UNKNOWN TRAWL') AND YEAR(BEST_DATE) <1996 THEN 0
+	-- WHEN TRIP_CATEGORY IN ('OPT B') AND YEAR(BEST_DATE) <2006 THEN 0
+	-- ELSE DISCARDED_KG END AS DISCARDED_KG,
+	DISCARDED_KG,
   LANDED_PCS,
   DISCARDED_PCS,
   MC.MAJOR_STAT_AREA_CODE,
@@ -63,16 +64,25 @@ ORDER BY BEST_DATE, SPECIES_COMMON_NAME"
 
 q_lines <- readLines(textConnection(.q))
 
+sp_list <- c("467", "418", "437", "435", "405", "401", "451", "414", "407",
+  "424", "426", "442", "417", "394", "439", "450", "421", "403",
+  "398", "431", "409", "428", "448", "433", "444", "415", "429",
+  "423")
+
 # Requries VPN:
 # -------------
 # Slow, might have been better to iterate over species
-# .sql <-
-#   gfdata:::inject_filter("WHERE MC.SPECIES_CODE IN", sp_list,
-#     sql_code = q_lines, search_flag = "-- insert species here") |>
-#   paste(collapse = '\n')
+.sql <-
+  gfdata:::inject_filter("WHERE MC.SPECIES_CODE IN", sp_list,
+    sql_code = q_lines, search_flag = "-- insert species here") |>
+  paste(collapse = '\n')
 
-# catch_spatial <- gfdata::run_sql("GFFOS", .sql)
+catch_spatial <- gfdata::run_sql("GFFOS", .sql)
 # saveRDS(catch_spatial, 'catch-spatial.rds')
+saveRDS(catch_spatial, "spatial_catch_2025_07_31.rds")
+
+stop("End of current data analysis")
+
 # -------------
 
 # --- Setup coastline ---
