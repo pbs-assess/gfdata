@@ -20,7 +20,14 @@ polys <- split(d, d$id) |> lapply(\(x) {
     c(x$pt1_lon, x$pt1_lat)
   )) |> st_polygon()
 })
-dd <- select(d, survey_series_name, survey_series_id, block_id = block_designation, depth_m = survey_site_depth_m, active_block = selection_ind)
+dd <- d |>
+  select(
+    survey_series_id,
+    survey_series_name,
+    block_id = block_designation,
+    grouping_code, # used to join with strata GROUPING data
+    depth_m = survey_site_depth_m,
+    active_block = selection_ind)
 dd$geometry <- st_sfc(polys)
 df <- st_as_sf(dd)
 st_crs(df) <- 4326
@@ -66,7 +73,7 @@ df2 |> filter(active_block) |>
   theme_minimal() +
   scale_colour_brewer(palette = "Dark2")
 
-df2 <- select(df2, survey_abbrev, survey_series_id, block_id, depth_m, active_block, geometry)
+df2 <- select(df2, -survey_series_name)
 
 df2 |> filter(active_block) |>
   ggplot(aes(colour = survey_abbrev)) +
