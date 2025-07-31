@@ -15,7 +15,7 @@ setwd(here::here("scratch"))
 # concatenate survey_id and species into an ID to join on
 
 d <- readRDS("ccira_sdmTMB_data_locations.rds")
-dat_rca_cpue <- select(d, survey_id, species, date, longitude, latitude, rca_establishment) |>
+dat_rca_cpue <- select(d, species, date, longitude, latitude, rca_establishment) |>
   as_tibble() |>
   st_as_sf(
     coords = c("longitude", "latitude"),
@@ -210,7 +210,9 @@ nretain <- out |>
   filter(nvessel >= 3) |>
   nrow()
 
-round(nretain / (ndisc + nretain), 2) * 100
+ndisc
+nretain
+nretain / (ndisc + nretain), 2) * 100
 
 check <- out |>
   as.data.frame() |>
