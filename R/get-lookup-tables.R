@@ -64,8 +64,6 @@ get_ssids <- function() {
 #' @rdname lookup
 get_active_survey_blocks <- function(ssid = NULL, active_only = TRUE) {
   .q <- read_sql("get-active-survey-blocks.sql")
-  .d <- run_sql("GFBioSQL", .q)
-  names(.d) <- tolower(names(.d))
 
   ssid_to_query <- if (is.null(ssid)) c(1, 3, 4, 16, 22, 36, 39, 40) else ssid
 
@@ -74,6 +72,9 @@ get_active_survey_blocks <- function(ssid = NULL, active_only = TRUE) {
     sql_code = .q,
     search_flag = "-- insert ssid here", conversion_func = I
     )
+
+  .d <- run_sql("GFBioSQL", .q)
+  names(.d) <- tolower(names(.d))
 
   if (active_only) {
     .d <- filter(.d, selection_ind == 1)
