@@ -281,3 +281,41 @@ load_survey_blocks <- function(type = c("polygon", "centroid", "XY"), active_onl
 
   return(dat)  # default: polygon sf
 }
+
+#' Convert SQL Geometry Data to an sf Polygon Object
+#'
+#' This function converts a data frame containing SQL-style geometry coordinates
+#' (four corner points per polygon) into an `sf` polygon object.
+#' The SQL-style geometry is returned from spatial SQL tables like SURVEY_SITE
+#' and SURVEY_SITE_HISTORIC in GFBioSQL.
+#'
+#' @param .d A data frame with columns `pt1_lon`, `pt1_lat`, `pt2_lon`, `pt2_lat`,
+#' `pt3_lon`, `pt3_lat`, `pt4_lon`, and `pt4_lat`, representing the four corners of polygons.
+#' @param crs An integer specifying the coordinate reference system (CRS).
+#' Defaults to `4326` (WGS 84).
+#'
+#' @return An `sf` object with polygon geometries and original data attributes (excluding point columns).
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' .d <- gfdata::get_active_survey_blocks(active_only = TRUE)
+#' sql_geom_to_sf(.d, crs = 4326)
+#' }
+sql_geom_to_sf <- function(.d, crs = 4326) {
+  .d$id <- seq_len(nrow(.d))
+  polys <- split(.d, .d$id) |> lapply(\(x) {
+    list(rbind(
+      c(x$pt1_lon, x$pt1_lat),
+      c(x$pt2_lon, x$pt2_lat),
+      c(x$pt3_lon, x$pt3_lat),
+      c(x$pt4_lon, x$pt4_lat),
+      c(x$pt1_lon, x$pt1_lat)
+    )) |> sf::st_polygon()
+  })
+  out <- .d |> dplyr::select(-(pt1_lat:pt4_lon))
+  out$geometry <- sf::st_sfc(polys)
+  out <- sf::st_as_sf(out)
+  sf::st_crs(out) <- crs
+  return(out)
+}
