@@ -40,21 +40,41 @@ get_ssids <- function() {
 }
 
 #' @export
-#' @param ssid A numeric vector of survey series IDs. Run [get_ssids()] for a
-#'   look-up table of available survey series IDs with surveys series
-#'   descriptions.
-#' @param active_only Logical: return only active blocks?
+#' @param ssid A numeric vector of survey series IDs. If NULL (default),
+#'   returns grids for Synoptic trawl surveys (1, 3, 4, 16), HBLL Outside
+#'   surveys (22, 36), and HBLL Inside surveys (39, 40).
+#'   For all available survey series, first run [get_ssids()] to see options,
+#'   then pass the desired IDs to this function.
+#' @param active_only Logical: return only active blocks? (default: TRUE)
+#'
+#' @return A data frame of survey blocks with columns for survey series ID,
+#'   name, block designation, coordinates, and selection indicators.
+#'
+#' @note
+#' \itemize{
+#'   \item ssid 2 (Hecate Strait Multispecies Assemblage Bottom Trawl)
+#'         is not available in SURVEY_SITES
+#'   \item ssids 6 and 7 (Small mesh Multispecies bottom trawl for QCS and WCVI)
+#'         are stored as SURVEY_SERIES_ID = 67, but this grid is best generated
+#'         from sampling points if used for modelling
+#'   \item ssid 14 (IPHC) contains only 4 large polygons spanning the
+#'         IPHC survey area and is also best generated from sampling points for
+#'         modelling
+#' }
 #' @rdname lookup
 get_active_survey_blocks <- function(ssid = NULL, active_only = TRUE) {
   .q <- read_sql("get-active-survey-blocks.sql")
   .d <- run_sql("GFBioSQL", .q)
   names(.d) <- tolower(names(.d))
-  if (!is.null(ssid)) {
-    .q <- inject_filter("AND SS.SURVEY_SERIES_ID IN", ssid,
-      sql_code = .q,
-      search_flag = "-- insert ssid here", conversion_func = I
+
+  ssid_to_query <- if (is.null(ssid)) c(1, 3, 4, 16, 22, 36, 39, 40) else ssid
+
+  .q <- inject_filter("WHERE SS.SURVEY_SERIES_ID IN",
+    ssid_to_query,
+    sql_code = .q,
+    search_flag = "-- insert ssid here", conversion_func = I
     )
-  }
+
   if (active_only) {
     .d <- filter(.d, selection_ind == 1)
   }

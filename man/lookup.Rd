@@ -53,14 +53,20 @@ get_other_surveys()
 get_table(name)
 }
 \arguments{
-\item{ssid}{A numeric vector of survey series IDs. Run \code{\link[=get_ssids]{get_ssids()}} for a
-look-up table of available survey series IDs with surveys series
-descriptions.}
+\item{ssid}{A numeric vector of survey series IDs. If NULL (default),
+returns grids for Synoptic trawl surveys (1, 3, 4, 16), HBLL Outside
+surveys (22, 36), and HBLL Inside surveys (39, 40).
+For all available survey series, first run \code{\link[=get_ssids]{get_ssids()}} to see options,
+then pass the desired IDs to this function.}
 
-\item{active_only}{Logical: return only active blocks?}
+\item{active_only}{Logical: return only active blocks? (default: TRUE)}
 
 \item{name}{The name of the table to get all records from.
 For code table use variable name without the'_code' suffix.}
+}
+\value{
+A data frame of survey blocks with columns for survey series ID,
+name, block designation, coordinates, and selection indicators.
 }
 \description{
 Extracts metadata and descriptive details useful in filtering data (i.e.
@@ -81,5 +87,17 @@ each stratum within surveys
 survey series ID
 \item \code{get_major_areas()} produces lookup table for major area descriptions for
 a given major area code
+}
+}
+\note{
+\itemize{
+\item ssid 2 (Hecate Strait Multispecies Assemblage Bottom Trawl)
+is not available in SURVEY_SITES
+\item ssids 6 and 7 (Small mesh Multispecies bottom trawl for QCS and WCVI)
+are stored as SURVEY_SERIES_ID = 67, but this grid is best generated
+from sampling points if used for modelling
+\item ssid 14 (IPHC) contains only 4 large polygons spanning the
+IPHC survey area and is also best generated from sampling points for
+modelling
 }
 }
