@@ -11,7 +11,7 @@ arguments or for filtering and can be looked up with these functions."></head><b
 
     <a class="navbar-brand me-2" href="../index.html">gfdata</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.5</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.6</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -88,13 +88,15 @@ arguments or for filtering and can be looked up with these functions.</p>
 
 
 <dl><dt id="arg-ssid">ssid<a class="anchor" aria-label="anchor" href="#arg-ssid"></a></dt>
-<dd><p>A numeric vector of survey series IDs. Run <code>get_ssids()</code> for a
-look-up table of available survey series IDs with surveys series
-descriptions.</p></dd>
+<dd><p>A numeric vector of survey series IDs. If NULL (default),
+returns grids for Synoptic trawl surveys (1, 3, 4, 16), HBLL Outside
+surveys (22, 36), and HBLL Inside surveys (39, 40).
+For all available survey series, first run <code>get_ssids()</code> to see options,
+then pass the desired IDs to this function.</p></dd>
 
 
 <dt id="arg-active-only">active_only<a class="anchor" aria-label="anchor" href="#arg-active-only"></a></dt>
-<dd><p>Logical: return only active blocks?</p></dd>
+<dd><p>Logical: return only active blocks? (default: TRUE)</p></dd>
 
 
 <dt id="arg-name">name<a class="anchor" aria-label="anchor" href="#arg-name"></a></dt>
@@ -102,6 +104,11 @@ descriptions.</p></dd>
 For code table use variable name without the'_code' suffix.</p></dd>
 
 </dl></div>
+    <div class="section level2">
+    <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
+    <p>A data frame of survey blocks with columns for survey series ID,
+name, block designation, coordinates, and selection indicators.</p>
+    </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
 
@@ -118,13 +125,25 @@ survey series ID</p></li>
 <li><p><code>get_major_areas()</code> produces lookup table for major area descriptions for
 a given major area code</p></li>
 </ul></div>
+    <div class="section level2">
+    <h2 id="note">Note<a class="anchor" aria-label="anchor" href="#note"></a></h2>
+
+<ul><li><p>ssid 2 (Hecate Strait Multispecies Assemblage Bottom Trawl)
+is not available in SURVEY_SITES</p></li>
+<li><p>ssids 6 and 7 (Small mesh Multispecies bottom trawl for QCS and WCVI)
+are stored as SURVEY_SERIES_ID = 67, but this grid is best generated
+from sampling points if used for modelling</p></li>
+<li><p>ssid 14 (IPHC) contains only 4 large polygons spanning the
+IPHC survey area and is also best generated from sampling points for
+modelling</p></li>
+</ul></div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Elise A. Keppel, Philina A. English, Sean C. Anderson, Andrew M. Edwards, Chris Grandin.</p>
+  <p>Developed by Elise A. Keppel, Philina A. English, Jillian C. Dunic, Sean C. Anderson, Andrew M. Edwards, Chris Grandin.</p>
 </div>
 
 <div class="pkgdown-footer-right">
