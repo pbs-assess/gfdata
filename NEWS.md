@@ -1,5 +1,10 @@
 # Updates to gfdata
 
+## 0.1.6 2025-09-02
+
+- Added `sql_geom_to_sf()` utility function for converting SQL geometry data to sf objects (e.g., results from `get_active_survey_blocks()`)
+- Fixed survey block lookup query to get GFBioSQL SURVEY_SITE table results for a given ssid
+
 ## 0.1.5 2025-07-09
 
 - Added `load_survey_blocks()` function to return survey block data in the following formats:
