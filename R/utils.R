@@ -282,7 +282,7 @@ load_survey_blocks <- function(
     "mssm" = gfdata::mssm_grid_sf |>
       dplyr::mutate(area = 9) |>
       sf::st_transform(crs = 32609) |>
-      dplyr::rename(survey_abbrev = .data$survey),
+      dplyr::rename(survey_abbrev = "survey"),
     "syn_sog" = gfdata::sog_grid
   )
 
