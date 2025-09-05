@@ -1,5 +1,15 @@
 # Updates to gfdata
 
+## 0.1.7 2025-09-05
+
+- Added new `sog_grid` dataset containing the Strait of Georgia Synoptic Bottom Trawl Survey Grid
+- Enhanced `load_survey_blocks()` function to support multiple datasets:
+  - `"syn_hbll"` (default): existing Synoptic and HBLL survey grids  
+  - `"mssm"`: MSSM survey grid data
+  - `"syn_sog"`: new Strait of Georgia survey grid
+- Improved `sql_geom_to_sf()` function with coordinate validation and better error handling
+- Updated documentation for `mssm_grid`, `survey_blocks`, and related functions
+
 ## 0.1.6 2025-09-02
 
 - Added `sql_geom_to_sf()` utility function for converting SQL geometry data to sf objects (e.g., results from `get_active_survey_blocks()`)

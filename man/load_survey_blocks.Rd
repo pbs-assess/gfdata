@@ -4,9 +4,20 @@
 \alias{load_survey_blocks}
 \title{Load survey block data (polygon, point, or coordinate table)}
 \usage{
-load_survey_blocks(type = c("polygon", "centroid", "XY"), active_only = TRUE)
+load_survey_blocks(
+  dataset = "syn_hbll",
+  type = c("polygon", "centroid", "XY"),
+  active_only = TRUE
+)
 }
 \arguments{
+\item{dataset}{Character string specifying the dataset to load. One of:
+\itemize{
+\item \code{"syn_hbll"} (default): Synoptic and HBLL survey grids (2x2 km square grids that may overlap with land).
+\item \code{"mssm"}: MSSM survey grid data, see \code{gfdata::mssm_grid}.
+\item \code{"syn_sog"}: Strait of Georgia Synoptic Bottom Trawl grid (only active blocks available).
+}}
+
 \item{type}{Character string specifying the output format. One of:
 \itemize{
 \item \code{"polygon"} (default): returns an \code{sf} object with polygon geometries.
@@ -21,8 +32,9 @@ representing point-on-surface coordinates extracted from each polygon.
 Either an \code{sf} object or a \code{tbl} depending on \code{type}.
 }
 \description{
-Returns the built-in \code{survey_blocks} dataset as either polygons, centroids, or
-coordinates. Survey blocks are 2x2 km square grids that may overlap with land.
+Returns built-in grid datasets as either polygons, centroids, or coordinates.
+Available datasets include the Synoptic and HBLL survey grids (2x2 km square grids),
+MSSM grid, and SYN SOG grid.
 Note that centroid and coordinate outputs may fall on land rather than in the ocean.
 While suitable for visualization and basic modeling, these points should not be used
 directly for extracting oceanographic covariates - instead use \code{polygon} and extract
@@ -30,15 +42,20 @@ as appropriate.
 }
 \examples{
 \dontrun{
-load_survey_blocks("polygon") |>
+# Load synoptic and HBLL survey grids as polygons (default)
+load_survey_blocks() |>
   ggplot() +
   geom_sf(aes(fill = survey_abbrev)) +
   theme_minimal()
-load_survey_blocks("centroid") |>
+
+# Load MSSM grid as centroids
+load_survey_blocks(dataset = "mssm", type = "centroid") |>
   ggplot() +
   geom_sf(aes(colour = survey_abbrev)) +
   theme_minimal()
-load_survey_blocks("XY") |>
+
+# Load SOG grid as coordinates
+load_survey_blocks(dataset = "syn_sog", type = "XY") |>
   ggplot() +
   geom_point(aes(x = X, y = Y)) +
   theme_minimal()

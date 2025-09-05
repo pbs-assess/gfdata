@@ -3,11 +3,22 @@
 \docType{data}
 \name{survey_blocks}
 \alias{survey_blocks}
-\title{Active survey blocks}
+\title{Synoptic and HBLL survey blocks}
 \format{
-Simple feature (\code{sf}) collection with 66744 features and 8 fields:
+Simple feature (\code{sf}) collection with 66744 features and 7 fields:
 \describe{
-\item{survey_abbrev}{Survey abbreviation.}
+\item{survey_abbrev}{Survey abbreviation. Includes:
+\itemize{
+\item \code{SYN QCS}: Synoptic Queen Charlotte Sound
+\item \code{SYN HS}: Synoptic Hecate Strait
+\item \code{SYN WCVI}: Synoptic West Coast Vancouver Island
+\item \code{SYN WCHG}: Synoptic West Coast Haida Gwaii
+\item \code{HBLL OUT N}: Hook and Line Outside North
+\item \code{HBLL OUT S}: Hook and Line Outside South
+\item \code{HBLL INS N}: Hook and Line Inside North
+\item \code{HBLL INS S}: Hook and Line Inside South
+}
+}
 \item{survey_series_id}{Unique identifier for the survey series.}
 \item{block_id}{Unique identifier for each grid cell (\code{BLOCK_DESIGNATION} in GFBioSQL).}
 \item{grouping_code}{Strata grouping code used to join with strata data from
@@ -23,9 +34,9 @@ e.g., \code{attr(gfdata::survey_blocks, "date-downloaded")})}
 survey_blocks
 }
 \description{
-Active survey blocks for DFO Pacific groundfish surveys.
-Obtained via \code{gfdata::get_active_survey_blocks()} with some cleaning
-as documented in \code{data-raw/survey_blocks.R}.
+Survey blocks (grids) for DFO Pacific groundfish surveys including Synoptic (SYN) and
+Hook and Line (HBLL) surveys. Obtained via \code{gfdata::get_active_survey_blocks()}
+with some cleaning as documented in \code{data-raw/survey_blocks.R}.
 }
 \examples{
 \dontshow{if (requireNamespace("sf", quietly = TRUE)) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
@@ -41,5 +52,9 @@ gfdata::survey_blocks |>
 attr(gfdata::survey_blocks, "date-generated")
 attr(gfdata::survey_blocks, "date-downloaded")
 \dontshow{\}) # examplesIf}
+}
+\seealso{
+\code{\link{load_survey_blocks}} for loading this dataset with additional options
+(polygon, centroid, or coordinate formats).
 }
 \keyword{datasets}

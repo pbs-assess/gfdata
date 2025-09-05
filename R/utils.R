@@ -227,13 +227,18 @@ hook_area_swept <- function(.d) {
 
 #' Load survey block data (polygon, point, or coordinate table)
 #'
-#' Returns the built-in `survey_blocks` dataset as either polygons, centroids, or
-#' coordinates. Survey blocks are 2x2 km square grids that may overlap with land.
+#' Returns built-in grid datasets as either polygons, centroids, or coordinates.
+#' Available datasets include the Synoptic and HBLL survey grids (2x2 km square grids),
+#' MSSM grid, and SYN SOG grid.
 #' Note that centroid and coordinate outputs may fall on land rather than in the ocean.
 #' While suitable for visualization and basic modeling, these points should not be used
 #' directly for extracting oceanographic covariates - instead use `polygon` and extract
 #' as appropriate.
 #'
+#' @param dataset Character string specifying the dataset to load. One of:
+#'   - `"syn_hbll"` (default): Synoptic and HBLL survey grids (2x2 km square grids that may overlap with land).
+#'   - `"mssm"`: MSSM survey grid data, see `gfdata::mssm_grid`.
+#'   - `"syn_sog"`: Strait of Georgia Synoptic Bottom Trawl grid (only active blocks available).
 #' @param type Character string specifying the output format. One of:
 #'   - `"polygon"` (default): returns an `sf` object with polygon geometries.
 #'   - `"centroid"`: returns an `sf` object with the centroid point for each block.
@@ -246,24 +251,44 @@ hook_area_swept <- function(.d) {
 #'
 #' @examples
 #' \dontrun{
-#' load_survey_blocks("polygon") |>
+#' # Load synoptic and HBLL survey grids as polygons (default)
+#' load_survey_blocks() |>
 #'   ggplot() +
 #'   geom_sf(aes(fill = survey_abbrev)) +
 #'   theme_minimal()
-#' load_survey_blocks("centroid") |>
+#'
+#' # Load MSSM grid as centroids
+#' load_survey_blocks(dataset = "mssm", type = "centroid") |>
 #'   ggplot() +
 #'   geom_sf(aes(colour = survey_abbrev)) +
 #'   theme_minimal()
-#' load_survey_blocks("XY") |>
+#'
+#' # Load SOG grid as coordinates
+#' load_survey_blocks(dataset = "syn_sog", type = "XY") |>
 #'   ggplot() +
 #'   geom_point(aes(x = X, y = Y)) +
 #'   theme_minimal()
 #' }
-load_survey_blocks <- function(type = c("polygon", "centroid", "XY"), active_only = TRUE) {
+load_survey_blocks <- function(
+  dataset = "syn_hbll",
+  type = c("polygon", "centroid", "XY"),
+  active_only = TRUE
+) {
   type <- match.arg(type)
-  dat <- gfdata::survey_blocks
 
-  if (active_only) dat <- dat |> dplyr::filter(active_block)
+  dataset <- match.arg(dataset, choices = c("syn_hbll", "mssm", "syn_sog"))
+  dat <- switch(dataset,
+    "syn_hbll" = gfdata::survey_blocks,
+    "mssm" = gfdata::mssm_grid_sf |>
+      dplyr::mutate(area = 9) |>
+      sf::st_transform(crs = 32609) |>
+      dplyr::rename(survey_abbrev = .data$survey),
+    "syn_sog" = gfdata::sog_grid
+  )
+
+  if (dataset != "mssm") {
+    if (active_only) dat <- dat[dat$active_block, ]
+  }
 
   if (type == "centroid") {
     return(sf::st_point_on_surface(dat)) # sf points
@@ -291,18 +316,44 @@ load_survey_blocks <- function(type = c("polygon", "centroid", "XY"), active_onl
 #'
 #' @param .d A data frame with columns `pt1_lon`, `pt1_lat`, `pt2_lon`, `pt2_lat`,
 #' `pt3_lon`, `pt3_lat`, `pt4_lon`, and `pt4_lat`, representing the four corners of polygons.
+#'   The function expects these exact column names
+#'   Additional columns will be preserved in the output.
 #' @param crs An integer specifying the coordinate reference system (CRS).
-#' Defaults to `4326` (WGS 84).
+#'   Defaults to `4326` (WGS 84). The function will warn if you specify WGS84 (4326)
+#'   but provide coordinates that appear to be in a projected system (e.g., UTM coordinates
+#'   with values outside the longitude range -180 to 180).
 #'
 #' @return An `sf` object with polygon geometries and original data attributes (excluding point columns).
 #' @export
 #'
 #' @examples
 #' \dontrun{
+#' # Example with data from GFBioSQL
 #' .d <- gfdata::get_active_survey_blocks(active_only = TRUE)
 #' sql_geom_to_sf(.d, crs = 4326)
 #' }
+#'
+#' # Example with WGS84 coordinates (standalone, no database required)
+#' wgs84_data <- data.frame(
+#'   pt1_lon = -123.0, pt1_lat = 48.0,
+#'   pt2_lon = -122.9, pt2_lat = 48.0,
+#'   pt3_lon = -122.9, pt3_lat = 48.1,
+#'   pt4_lon = -123.0, pt4_lat = 48.1,
+#'   site_id = "A1"
+#' )
+#' sql_geom_to_sf(wgs84_data, crs = 4326)  # WGS84 coordinates
+#'
 sql_geom_to_sf <- function(.d, crs = 4326) {
+  # Warn if coordinates seem to be in a different CRS than expected
+  if (crs == 4326) {
+    # Check if coordinates look like they might be in UTM or another projected system
+    lon_range <- range(.d$pt1_lon, .d$pt2_lon, .d$pt3_lon, .d$pt4_lon, na.rm = TRUE)
+    if (any(lon_range > 180) || any(lon_range < -180)) {
+      warning("Coordinates appear to be outside WGS84 longitude range (-180 to 180). ",
+              "Are you sure the input coordinates are in the specified CRS (", crs, ")?")
+    }
+  }
+
   .d$id <- seq_len(nrow(.d))
   polys <- split(.d, .d$id) |> lapply(\(x) {
     list(rbind(
@@ -313,7 +364,10 @@ sql_geom_to_sf <- function(.d, crs = 4326) {
       c(x$pt1_lon, x$pt1_lat)
     )) |> sf::st_polygon()
   })
-  out <- .d |> dplyr::select(-(pt1_lat:pt4_lon))
+  # Remove coordinate columns and temporary id column
+  coord_cols <- grepl("^pt", names(.d))
+  cols_to_keep <- !coord_cols & names(.d) != "id"
+  out <- .d[, cols_to_keep, drop = FALSE]
   out$geometry <- sf::st_sfc(polys)
   out <- sf::st_as_sf(out)
   sf::st_crs(out) <- crs

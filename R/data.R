@@ -6,6 +6,9 @@
 #' the most consistent resampling (spatially) occurring in grid cells last sampled
 #' between 2009 and 2021.
 #'
+#' @seealso \code{\link{load_survey_blocks}} for loading this dataset with additional options
+#'   (polygon, centroid, or coordinate formats).
+#'
 #' @format ## `mssm_grid`
 #' A data frame with 3,735 rows and 5 columns:
 #' \describe{
@@ -63,15 +66,29 @@
 #' @rdname iphc
 "iphc_catch"
 
-#' Active survey blocks
+#' Synoptic and HBLL survey blocks
 #'
-#' Active survey blocks for DFO Pacific groundfish surveys.
-#' Obtained via `gfdata::get_active_survey_blocks()` with some cleaning
-#' as documented in `data-raw/survey_blocks.R`.
+#' Survey blocks (grids) for DFO Pacific groundfish surveys including Synoptic (SYN) and
+#' Hook and Line (HBLL) surveys. Obtained via `gfdata::get_active_survey_blocks()`
+#' with some cleaning as documented in `data-raw/survey_blocks.R`.
 #'
-#' @format Simple feature (`sf`) collection with 66744 features and 8 fields:
+#' @seealso \code{\link{load_survey_blocks}} for loading this dataset with additional options
+#'   (polygon, centroid, or coordinate formats).
+#'
+#' @format Simple feature (`sf`) collection with 66744 features and 7 fields:
 #' \describe{
-#'   \item{survey_abbrev}{Survey abbreviation.}
+#'   \item{survey_abbrev}{Survey abbreviation. Includes:
+#'     \itemize{
+#'       \item \code{SYN QCS}: Synoptic Queen Charlotte Sound
+#'       \item \code{SYN HS}: Synoptic Hecate Strait
+#'       \item \code{SYN WCVI}: Synoptic West Coast Vancouver Island
+#'       \item \code{SYN WCHG}: Synoptic West Coast Haida Gwaii
+#'       \item \code{HBLL OUT N}: Hook and Line Outside North
+#'       \item \code{HBLL OUT S}: Hook and Line Outside South
+#'       \item \code{HBLL INS N}: Hook and Line Inside North
+#'       \item \code{HBLL INS S}: Hook and Line Inside South
+#'     }
+#'   }
 #'   \item{survey_series_id}{Unique identifier for the survey series.}
 #'   \item{block_id}{Unique identifier for each grid cell (`BLOCK_DESIGNATION` in GFBioSQL).}
 #'   \item{grouping_code}{Strata grouping code used to join with strata data from
@@ -97,3 +114,39 @@
 #' attr(gfdata::survey_blocks, "date-downloaded")
 #'
 "survey_blocks"
+
+#' Strait of Georgia Synoptic Bottom Trawl Survey Grid
+#'
+#' Survey blocks for the Strait of Georgia (SOG) Synoptic Bottom Trawl Survey.
+#' This dataset contains only active survey blocks and represents the grid used
+#' for the Strait of Georgia synoptic survey (survey series ID 45).
+#'
+#' @seealso \code{\link{load_survey_blocks}} for loading this dataset with additional options
+#'   (polygon, centroid, or coordinate formats).
+#'
+#' @format Simple feature (`sf`) collection with 7 fields:
+#' \describe{
+#'   \item{survey_series_id}{Unique identifier for the survey series (45 for SOG).}
+#'   \item{survey_abbrev}{Survey abbreviation: "SYN SOG".}
+#'   \item{block_id}{Unique identifier for each grid cell (`BLOCK_DESIGNATION` in GFBioSQL).}
+#'   \item{grouping_code}{Strata grouping code used to join with strata data from
+#'         the GROUPING table in GFBioSQL.}
+#'   \item{depth_m}{Depth in metres.}
+#'   \item{active_block}{Is block actively fished (all blocks in this dataset are active).}
+#'   \item{area}{Overwater area in km^2.}
+#'   \item{geometry}{Represents grid cell.}
+#' }
+#'
+#' @examplesIf requireNamespace("sf", quietly = TRUE)
+#' requireNamespace("ggplot2", quietly = TRUE)
+#' library(sf)
+#' library(ggplot2)
+#' gfdata::sog_grid |>
+#'   ggplot() +
+#'   geom_sf(aes(fill = depth_m)) +
+#'   theme_minimal() +
+#'   scale_fill_viridis_c(name = "Depth (m)")
+#' attr(gfdata::sog_grid, "date-generated")
+#' attr(gfdata::sog_grid, "date-downloaded")
+#'
+"sog_grid"

@@ -37,4 +37,8 @@ The \code{year} is the last year a grid cell was sampled as of 2023, with
 the most consistent resampling (spatially) occurring in grid cells last sampled
 between 2009 and 2021.
 }
+\seealso{
+\code{\link{load_survey_blocks}} for loading this dataset with additional options
+(polygon, centroid, or coordinate formats).
+}
 \keyword{datasets}
