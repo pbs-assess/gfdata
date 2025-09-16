@@ -25,7 +25,7 @@ run_sql <- function(database, query) {
   DBI::dbGetQuery(con, query)
 }
 
-db_connection <- function(server = "DFBCV9TWVASP001",
+db_connection <- function(server = "DFBCV9TWVASP003\\SQL2016STD",
                           database = "GFBioSQL") {
   pbs_uid <- getOption("pbs.uid")
   pbs_pwd <- getOption("pbs.pwd")
