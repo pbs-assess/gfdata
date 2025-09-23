@@ -8,8 +8,8 @@
 # Calculate design-based biomass estimate using data.table
 calc_bio_dt <- function(dat, i = seq_len(nrow(dat))) {
   dt <- as.data.table(dat[i, ])
-  dt[, density := mean(density_kgpm2 * 1e6), by = .(year, survey_id, area_km2, grouping_code)]
-  dt[, biomass := sum(unique(density) * unique(area_km2)), by = year]
+  dt[, density := mean(density_kgpm2 * 1e6), by = .(year, survey_id, grouping_area_km2, grouping_code)]
+  dt[, biomass := sum(unique(density) * unique(grouping_area_km2)), by = year]
   dt[, unique(biomass)]
 }
 
@@ -72,10 +72,11 @@ get_design_index <- function(species, ssid = NULL, reps = 1000) {
     43, # SABLE RAND
     76  # OTHER DOG
   )) {
+    message("Detected a longline or trap survey; using counts rather than weight")
     dat$density_kgpm2 <- dat$density_ppkm2 / 1e6
   }
 
-  message("Calculating desig-based index with bootstrapped uncertainty")
+  message("Calculating design-based index with bootstrapped uncertainty")
   ind <- boot_all_years_parallel_dt(dat, reps = reps)
   ind <- as.data.frame(ind)
   add_version(as_tibble(ind))

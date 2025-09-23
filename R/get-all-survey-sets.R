@@ -53,7 +53,7 @@
 #' ## Specify single or multiple species by common name or species code and
 #' ## single or multiple survey series id(s).
 #' ## Notes:
-#' ## `area_km` is the stratum area used in design-based index calculation.
+#' ## `grouping_area_km` is the stratum area used in design-based index calculation.
 #' ## `area_swept` is in m^2 and is used to calculate density for trawl surveys
 #' ## It is based on `area_swept1` (`doorspread_m` x `tow_length_m`) except
 #' ## when `tow_length_m` is missing, and then we use `area_swept2`
