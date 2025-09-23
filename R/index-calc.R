@@ -46,6 +46,7 @@ boot_all_years_parallel_dt <- function(dat, reps, ncpus = NULL) {
 
 get_design_index <- function(species, ssid = NULL, reps = 1000) {
 
+  message("Retreiving survey set data")
   if (length(species) > 1L) {
     stop("get_design_index() only works with individual species.",   call. = FALSE)
   }
@@ -61,7 +62,7 @@ get_design_index <- function(species, ssid = NULL, reps = 1000) {
   )
 
   # longline:
-  if (survey %in% c(
+  if (ssid %in% c(
     14, # IPHC FISS
     22, # HBLL OUT N
     36, # HBLL OUT S
@@ -74,6 +75,7 @@ get_design_index <- function(species, ssid = NULL, reps = 1000) {
     dat$density_kgpm2 <- dat$density_ppkm2 / 1e6
   }
 
+  message("Calculating desig-based index with bootstrapped uncertainty")
   ind <- boot_all_years_parallel_dt(dat, reps = reps)
   ind <- as.data.frame(ind)
   add_version(as_tibble(ind))
