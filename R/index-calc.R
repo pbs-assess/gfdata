@@ -58,6 +58,7 @@ get_design_index <- function(species, ssid = NULL, reps = 1000) {
     species = species,
     ssid = ssid,
     grouping_only = TRUE,
+    remove_false_zeros = FALSE,
     usability = c(0, 1, 2, 6)
   )
 
