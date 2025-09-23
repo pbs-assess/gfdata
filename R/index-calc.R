@@ -46,10 +46,10 @@ boot_all_years_parallel_dt <- function(dat, reps, ncpus = NULL) {
 
 get_design_index <- function(species, ssid = NULL, reps = 1000) {
 
-  if (length(species > 1L)) {
+  if (length(species) > 1L) {
     stop("get_design_index() only works with individual species.",   call. = FALSE)
   }
-  if (length(ssid > 1L)) {
+  if (length(ssid) > 1L) {
     stop("get_design_index() only works with individual surveys.",   call. = FALSE)
   }
 
