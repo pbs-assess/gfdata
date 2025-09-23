@@ -27,7 +27,7 @@ This dataset contains only active survey blocks and represents the grid used
 for the Strait of Georgia synoptic survey (survey series ID 45).
 }
 \examples{
-\dontshow{if (requireNamespace("sf", quietly = TRUE)) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontshow{if (requireNamespace("sf", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 requireNamespace("ggplot2", quietly = TRUE)
 library(sf)
 library(ggplot2)

@@ -132,7 +132,14 @@ if (getRversion() >= "2.15.1") {
       "usability_desc",
       "weight",
       "counts_diff",
-      "event_level_count"
+      "event_level_count",
+      "density",
+      "density_kgpm2",
+      "survey_id",
+      "area_km2",
+      "biomass",
+      "ALTERNATE_SPECIMEN_TYPE",
+      "survey"
     )
   )
 }

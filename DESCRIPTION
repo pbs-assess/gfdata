@@ -1,6 +1,6 @@
 Package: gfdata
 Title: Data Extraction for DFO PBS Groundfish
-Version: 0.1.6
+Version: 0.1.7
 Authors@R: c(
     person(c("Elise", "A."), "Keppel", role = "aut"),
     person(c("Philina", "A."), "English",
@@ -18,16 +18,19 @@ Depends: R (>= 4.3.0)
 License: GPL (>=2)
 LazyData: true
 Imports:
+  boot,
+  data.table,
   DBI,
   dplyr (>= 0.7.0),
   lubridate,
   magrittr,
   odbc,
+  parallel,
   readr,
   tibble,
   tidyr,
   rlang
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.2.9000
 Suggests:
     usethis,
     testthat,

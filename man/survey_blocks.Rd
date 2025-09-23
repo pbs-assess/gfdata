@@ -39,7 +39,7 @@ Hook and Line (HBLL) surveys. Obtained via \code{gfdata::get_active_survey_block
 with some cleaning as documented in \code{data-raw/survey_blocks.R}.
 }
 \examples{
-\dontshow{if (requireNamespace("sf", quietly = TRUE)) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontshow{if (requireNamespace("sf", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 requireNamespace("ggplot2", quietly = TRUE)
 library(sf)
 library(ggplot2)
