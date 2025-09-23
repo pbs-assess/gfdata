@@ -18,17 +18,35 @@ calc_bio_dt <- function(dat, i = seq_len(nrow(dat))) {
 
 # Bootstrap one year with parallel processing
 boot_one_year_parallel_dt <- function(x, reps, ncpus = NULL) {
-  if (is.null(ncpus)) {
-    ncpus <- parallel::detectCores()
+  do_boot <- reps > 0
+  if (do_boot) {
+    if (is.null(ncpus)) {
+      ncpus <- parallel::detectCores()
+    }
+    b <- boot::boot(x, statistic = calc_bio_dt, strata = x$grouping_code, R = reps,
+      parallel = "multicore", ncpus = ncpus)
+    suppressWarnings(bci <- boot::boot.ci(b, type = "perc"))
   }
-  b <- boot::boot(x, statistic = calc_bio_dt, strata = x$grouping_code, R = reps,
-                  parallel = "multicore", ncpus = ncpus)
-  suppressWarnings(bci <- boot::boot.ci(b, type = "perc"))
+
+  x$density_scaled <- x$density_kgpm2 * 1e6
+  mydesign <- survey::svydesign(
+    id = ~ 1, strata = ~ grouping_code, 
+    data = x, fpc = ~ grouping_area_km2
+  )
+  design_estimates <- survey::svytotal(~ density_scaled, design = mydesign)
+  var_design <- as.numeric(attr(design_estimates, "var"))
+
+  b_analytical <- calc_bio_dt(x)
+
   data.table(
-    biomass = calc_bio_dt(x),
-    lowerci = bci$percent[[4]],
-    upperci = bci$percent[[5]],
-    re = stats::sd(b$t) / mean(b$t),
+    biomass = b_analytical,
+    lowerci = if (do_boot) bci$percent[[4]] else NA_real_,
+    upperci = if (do_boot) bci$percent[[5]] else NA_real_,
+    re = if (do_boot) stats::sd(b$t) / mean(b$t) else NA_real_,
+    cv_boot = if (do_boot) stats::sd(b$t) / mean(b$t) else NA_real_,
+    variance_boot = if (do_boot) as.numeric(stats::var(b$t)) else NA_real_,
+    cv_design = sqrt(var_design) / b_analytical,
+    variance_design = var_design,
     num_sets = nrow(x), # we have one year of data here
     num_pos_sets = nrow(x[x$density_kgpm2 > 0,,drop=FALSE]),
     survey_abbrev = x$survey_abbrev[1],
@@ -47,6 +65,10 @@ boot_all_years_parallel_dt <- function(dat, reps, ncpus = NULL) {
   out
 }
 
+#' @param species Species common name or number
+#' @param ssid Survey series ID
+#' @param reps Number of bootstrap samples. Set to `0` to skip the bootstrapping
+#'   and only report design-based variance estimates.
 get_design_index <- function(species, ssid = NULL, reps = 1000) {
 
   message("Retreiving survey set data")
@@ -55,6 +77,9 @@ get_design_index <- function(species, ssid = NULL, reps = 1000) {
   }
   if (length(ssid) > 1L) {
     stop("get_design_index() only works with individual surveys.",   call. = FALSE)
+  }
+  if (ssid %in% c(41, 43)) {
+    stop("Function not set up for the sablefish surveys yet", call. = FALSE)
   }
 
   dat <- get_all_survey_sets(
@@ -65,6 +90,27 @@ get_design_index <- function(species, ssid = NULL, reps = 1000) {
     usability = c(0, 1, 2, 6)
   )
 
+  #   if (is_sable) {
+  #    mb <- tapply(dat$CPUE_PPT, list(dat$GROUPING_CODE), mean)
+  #    mu[sa$GROUPING_CODE %in% names(mb)] <- mb
+  #    res <- mean(mu)
+  # } else if (is_ll) {
+  #    mb <- tapply(dat$DENSITY_PPKM2, list(dat$GROUPING_CODE), mean)
+  #    mu[sa$GROUPING_CODE %in% names(mb)] <- mb
+  #    res <- sum(mu * sa$AREA_KM2)
+  # } else if (is_jig) {
+  #    mb <- tapply(dat$CPUE_PPH, list(dat$GROUPING_CODE), mean)
+  # mu[sa$GROUPING_CODE %in% names(mb)] <- mb
+  # res <- mean(mu)
+  # } else if (is_dog) {
+  #    mb <- tapply(dat$DENSITY_PPKM2, list(dat$GROUPING_CODE), mean)
+  #    mu[sa$GROUPING_CODE %in% names(mb)] <- mb
+  #    res <- mean(mu)
+  # } else {
+  #    mb <- tapply(dat$DENSITY_KGPM2 * 1000000, list(dat$GROUPING_CODE), mean)
+  #    mu[sa$GROUPING_CODE %in% names(mb)] <- mb
+  #    res <- sum(mu * sa$AREA_KM2)
+  # }
   # longline:
   if (ssid %in% c(
     14, # IPHC FISS
@@ -72,8 +118,8 @@ get_design_index <- function(species, ssid = NULL, reps = 1000) {
     36, # HBLL OUT S
     39, # HBLL INS N
     40, # HBLL INS S
-    41, # SABLE INLET
-    43, # SABLE RAND
+    # 41, # SABLE INLET
+    # 43, # SABLE RAND
     76  # OTHER DOG
   )) {
     message("Detected a longline or trap survey; using counts rather than weight")
