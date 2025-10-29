@@ -626,7 +626,7 @@ get_cpue_historical <- function(species = NULL, major = NULL,
       search_flag = "-- insert major here", conversion_func = I
     )
   }
-  .d <- run_sql(database = c("GFFOS", "GFCatch", "PacHarvest"), .q)
+  .d <- run_sql(database = c("GFFOS"), .q)
   .d$SPECIES_COMMON_NAME[.d$SPECIES_COMMON_NAME == "SPINY DOGFISH"] <-
     toupper("north pacific spiny dogfish") # to match GFBioSQL
   names(.d) <- tolower(names(.d))
