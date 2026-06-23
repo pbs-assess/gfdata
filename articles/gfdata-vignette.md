@@ -1,0 +1,474 @@
+# Introduction to gfdata
+
+## Setup
+
+If you don’t already have the package installed, then run:
+
+``` r
+
+# install.packages("devtools")
+devtools::install_github("pbs-assess/gfdata")
+```
+
+First we will load the package along with dplyr since we will use it
+within our code later.
+
+``` r
+
+library(gfdata)
+library(dplyr)
+```
+
+## An overview of gfdata
+
+Commercial and research catch, effort, and biological data for
+groundfish are archived by the DFO Pacific Groundfish Data Unit
+(Fisheries and Oceans Canada, Science Branch, Pacific Region) and housed
+in a number of relational databases archived on-site at the Pacific
+Biological Station, Nanaimo, BC).
+
+The gfdata package was develeoped to automate data extraction from these
+databases in a consistent, reproducible manner with a series of
+`get_*()` functions. The functions extract data using SQL queries,
+developed with support from the Groundfish Data Unit. The standardized
+datasets are designed to feed directly into functions in the gfplot
+package, or can of course also be analyzed outside of gfplot.  
+  
+The SQL code called in the `get_*()` functions can be viewed here:  
+<https://github.com/pbs-assess/gfata/tree/master/inst/sql>  
+  
+How the various functions fit together:  
+<https://github.com/pbs-assess/gfplot/blob/master/inst/function-web.pdf>  
+  
+Detailed information on the data extraction and the `get_*()` functions
+can be found in:
+
+Anderson, S.C., Keppel, E.A., Edwards, A.M.. “A reproducible data
+synopsis for over 100 species of British Columbia groundfish”. DFO Can.
+Sci. Advis. Sec. REs. Doc. 2019/nnn. iv + 327 p.  
+  
+The complete list of `get_*()` functions in gfdata is:
+
+``` r
+
+fns <- ls("package:gfdata")
+sort(fns[grepl("get", fns)])
+```
+
+    #>  [1] "get_active_survey_blocks"    "get_age_methods"             "get_age_precision"          
+    #>  [4] "get_all_stomachs"            "get_all_survey_samples"      "get_all_survey_sets"        
+    #>  [7] "get_catch"                   "get_catch_spatial"           "get_comm_gear_types"        
+    #> [10] "get_commercial_hooks_per_fe" "get_commercial_samples"      "get_cpue_historical"        
+    #> [13] "get_cpue_historical_hake"    "get_cpue_historical_hl"      "get_cpue_index"             
+    #> [16] "get_cpue_index_hl"           "get_cpue_spatial"            "get_cpue_spatial_ll"        
+    #> [19] "get_eulachon_specimens"      "get_fishery_ids"             "get_fishery_sectors"        
+    #> [22] "get_gear_types"              "get_hake_catch"              "get_hake_survey_samples"    
+    #> [25] "get_ll_hook_data"            "get_major_areas"             "get_management"             
+    #> [28] "get_management_areas"        "get_other_surveys"           "get_parent_level_counts"    
+    #> [31] "get_sable_landings"          "get_sablefish_surveys"       "get_sample_trips"           
+    #> [34] "get_sensor_attributes"       "get_sensor_data_ll_ctd"      "get_sensor_data_ll_ctd_fe"  
+    #> [37] "get_sensor_data_ll_td"       "get_sensor_data_ll_td_fe"    "get_sensor_data_trawl"      
+    #> [40] "get_sensor_data_trawl_fe"    "get_skate_level_counts"      "get_species"                
+    #> [43] "get_species_groups"          "get_spp_sample_length_type"  "get_ssids"                  
+    #> [46] "get_strata_areas"            "get_survey_blocks"           "get_survey_gear_types"      
+    #> [49] "get_survey_ids"              "get_survey_index"            "get_survey_samples"         
+    #> [52] "get_survey_sets"             "get_survey_stomachs"         "get_table"
+
+The `get_*()` functions extract data by species, and some functions have
+arguments for additional filtering, such as survey series, management
+area, years, gear type, or environmental data type. In all cases, the
+`get_*()` functions can extract data for one or multiple species.
+
+All functions can be viewed with the available arguments in the help
+documentation for each set of functions with:
+
+``` r
+
+?get_data
+?get_environmental_data
+?get_lookup_tables
+```
+
+In addition, a number of the `get` functions retain many relevant
+database columns that users can filter on with, for example,
+`dplyr::filter(dat, x = "y")`.
+
+## Example
+
+As an example, we could extract Pacific cod survey sample data with the
+following function call if we were on a DFO laptop, with appropriate
+database permissions, and on the PBS network.
+
+``` r
+
+dat <- get_survey_samples("pacific cod")
+```
+
+    #> All or majority of length measurements are Fork_Length
+
+    #> Warning in get_survey_samples("pacific cod"): Duplicate specimen IDs are present because of
+    #> overlapping survey stratifications. If working with the data yourelf, filter them after selecting
+    #> specific surveys. For example, `dat <- dat[!duplicated(dat$specimen_id), ]`. The tidying and
+    #> plotting functions within gfplot will do this for you.
+
+``` r
+
+head(dat)
+```
+
+    #> # A tibble: 6 x 40
+    #>   trip_start_date     fishing_event_id  year month  gear survey_series_id survey_abbrev
+    #>   <dttm>                         <dbl> <int> <int> <dbl>            <dbl> <chr>        
+    #> 1 2014-10-01 00:00:00          3420684  2014    10     5               76 DOG          
+    #> 2 2019-10-01 00:00:00          5167333  2019    10     5               76 DOG          
+    #> 3 2003-08-13 00:00:00           309491  2003     8     5               39 HBLL INS N   
+    #> 4 2003-08-13 00:00:00           309493  2003     8     5               39 HBLL INS N   
+    #> 5 2003-08-13 00:00:00           309503  2003     8     5               39 HBLL INS N   
+    #> 6 2003-08-13 00:00:00           309506  2003     8     5               39 HBLL INS N   
+    #> # i 33 more variables: survey_series_desc <chr>, survey_id <int>, major_stat_area_code <chr>,
+    #> #   major_stat_area_name <chr>, minor_stat_area_code <chr>, species_code <chr>,
+    #> #   species_common_name <chr>, species_science_name <chr>, specimen_id <dbl>, sample_id <dbl>,
+    #> #   sex <dbl>, age_specimen_collected <int>, age <dbl>, sampling_desc <chr>,
+    #> #   ageing_method_code <dbl>, length <dbl>, weight <int>, maturity_code <dbl>, maturity_name <chr>,
+    #> #   maturity_desc <chr>, maturity_convention_code <dbl>, maturity_convention_desc <chr>,
+    #> #   maturity_convention_maxvalue <dbl>, trip_sub_type_code <dbl>, sample_type_code <dbl>, ...
+
+Note that there are some duplicate records in the databases due to
+relating a record to multiple stratification schemes for alternative
+analyses. If this occurs, a warning is given.
+
+> “Duplicate specimen IDs are present because of overlapping survey
+> stratifications. If working with the data yourelf, filter them after
+> selecting specific surveys. For example,
+> `dat <- dat[!duplicated(dat$specimen_id), ]`. The tidying and plotting
+> functions within gfplot will do this for you.”
+
+Either species name or species code can be given as an argument, and
+species name, if used, is not case-sensitive. The following all do the
+same thing:
+
+``` r
+
+get_survey_samples("pacific cod")
+get_survey_samples("Pacific cod")
+get_survey_samples("PaCiFiC cOD")
+get_survey_samples("222")
+get_survey_samples(222)
+```
+
+To extract multiple species at once, give a list as the species
+argument:
+
+``` r
+
+get_survey_samples(c("pacific ocean perch", "pacific cod"))
+get_survey_samples(c(396, 222))
+get_survey_samples(c(222, "pacific cod"))
+```
+
+We can further restrict the data extraction to a single trawl survey
+series by including the ssid (survey series id) argument. For a list of
+survey series id codes, run the lookup function
+[`get_ssids()`](https://pbs-assess.github.io/gfdata/reference/lookup.md).
+
+``` r
+
+ssids <- get_ssids()
+head(ssids)
+```
+
+    #> # A tibble: 6 x 3
+    #>   SURVEY_SERIES_ID SURVEY_SERIES_DESC                                 SURVEY_ABBREV
+    #>              <dbl> <chr>                                              <chr>        
+    #> 1                0 Individual survey without a series                 OTHER        
+    #> 2                1 Queen Charlotte Sound Synoptic Bottom Trawl        SYN QCS      
+    #> 3                2 Hecate Strait Multispecies Assemblage Bottom Trawl HS MSA       
+    #> 4                3 Hecate Strait Synoptic Bottom Trawl                SYN HS       
+    #> 5                4 West Coast Vancouver Island Synoptic Bottom Trawl  SYN WCVI     
+    #> 6                5 Hecate Strait Pacific Cod Monitoring Bottom Trawl  OTHER
+
+Select desired ssid and include as argument (i.e. the Queen Charlotte
+Sound bottom trawl survey):
+
+``` r
+
+dat <- get_survey_samples(222, ssid = 1)
+```
+
+    #> All or majority of length measurements are Fork_Length
+
+``` r
+
+head(dat)
+```
+
+    #> # A tibble: 6 x 40
+    #>   trip_start_date     fishing_event_id  year month  gear survey_series_id survey_abbrev
+    #>   <dttm>                         <dbl> <int> <int> <dbl>            <dbl> <chr>        
+    #> 1 2003-07-03 00:00:00           308673  2003     7     1                1 SYN QCS      
+    #> 2 2003-07-03 00:00:00           308673  2003     7     1                1 SYN QCS      
+    #> 3 2003-07-03 00:00:00           308673  2003     7     1                1 SYN QCS      
+    #> 4 2003-07-03 00:00:00           308673  2003     7     1                1 SYN QCS      
+    #> 5 2003-07-03 00:00:00           308673  2003     7     1                1 SYN QCS      
+    #> 6 2003-07-03 00:00:00           308673  2003     7     1                1 SYN QCS      
+    #> # i 33 more variables: survey_series_desc <chr>, survey_id <int>, major_stat_area_code <chr>,
+    #> #   major_stat_area_name <chr>, minor_stat_area_code <chr>, species_code <chr>,
+    #> #   species_common_name <chr>, species_science_name <chr>, specimen_id <dbl>, sample_id <dbl>,
+    #> #   sex <dbl>, age_specimen_collected <int>, age <dbl>, sampling_desc <chr>,
+    #> #   ageing_method_code <dbl>, length <dbl>, weight <int>, maturity_code <dbl>, maturity_name <chr>,
+    #> #   maturity_desc <chr>, maturity_convention_code <dbl>, maturity_convention_desc <chr>,
+    #> #   maturity_convention_maxvalue <dbl>, trip_sub_type_code <dbl>, sample_type_code <dbl>, ...
+
+``` r
+
+glimpse(dat)
+```
+
+    #> Rows: 11,509
+    #> Columns: 40
+    #> $ trip_start_date              <dttm> 2003-07-03, 2003-07-03, 2003-07-03, 2003-07-03, 2003-07-03, ~
+    #> $ fishing_event_id             <dbl> 308673, 308673, 308673, 308673, 308673, 308673, 308673, 30867~
+    #> $ year                         <int> 2003, 2003, 2003, 2003, 2003, 2003, 2003, 2003, 2003, 2003, 2~
+    #> $ month                        <int> 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7~
+    #> $ gear                         <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1~
+    #> $ survey_series_id             <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1~
+    #> $ survey_abbrev                <chr> "SYN QCS", "SYN QCS", "SYN QCS", "SYN QCS", "SYN QCS", "SYN Q~
+    #> $ survey_series_desc           <chr> "Queen Charlotte Sound Synoptic Bottom Trawl", "Queen Charlot~
+    #> $ survey_id                    <int> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1~
+    #> $ major_stat_area_code         <chr> "05", "05", "05", "05", "05", "05", "05", "05", "05", "05", "~
+    #> $ major_stat_area_name         <chr> "5A: SOUTHERN Q.C. SOUND", "5A: SOUTHERN Q.C. SOUND", "5A: SO~
+    #> $ minor_stat_area_code         <chr> "11", "11", "11", "11", "11", "11", "11", "11", "11", "11", "~
+    #> $ species_code                 <chr> "222", "222", "222", "222", "222", "222", "222", "222", "222"~
+    #> $ species_common_name          <chr> "pacific cod", "pacific cod", "pacific cod", "pacific cod", "~
+    #> $ species_science_name         <chr> "gadus macrocephalus", "gadus macrocephalus", "gadus macrocep~
+    #> $ specimen_id                  <dbl> 7607986, 7607987, 7607988, 7607989, 7607990, 7607991, 7607992~
+    #> $ sample_id                    <dbl> 233551, 233551, 233551, 233551, 233551, 233551, 233551, 23355~
+    #> $ sex                          <dbl> 2, 2, 1, 1, 1, 1, 2, 1, 2, 2, 2, 2, 1, 1, 2, 1, 2, 2, 2, 2, 2~
+    #> $ age_specimen_collected       <int> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0~
+    #> $ age                          <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    #> $ sampling_desc                <chr> "UNSORTED", "UNSORTED", "UNSORTED", "UNSORTED", "UNSORTED", "~
+    #> $ ageing_method_code           <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    #> $ length                       <dbl> 21, 21, 23, 23, 23, 23, 23, 24, 24, 25, 26, 26, 27, 28, 28, 2~
+    #> $ weight                       <int> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    #> $ maturity_code                <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0~
+    #> $ maturity_name                <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    #> $ maturity_desc                <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    #> $ maturity_convention_code     <dbl> 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9~
+    #> $ maturity_convention_desc     <chr> "MATURITIES NOT LOOKED AT", "MATURITIES NOT LOOKED AT", "MATU~
+    #> $ maturity_convention_maxvalue <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0~
+    #> $ trip_sub_type_code           <dbl> 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3~
+    #> $ sample_type_code             <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1~
+    #> $ species_category_code        <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1~
+    #> $ sample_source_code           <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1~
+    #> $ dna_sample_type              <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    #> $ dna_container_id             <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N~
+    #> $ usability_code               <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1~
+    #> $ grouping_code                <dbl> 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 1~
+    #> $ length_type                  <chr> "Fork_Length", "Fork_Length", "Fork_Length", "Fork_Length", "~
+    #> $ species_ageing_group         <chr> "pcod_lingcod", "pcod_lingcod", "pcod_lingcod", "pcod_lingcod~
+
+## Caching the data from the SQL servers
+
+In addition to the individual `get_*()` functions, there is a function
+[`cache_pbs_data()`](https://pbs-assess.github.io/gfdata/reference/get_data.md)
+that runs all the `get_*()` functions and caches the data in a folder
+that you specify. This is useful to be able to have the data available
+for working on later when not on the PBS network, and it saves running
+the SQL queries (though the data do get updated occassionally and the
+most up-to-date data should usually be extracted for analysis).
+
+The helper function
+[`cache_pbs_data()`](https://pbs-assess.github.io/gfdata/reference/get_data.md)
+will extract all of the data for the given species into a series of
+`.rds` files into whatever folder you specify to the `path` argument.
+I’ll wrap it in a quick check just to make sure we don’t download the
+data twice if we build this document again.
+
+``` r
+
+cache_pbs_data("pacific cod", path = "pcod-cache")
+```
+
+    #> Extracting data for
+
+    #> Extracting survey samples
+
+    #> All or majority of length measurements are Fork_Length
+
+    #> Warning in get_survey_samples(this_sp): Duplicate specimen IDs are present because of overlapping
+    #> survey stratifications. If working with the data yourelf, filter them after selecting specific
+    #> surveys. For example, `dat <- dat[!duplicated(dat$specimen_id), ]`. The tidying and plotting
+    #> functions within gfplot will do this for you.
+
+    #> Extracting commercial samples
+
+    #> All or majority of length measurements are Fork_Length
+
+    #> Extracting catch
+
+    #> Extracting spatial CPUE
+
+    #> Extracting spatial LL CPUE
+
+    #> Extracting spatial catch
+
+    #> Extracting survey indexes
+
+    #> Extracting aging precision
+
+    #> All data extracted and saved in the folder `pcod-cache`.
+
+And to call the list of output files:
+
+``` r
+
+dat  <- readRDS(file.path("pcod-cache", "pacific-cod.rds"))
+head(dat)
+```
+
+    #> $survey_samples
+    #> # A tibble: 77,134 x 40
+    #>    trip_start_date     fishing_event_id  year month  gear survey_series_id survey_abbrev
+    #>    <dttm>                         <dbl> <int> <int> <dbl>            <dbl> <chr>        
+    #>  1 2014-10-01 00:00:00          3420684  2014    10     5               76 DOG          
+    #>  2 2019-10-01 00:00:00          5167333  2019    10     5               76 DOG          
+    #>  3 2003-08-13 00:00:00           309491  2003     8     5               39 HBLL INS N   
+    #>  4 2003-08-13 00:00:00           309493  2003     8     5               39 HBLL INS N   
+    #>  5 2003-08-13 00:00:00           309503  2003     8     5               39 HBLL INS N   
+    #>  6 2003-08-13 00:00:00           309506  2003     8     5               39 HBLL INS N   
+    #>  7 2003-08-13 00:00:00           309516  2003     8     5               39 HBLL INS N   
+    #>  8 2003-08-13 00:00:00           309517  2003     8     5               39 HBLL INS N   
+    #>  9 2003-08-13 00:00:00           309524  2003     8     5               39 HBLL INS N   
+    #> 10 2003-08-13 00:00:00           309478  2003     8     5               39 HBLL INS N   
+    #> # i 77,124 more rows
+    #> # i 33 more variables: survey_series_desc <chr>, survey_id <int>, major_stat_area_code <chr>,
+    #> #   major_stat_area_name <chr>, minor_stat_area_code <chr>, species_code <chr>,
+    #> #   species_common_name <chr>, species_science_name <chr>, specimen_id <dbl>, sample_id <dbl>,
+    #> #   sex <dbl>, age_specimen_collected <int>, age <dbl>, sampling_desc <chr>,
+    #> #   ageing_method_code <dbl>, length <dbl>, weight <int>, maturity_code <dbl>, maturity_name <chr>,
+    #> #   maturity_desc <chr>, maturity_convention_code <dbl>, maturity_convention_desc <chr>, ...
+    #> 
+    #> $commercial_samples
+    #> # A tibble: 155,282 x 54
+    #>    trip_start_date     trip_end_date       trip_year  year month   day time_deployed
+    #>    <dttm>              <dttm>                  <int> <dbl> <int> <int> <dttm>       
+    #>  1 1962-04-19 00:00:00 1962-04-30 00:00:00      1962  1962     4     2 NA           
+    #>  2 1962-04-19 00:00:00 1962-04-30 00:00:00      1962  1962     4     2 NA           
+    #>  3 1962-04-19 00:00:00 1962-04-30 00:00:00      1962  1962     4     2 NA           
+    #>  4 1962-04-19 00:00:00 1962-04-30 00:00:00      1962  1962     4     2 NA           
+    #>  5 1962-04-19 00:00:00 1962-04-30 00:00:00      1962  1962     4     2 NA           
+    #>  6 1962-04-19 00:00:00 1962-04-30 00:00:00      1962  1962     4     2 NA           
+    #>  7 1962-04-19 00:00:00 1962-04-30 00:00:00      1962  1962     4     2 NA           
+    #>  8 1962-04-19 00:00:00 1962-04-30 00:00:00      1962  1962     4     2 NA           
+    #>  9 1962-04-19 00:00:00 1962-04-30 00:00:00      1962  1962     4     2 NA           
+    #> 10 1962-04-19 00:00:00 1962-04-30 00:00:00      1962  1962     4     2 NA           
+    #> # i 155,272 more rows
+    #> # i 47 more variables: time_retrieved <dttm>, trip_id <dbl>, fishing_event_id <dbl>,
+    #> #   latitude <dbl>, lat_start <dbl>, lat_end <dbl>, longitude <dbl>, lon_start <dbl>,
+    #> #   lon_end <dbl>, best_depth <dbl>, gear_code <dbl>, gear_desc <chr>, species_code <chr>,
+    #> #   species_common_name <chr>, species_science_name <chr>, sample_id <dbl>, specimen_id <dbl>,
+    #> #   sex <dbl>, age_specimen_collected <int>, age <dbl>, ageing_method_code <dbl>, length <dbl>,
+    #> #   weight <int>, maturity_code <dbl>, maturity_convention_code <dbl>, ...
+    #> 
+    #> $catch
+    #> # A tibble: 333,430 x 27
+    #>    database_name trip_id  fishing_event_id fishery_sector   trip_category gear   best_date          
+    #>    <chr>         <chr>    <chr>            <chr>            <chr>         <chr>  <dttm>             
+    #>  1 GFCatch       54000002 1                GROUNDFISH TRAWL <NA>          BOTTO~ 1954-01-04 00:00:00
+    #>  2 GFCatch       54000054 1                GROUNDFISH TRAWL <NA>          BOTTO~ 1954-01-04 00:00:00
+    #>  3 GFCatch       54000001 1                GROUNDFISH TRAWL <NA>          BOTTO~ 1954-01-04 00:00:00
+    #>  4 GFCatch       54000055 1                GROUNDFISH TRAWL <NA>          BOTTO~ 1954-01-04 00:00:00
+    #>  5 GFCatch       54000034 1                GROUNDFISH TRAWL <NA>          BOTTO~ 1954-01-05 00:00:00
+    #>  6 GFCatch       54000003 1                GROUNDFISH TRAWL <NA>          BOTTO~ 1954-01-07 00:00:00
+    #>  7 GFCatch       54000036 4                GROUNDFISH TRAWL <NA>          BOTTO~ 1954-01-07 00:00:00
+    #>  8 GFCatch       54000061 1                GROUNDFISH TRAWL <NA>          BOTTO~ 1954-01-07 00:00:00
+    #>  9 GFCatch       54000036 3                GROUNDFISH TRAWL <NA>          BOTTO~ 1954-01-07 00:00:00
+    #> 10 GFCatch       54000037 1                GROUNDFISH TRAWL <NA>          BOTTO~ 1954-01-07 00:00:00
+    #> # i 333,420 more rows
+    #> # i 20 more variables: fe_start_date <dttm>, fe_end_date <dttm>, lat <dbl>, lon <dbl>,
+    #> #   best_depth <int>, species_code <chr>, dfo_stat_area_code <chr>, dfo_stat_subarea_code <int>,
+    #> #   species_scientific_name <chr>, species_common_name <chr>, landed_kg <dbl>, discarded_kg <dbl>,
+    #> #   landed_pcs <int>, discarded_pcs <int>, major_stat_area_code <chr>, minor_stat_area_code <chr>,
+    #> #   major_stat_area_name <chr>, vessel_name <chr>, vessel_registration_number <chr>, year <dbl>
+    #> 
+    #> $cpue_spatial
+    #> # A tibble: 77,392 x 11
+    #>     year best_date           major_stat_area_code trip_id fishing_event_id   lat   lon
+    #>    <int> <dttm>              <chr>                  <int>            <int> <dbl> <dbl>
+    #>  1  2007 2007-05-08 09:50:00 06                     83395           732412  51.4 -129.
+    #>  2  2007 2007-05-08 11:15:00 06                     83395           732415  51.4 -129.
+    #>  3  2007 2007-05-07 16:30:00 06                     83395           732418  51.3 -129.
+    #>  4  2007 2007-05-08 19:55:00 06                     83395           732419  51.3 -129.
+    #>  5  2007 2007-05-07 09:30:00 07                     83739           736980  52.4 -130.
+    #>  6  2007 2007-05-11 08:07:00 05                     83739           736990  50.8 -129.
+    #>  7  2007 2007-05-08 17:26:00 08                     83916           726785  54.5 -131.
+    #>  8  2007 2007-05-07 13:17:00 08                     83916           726787  54.5 -131.
+    #>  9  2007 2007-05-08 11:14:00 08                     83916           726788  54.5 -131.
+    #> 10  2007 2007-05-08 07:15:00 08                     83916           726790  54.5 -131.
+    #> # i 77,382 more rows
+    #> # i 4 more variables: vessel_registration_number <int>, species_scientific_name <chr>,
+    #> #   species_common_name <chr>, cpue <dbl>
+    #> 
+    #> $cpue_spatial_ll
+    #> # A tibble: 8,899 x 16
+    #>     year best_date           fishery_sector vessel_registration_num~1 gear  trip_id fishing_event_id
+    #>    <int> <dttm>              <chr>                              <int> <chr>   <int>            <int>
+    #>  1  2006 2006-03-12 12:00:00 halibut                            30850 long~   60792           512243
+    #>  2  2006 2006-03-06 09:30:00 halibut                            22452 long~   60809           512797
+    #>  3  2006 2006-03-07 10:10:00 halibut                            22452 long~   60809           512802
+    #>  4  2006 2006-03-07 12:00:00 halibut                            22452 long~   60809           512803
+    #>  5  2006 2006-03-09 20:00:00 halibut                            22452 long~   60809           512806
+    #>  6  2006 2006-03-10 10:45:00 halibut                            23703 long~   60944           511671
+    #>  7  2006 2006-03-11 14:45:00 halibut                            23703 long~   60944           511683
+    #>  8  2006 2006-03-12 09:15:00 halibut                            23703 long~   60944           511701
+    #>  9  2006 2006-03-12 17:00:00 halibut                            23703 long~   60944           511705
+    #> 10  2006 2006-03-13 23:59:00 halibut                            22452 long~   61099           513046
+    #> # i 8,889 more rows
+    #> # i abbreviated name: 1: vessel_registration_number
+    #> # i 9 more variables: lat <dbl>, lon <dbl>, species_code <chr>, species_scientific_name <chr>,
+    #> #   species_common_name <chr>, landed_round_kg <dbl>, cpue <int>, total_released_pcs <int>,
+    #> #   major_stat_area_code <chr>
+    #> 
+    #> $catch_spatial
+    #> # A tibble: 77,392 x 11
+    #>     year best_date           major_stat_area_code trip_id fishing_event_id   lat   lon
+    #>    <int> <dttm>              <chr>                  <int>            <int> <dbl> <dbl>
+    #>  1  2007 2007-12-28 14:25:00 01                     99701           881231  48.9 -123.
+    #>  2  2007 2007-12-28 16:23:00 01                     99701           881232  48.9 -123.
+    #>  3  2007 2007-12-28 18:13:00 01                     99701           881233  48.9 -123.
+    #>  4  2007 2007-12-28 20:10:00 01                     99701           881234  48.9 -123.
+    #>  5  2007 2007-12-29 08:20:00 01                     99701           881235  48.9 -123.
+    #>  6  2007 2007-12-29 10:01:00 01                     99701           881236  48.9 -123.
+    #>  7  2007 2007-12-28 08:35:00 01                     99705           881398  49.3 -123.
+    #>  8  2007 2007-12-29 15:01:00 01                     99705           881402  49.2 -123.
+    #>  9  2007 2007-12-29 10:48:00 01                     99711           881395  49.3 -123.
+    #> 10  2007 2007-04-05 17:50:00 01                     82028           880764  48.9 -123.
+    #> # i 77,382 more rows
+    #> # i 4 more variables: vessel_registration_number <int>, species_scientific_name <chr>,
+    #> #   species_common_name <chr>, catch <dbl>
+
+And to call one object/dataframe (i.e. our survey sample data) from the
+list:
+
+``` r
+
+dat <- dat$survey_samples
+head(dat)
+```
+
+    #> # A tibble: 6 x 40
+    #>   trip_start_date     fishing_event_id  year month  gear survey_series_id survey_abbrev
+    #>   <dttm>                         <dbl> <int> <int> <dbl>            <dbl> <chr>        
+    #> 1 2014-10-01 00:00:00          3420684  2014    10     5               76 DOG          
+    #> 2 2019-10-01 00:00:00          5167333  2019    10     5               76 DOG          
+    #> 3 2003-08-13 00:00:00           309491  2003     8     5               39 HBLL INS N   
+    #> 4 2003-08-13 00:00:00           309493  2003     8     5               39 HBLL INS N   
+    #> 5 2003-08-13 00:00:00           309503  2003     8     5               39 HBLL INS N   
+    #> 6 2003-08-13 00:00:00           309506  2003     8     5               39 HBLL INS N   
+    #> # i 33 more variables: survey_series_desc <chr>, survey_id <int>, major_stat_area_code <chr>,
+    #> #   major_stat_area_name <chr>, minor_stat_area_code <chr>, species_code <chr>,
+    #> #   species_common_name <chr>, species_science_name <chr>, specimen_id <dbl>, sample_id <dbl>,
+    #> #   sex <dbl>, age_specimen_collected <int>, age <dbl>, sampling_desc <chr>,
+    #> #   ageing_method_code <dbl>, length <dbl>, weight <int>, maturity_code <dbl>, maturity_name <chr>,
+    #> #   maturity_desc <chr>, maturity_convention_code <dbl>, maturity_convention_desc <chr>,
+    #> #   maturity_convention_maxvalue <dbl>, trip_sub_type_code <dbl>, sample_type_code <dbl>, ...
