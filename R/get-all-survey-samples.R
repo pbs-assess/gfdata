@@ -33,7 +33,7 @@
 #' @param keep_all_ages Defaults to FALSE to keep only ages with standard methods
 #'   for all surveys other than the NMFS Triennial.
 #' @param include_event_info Logical for whether to append all relevant fishing
-#'   event info (location, timing, effort, catch, etc.). Defaults to TRUE.
+#'   event info (location, timing, effort, catch, etc.). Defaults to FALSE.
 #' @param include_activity_matches TRUE gets all records collected with activity
 #'   codes that match chosen ssids. Default is FALSE.
 #' @param remove_bad_data Remove known bad data, such as unrealistic
