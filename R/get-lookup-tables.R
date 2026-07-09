@@ -200,7 +200,7 @@ get_species <- function() {
     species_grouping = tolower(species_grouping)
   ) %>%
     select(-row_version, -rsty_id, -parent_rsty_id, -species_desc) %>%
-    dplyr::as.tbl()
+    tibble::as_tibble()
 }
 
 
