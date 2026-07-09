@@ -4,7 +4,7 @@
 \alias{get_design_index}
 \title{Calculate a design index}
 \usage{
-get_design_index(species, ssid = NULL, reps = 1000)
+get_design_index(species, ssid = NULL, reps = 1000, data = NULL)
 }
 \arguments{
 \item{species}{Species common name or number}
@@ -13,6 +13,11 @@ get_design_index(species, ssid = NULL, reps = 1000)
 
 \item{reps}{Number of bootstrap samples. Set to \code{0} to skip the bootstrapping
 and only report design-based variance estimates.}
+
+\item{data}{Optional output from a call to \code{\link[=get_all_survey_sets]{get_all_survey_sets()}}.
+By default, this function will call \code{\link[=get_all_survey_sets]{get_all_survey_sets()}} for the
+given species, but this requires access to the GFBio database, and
+will also be slower if you've already cached the data.}
 }
 \description{
 Calculate a design-based index with bootstrapped standard errors

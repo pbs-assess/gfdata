@@ -1,5 +1,10 @@
 # Updates to gfdata
 
+## 0.1.10 2026-07-09
+
+- Add `data` argument to `get_all_survey_sets()` to use already
+  cached data.
+
 ## 0.1.9 2026-07-09
 
 - Update IPHC data to 2025 version.

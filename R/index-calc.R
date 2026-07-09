@@ -74,8 +74,12 @@ boot_all_years_parallel_dt <- function(dat, reps, ncpus = NULL) {
 #' @param ssid Survey series ID
 #' @param reps Number of bootstrap samples. Set to `0` to skip the bootstrapping
 #'   and only report design-based variance estimates.
+#' @param data Optional output from a call to [get_all_survey_sets()].
+#'   By default, this function will call [get_all_survey_sets()] for the
+#'   given species, but this requires access to the GFBio database, and
+#'   will also be slower if you've already cached the data.
 #' @export
-get_design_index <- function(species, ssid = NULL, reps = 1000) {
+get_design_index <- function(species, ssid = NULL, reps = 1000, data = NULL) {
 
   message("Retreiving survey set data")
   if (length(species) > 1L) {
@@ -88,13 +92,18 @@ get_design_index <- function(species, ssid = NULL, reps = 1000) {
     stop("Function not set up for the sablefish surveys yet", call. = FALSE)
   }
 
+  if (is.null(data)) {
   dat <- get_all_survey_sets(
     species = species,
     ssid = ssid,
     grouping_only = TRUE,
-    remove_false_zeros = FALSE,
+    remove_false_zeros = TRUE,
     usability = c(0, 1, 2, 6)
   )
+  } else {
+    dat <- data[!is.na(data$grouping_code),,drop=FALSE] # grouping_only = TRUE
+    dat <- dat[dat$grouping_code %in% c(0, 1, 2, 6),,drop=FALSE]
+  }
 
   #   if (is_sable) {
   #    mb <- tapply(dat$CPUE_PPT, list(dat$GROUPING_CODE), mean)
