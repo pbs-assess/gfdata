@@ -22,6 +22,7 @@ Useful links:
 
 Authors:
 \itemize{
+  \item Philina A. English \email{philina.english@dfo-mpo.gc.ca}
   \item Elise A. Keppel
   \item Jillian C. Dunic \email{jillian.dunic@dfo-mpo.gc.ca}
   \item Sean C. Anderson \email{sean.anderson@dfo-mpo.gc.ca}
