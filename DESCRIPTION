@@ -1,6 +1,6 @@
 Package: gfdata
 Title: Data Extraction for DFO PBS Groundfish
-Version: 0.1.7
+Version: 0.1.8
 Authors@R: c(
     person(c("Elise", "A."), "Keppel", role = "aut"),
     person(c("Philina", "A."), "English",
@@ -31,7 +31,7 @@ Imports:
   tibble,
   tidyr,
   rlang
-RoxygenNote: 7.3.2.9000
+RoxygenNote: 7.3.3
 Suggests:
     usethis,
     testthat,

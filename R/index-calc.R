@@ -30,7 +30,7 @@ boot_one_year_parallel_dt <- function(x, reps, ncpus = NULL) {
 
   x$density_scaled <- x$density_kgpm2 * 1e6
   mydesign <- survey::svydesign(
-    id = ~ 1, strata = ~ grouping_code, 
+    id = ~ 1, strata = ~ grouping_code,
     data = x, fpc = ~ grouping_area_km2
   )
   design_estimates <- survey::svytotal(~ density_scaled, design = mydesign)
@@ -65,10 +65,16 @@ boot_all_years_parallel_dt <- function(dat, reps, ncpus = NULL) {
   out
 }
 
+#' @title Calculate a design index
+#'
+#' @description
+#' Calculate a design-based index with bootstrapped standard errors
+#'
 #' @param species Species common name or number
 #' @param ssid Survey series ID
 #' @param reps Number of bootstrap samples. Set to `0` to skip the bootstrapping
 #'   and only report design-based variance estimates.
+#' @export
 get_design_index <- function(species, ssid = NULL, reps = 1000) {
 
   message("Retreiving survey set data")

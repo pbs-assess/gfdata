@@ -1,5 +1,12 @@
 # Updates to gfdata
 
+## 0.1.8 2026-07-09
+
+- `get_all_survey_sets()` now defaults to `species = NULL` to get all
+  species.
+- Exported and documented `get_design_index()` for design-based index
+  calculations based on pulled survey set data.
+
 ## 0.1.7 2025-09-05
 
 - Added new `sog_grid` dataset containing the Strait of Georgia Synoptic Bottom Trawl Survey Grid

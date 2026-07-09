@@ -26,7 +26,7 @@ get_all_survey_samples(
 )
 
 get_all_survey_sets(
-  species,
+  species = NULL,
   ssid = NULL,
   major = NULL,
   years = NULL,
@@ -84,7 +84,7 @@ achieved by filtering for specimens where \code{!is.na(grouping_code)}.}
 for all surveys other than the NMFS Triennial.}
 
 \item{include_event_info}{Logical for whether to append all relevant fishing
-event info (location, timing, effort, catch, etc.). Defaults to TRUE.}
+event info (location, timing, effort, catch, etc.). Defaults to FALSE.}
 
 \item{include_activity_matches}{Get all surveys with activity codes that
 match chosen ssids.}

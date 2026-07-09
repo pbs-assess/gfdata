@@ -63,7 +63,7 @@
 #' ## `time_retrieved`.
 #' }
 #'
-get_all_survey_sets <- function(species,
+get_all_survey_sets <- function(species = NULL,
                                 ssid = NULL,
                                 major = NULL,
                                 years = NULL,
