@@ -70,9 +70,18 @@ boot_one_year_dt <- function(x, reps) {
 
   if (do_boot) {
     t <- boot_biomass_vec(x, reps)
+    # boot::boot.ci() silently returns NULL (just prints a message, no
+    # warning/error) when every bootstrap replicate is identical -- common
+    # for years with very few sets per stratum, where resampling can't
+    # produce any variation. bci$percent[[4]] on a NULL bci is also silently
+    # NULL rather than NA, which drops the lowerci/upperci columns entirely
+    # further down and breaks rbindlist() across years, so guard explicitly.
     suppressWarnings(bci <- boot::boot.ci(
       list(R = reps), type = "perc", t0 = b_analytical, t = t
     ))
+    if (is.null(bci)) {
+      do_boot <- FALSE
+    }
   }
 
   x$density_scaled <- x$density_kgpm2 * 1e6
