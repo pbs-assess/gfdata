@@ -32,6 +32,8 @@
   [`get_hake_catch()`](https://pbs-assess.github.io/gfdata/reference/get_data.md)
   [`get_sablefish_surveys()`](https://pbs-assess.github.io/gfdata/reference/get_data.md)
   : Get PBS data
+- [`get_design_index()`](https://pbs-assess.github.io/gfdata/reference/get_design_index.md)
+  : Calculate a design index
 - [`get_sensor_data_trawl()`](https://pbs-assess.github.io/gfdata/reference/get_environmental_data.md)
   [`get_sensor_data_trawl_fe()`](https://pbs-assess.github.io/gfdata/reference/get_environmental_data.md)
   [`get_sensor_data_ll_td()`](https://pbs-assess.github.io/gfdata/reference/get_environmental_data.md)

@@ -33,7 +33,7 @@ get_all_survey_samples(
 )
 
 get_all_survey_sets(
-  species,
+  species = NULL,
   ssid = NULL,
   major = NULL,
   years = NULL,
@@ -114,7 +114,7 @@ get_all_survey_sets(
 - include_event_info:
 
   Logical for whether to append all relevant fishing event info
-  (location, timing, effort, catch, etc.). Defaults to TRUE.
+  (location, timing, effort, catch, etc.). Defaults to FALSE.
 
 - include_activity_matches:
 

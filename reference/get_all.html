@@ -21,7 +21,7 @@ exact number depends on which types of surveys are being returned."></head><body
 
     <a class="navbar-brand me-2" href="../index.html">gfdata</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.7</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.8</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -85,7 +85,7 @@ exact number depends on which types of surveys are being returned.</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">get_all_survey_sets</span><span class="op">(</span></span>
-<span>  <span class="va">species</span>,</span>
+<span>  species <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ssid <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  major <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  years <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -164,7 +164,7 @@ for all surveys other than the NMFS Triennial.</p></dd>
 
 <dt id="arg-include-event-info">include_event_info<a class="anchor" aria-label="anchor" href="#arg-include-event-info"></a></dt>
 <dd><p>Logical for whether to append all relevant fishing
-event info (location, timing, effort, catch, etc.). Defaults to TRUE.</p></dd>
+event info (location, timing, effort, catch, etc.). Defaults to FALSE.</p></dd>
 
 
 <dt id="arg-include-activity-matches">include_activity_matches<a class="anchor" aria-label="anchor" href="#arg-include-activity-matches"></a></dt>
