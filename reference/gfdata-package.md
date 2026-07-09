@@ -19,6 +19,8 @@ Useful links:
 
 Authors:
 
+- Philina A. English <philina.english@dfo-mpo.gc.ca>
+
 - Elise A. Keppel
 
 - Jillian C. Dunic <jillian.dunic@dfo-mpo.gc.ca>

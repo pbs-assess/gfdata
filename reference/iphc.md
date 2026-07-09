@@ -81,7 +81,7 @@ Once the 2 data frames are joined, a data frame with these columns:
   Species common name
 
 An object of class `tbl_df` (inherits from `tbl`, `data.frame`) with
-306480 rows and 6 columns.
+316956 rows and 6 columns.
 
 ## Details
 
