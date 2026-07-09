@@ -2,8 +2,15 @@
 
 ## 0.1.10 2026-07-09
 
-- Add `data` argument to `get_all_survey_sets()` to use already
+- Add `data` argument to `get_design_index()` to use already
   cached data.
+  
+- Dramatically speed up `get_design_index()` bootstrapping.
+
+- Deal with NAs in `get_design_index()`.
+
+- Fill in a limited set of missing door spreads (SYN WCHG 2014) based
+  on average from that year in `get_all_survey_sets()`.
 
 ## 0.1.9 2026-07-09
 

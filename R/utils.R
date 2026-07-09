@@ -210,6 +210,23 @@ add_version <- function(x) {
 }
 
 trawl_area_swept <- function(.d) {
+  # Door spread is a property of the vessel/gear on a given cruise, not the
+  # individual tow, so when the sensor drops out for some tows within a
+  # survey_series_id/year, fill those with the mean of the other tows from
+  # that same cruise. Leaves doorspread_m untouched (still NA) for any
+  # survey_series_id/year with no valid readings at all (e.g. longline
+  # surveys, where doorspread doesn't apply).
+  .d <- .d |>
+    dplyr::group_by(survey_series_id, year) |>
+    dplyr::mutate(
+      doorspread_m = ifelse(
+        is.na(doorspread_m) & any(!is.na(doorspread_m)),
+        mean(doorspread_m, na.rm = TRUE),
+        doorspread_m
+      )
+    ) |>
+    dplyr::ungroup()
+
   .d$area_swept1 <- .d$doorspread_m * .d$tow_length_m
   .d$area_swept2 <- .d$doorspread_m * (.d$speed_mpm * .d$duration_min)
   .d$area_swept <- ifelse(!is.na(.d$area_swept1), .d$area_swept1, .d$area_swept2)
