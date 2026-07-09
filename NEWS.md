@@ -1,5 +1,9 @@
 # Updates to gfdata
 
+## 0.1.9 2026-07-09
+
+- Update IPHC data to 2025 version.
+
 ## 0.1.8 2026-07-09
 
 - `get_all_survey_sets()` now defaults to `species = NULL` to get all

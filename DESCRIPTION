@@ -1,6 +1,6 @@
 Package: gfdata
 Title: Data Extraction for DFO PBS Groundfish
-Version: 0.1.8
+Version: 0.1.9
 Authors@R: c(
     person(c("Elise", "A."), "Keppel", role = "aut"),
     person(c("Philina", "A."), "English",
