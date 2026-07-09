@@ -16,14 +16,15 @@
 # - repeat for 'Set and Pacific halibut data'
 # - move these 2 .xlsx files into this folder
 # - Set the date you did this download here:
-DOWNLOAD_DATE <- "2025-01-22"
+DOWNLOAD_DATE <- "2026-07-09"
 # - run the following code
 
-old_set_filename <- "2024-05-Set and Pacific halibut data.xlsx"
-new_set_filename <- "2025-01-Set and Pacific halibut data.xlsx"
+# 'old' not needed unless uncommenting some comparison code:
+old_set_filename <- "2025-01-Set and Pacific halibut data.xlsx"
+new_set_filename <- "2026-07-Set and Pacific halibut data.xlsx"
 
-old_non_filename <- "2024-05-Non-Pacific halibut data.xlsx"
-new_non_filename <- "2025-01-Non-Pacific halibut data.xlsx"
+old_non_filename <- "2025-01-Non-Pacific halibut data.xlsx"
+new_non_filename <- "2026-07-Non-Pacific halibut data.xlsx"
 
 # There shouldn't be any tweaks needed unless the IPHC makes changes to their
 # survey design (which I'm sure they will!).
