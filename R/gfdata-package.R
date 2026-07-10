@@ -139,7 +139,8 @@ if (getRversion() >= "2.15.1") {
       "area_km2",
       "biomass",
       "ALTERNATE_SPECIMEN_TYPE",
-      "survey"
+      "survey",
+      "grouping_area_km2"
     )
   )
 }

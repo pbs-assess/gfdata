@@ -1,5 +1,9 @@
 # Updates to gfdata
 
+## 0.1.11 2026-07-10
+
+- Add `design_indexes` data. See `?design_indexes`.
+
 ## 0.1.10 2026-07-09
 
 - Add `data` argument to `get_design_index()` to use already

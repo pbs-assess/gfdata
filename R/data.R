@@ -150,3 +150,18 @@
 #' attr(gfdata::sog_grid, "date-downloaded")
 #'
 "sog_grid"
+
+#' @title Design-based survey indexes
+#'
+#' @description
+#' Design-based indexes as calculated from survey set data.
+#' A bootstrap with 20,000 replicates is used for calculation
+#' of standard errors and confidence intervals.
+#' See file `data-raw/design-indexes.R` for calculation.
+#' This is the output from running [get_design_index()]
+#' on all the species in the groundfish data synopsis report.
+#'
+#' @seealso [get_design_index()]
+#'
+#' @rdname design_indexes
+"design_indexes"
