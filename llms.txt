@@ -16,6 +16,8 @@ network and permissions to access the groundfish databases.*
 
 - [`assign_areas()`](https://pbs-assess.github.io/gfdata/reference/assign_areas.md)
   : Assign areas
+- [`design_indexes`](https://pbs-assess.github.io/gfdata/reference/design_indexes.md)
+  : Design-based survey indexes
 - [`get_all_survey_samples()`](https://pbs-assess.github.io/gfdata/reference/get_all.md)
   [`get_all_survey_sets()`](https://pbs-assess.github.io/gfdata/reference/get_all.md)
   : Get all data
