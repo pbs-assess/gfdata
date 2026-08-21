@@ -25,7 +25,8 @@ get_survey_samples(
   remove_bad_data = TRUE,
   unsorted_only = TRUE,
   usability = NULL,
-  major = NULL
+  major = NULL,
+  return_all_lengths = FALSE
 )
 
 get_commercial_samples(
@@ -165,8 +166,8 @@ get_sablefish_surveys()
 
 - return_all_lengths:
 
-  Include all length types, rather than just with most common
-  measurement. Default = FALSE.
+  Include all length types in long format, rather than just the most
+  common measurement. Default = FALSE.
 
 - alt_year_start_date:
 

@@ -16,7 +16,7 @@ design_indexes
 ## Format
 
 An object of class `tbl_df` (inherits from `tbl`, `data.frame`) with
-16675 rows and 8 columns.
+17400 rows and 8 columns.
 
 ## See also
 
