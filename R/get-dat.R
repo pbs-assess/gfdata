@@ -314,7 +314,8 @@ get_ll_hook_data <- function(species = NULL, ssid = NULL){
 #'   IPHC codes may be different to other surveys.
 get_survey_samples <- function(species, ssid = NULL,
                                remove_bad_data = TRUE, unsorted_only = TRUE,
-                               usability = NULL, major = NULL) {
+                               usability = NULL, major = NULL,
+                               return_all_lengths = FALSE) {
 
   if(length(species) > 1L) {
     stop(
@@ -342,14 +343,37 @@ get_survey_samples <- function(species, ssid = NULL,
   search_flag <- "-- insert length type here"
   i <- grep(search_flag, .q)
 
-  .q[i] <- paste0("CAST(ROUND(", length_type, "/ 10, 1) AS DECIMAL(8,1)) AS LENGTH,")
+  if (return_all_lengths) {
+    .q[i] <- paste0("CAST(ROUND(", length_type, "/ 10, 1) AS DECIMAL(8,1)) AS LENGTH,
+                    CAST(ROUND(Fork_Length / 10, 1) AS DECIMAL(8,1)) AS Fork_Length,
+                    CAST(ROUND(Standard_Length / 10, 1) AS DECIMAL(8,1)) AS Standard_Length,
+                    CAST(ROUND(Total_Length / 10, 1) AS DECIMAL(8,1)) AS Total_Length,
+                    CAST(ROUND(Second_Dorsal_Length / 10, 1) AS DECIMAL(8,1)) AS Second_Dorsal_Length,")
+  } else {
+    .q[i] <- paste0("CAST(ROUND(", length_type, "/ 10, 1) AS DECIMAL(8,1)) AS LENGTH,")
+  }
 
   .d <- run_sql("GFBioSQL", .q)
   names(.d) <- tolower(names(.d))
   .d$species_common_name <- tolower(.d$species_common_name)
   .d$species_science_name <- tolower(.d$species_science_name)
 
-  .d <- .d %>% mutate(length_type = length_type)
+  if (!return_all_lengths) {
+    .d <- .d %>% mutate(length_type = length_type)
+  } else {
+    original_columns <- .d %>%
+      select(-fork_length, -standard_length, -total_length, -second_dorsal_length) %>%
+      names()
+    .d <- .d %>%
+      select(-length) %>%
+      tidyr::pivot_longer(
+        cols = tidyr::ends_with("_length"),
+        names_to = "length_type",
+        values_to = "length",
+        values_drop_na = TRUE
+      ) %>%
+      dplyr::relocate(tidyr::all_of(original_columns))
+  }
 
   if (unsorted_only) {
     .d <- filter(.d, sampling_desc == "UNSORTED")
@@ -359,7 +383,7 @@ get_survey_samples <- function(species, ssid = NULL,
     .d <- filter(.d, usability_code %in% usability)
   }
 
-  if (length(.d$specimen_id) > length(unique(.d$specimen_id))) {
+  if (anyDuplicated(.d[c("specimen_id", "length_type")])) {
     warning(
       "Duplicate specimen IDs are present because of overlapping survey ",
       "stratifications. If working with the data yourelf, filter them after ",
@@ -414,8 +438,8 @@ get_survey_samples <- function(species, ssid = NULL,
 #' @export
 #' @param unsorted_only Remove sorted biological data ('keepers' and 'discards'
 #'  and unknown). Default = TRUE.
-#' @param return_all_lengths Include all length types, rather than just
-#'  with most common measurement. Default = FALSE.
+#' @param return_all_lengths Include all length types in long format, rather
+#'  than just the most common measurement. Default = FALSE.
 #' @rdname get_data
 get_commercial_samples <- function(species, unsorted_only = TRUE,
                                    return_all_lengths = FALSE,

@@ -44,7 +44,8 @@ get_survey_samples(
   remove_bad_data = TRUE,
   unsorted_only = TRUE,
   usability = NULL,
-  major = NULL
+  major = NULL,
+  return_all_lengths = FALSE
 )
 
 get_commercial_samples(
@@ -161,8 +162,8 @@ IPHC codes may be different to other surveys.}
 4B only), set inside = 1. To select only the outside population, set inside
 = 0.}
 
-\item{return_all_lengths}{Include all length types, rather than just
-with most common measurement. Default = FALSE.}
+\item{return_all_lengths}{Include all length types in long format, rather
+than just the most common measurement. Default = FALSE.}
 
 \item{alt_year_start_date}{Alternative year starting date specified as a
 month-day combination. E.g. "03-01" for March 1st. Can be used to create

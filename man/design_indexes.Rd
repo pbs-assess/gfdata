@@ -5,7 +5,7 @@
 \alias{design_indexes}
 \title{Design-based survey indexes}
 \format{
-An object of class \code{tbl_df} (inherits from \code{tbl}, \code{data.frame}) with 16675 rows and 8 columns.
+An object of class \code{tbl_df} (inherits from \code{tbl}, \code{data.frame}) with 17400 rows and 8 columns.
 }
 \usage{
 design_indexes

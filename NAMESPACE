@@ -57,36 +57,40 @@ export(load_iphc_dat)
 export(load_survey_blocks)
 export(run_sql)
 export(sql_geom_to_sf)
-importFrom(data.table,":=")
-importFrom(data.table,.N)
-importFrom(data.table,as.data.table)
-importFrom(data.table,data.table)
-importFrom(data.table,rbindlist)
-importFrom(data.table,uniqueN)
-importFrom(dplyr,anti_join)
-importFrom(dplyr,arrange)
-importFrom(dplyr,as_tibble)
-importFrom(dplyr,bind_rows)
-importFrom(dplyr,case_when)
-importFrom(dplyr,contains)
-importFrom(dplyr,distinct)
-importFrom(dplyr,filter)
-importFrom(dplyr,full_join)
-importFrom(dplyr,group_by)
-importFrom(dplyr,inner_join)
-importFrom(dplyr,left_join)
-importFrom(dplyr,mutate)
-importFrom(dplyr,n)
-importFrom(dplyr,pull)
-importFrom(dplyr,relocate)
-importFrom(dplyr,rename)
-importFrom(dplyr,right_join)
-importFrom(dplyr,select)
-importFrom(dplyr,semi_join)
-importFrom(dplyr,summarise)
-importFrom(dplyr,tibble)
-importFrom(dplyr,ungroup)
-importFrom(dplyr,where)
+importFrom(data.table,
+  ":=",
+  .N,
+  as.data.table,
+  data.table,
+  rbindlist,
+  uniqueN
+)
+importFrom(dplyr,
+  anti_join,
+  arrange,
+  as_tibble,
+  bind_rows,
+  case_when,
+  contains,
+  distinct,
+  filter,
+  full_join,
+  group_by,
+  inner_join,
+  left_join,
+  mutate,
+  n,
+  pull,
+  relocate,
+  rename,
+  right_join,
+  select,
+  semi_join,
+  summarise,
+  tibble,
+  ungroup,
+  where
+)
 importFrom(magrittr,"%>%")
 importFrom(rlang,.data)
 importFrom(stats,na.omit)
