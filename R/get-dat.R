@@ -377,9 +377,9 @@ get_survey_samples <- function(species, ssid = NULL,
   .d$species_science_name <- tolower(.d$species_science_name)
 
   is_grenadier <- .d$grenadier_ind == 1
-  if (any(is_grenadier, na.rm = TRUE)) {
+  if (nrow(.d) > 0 && any(is_grenadier, na.rm = TRUE)) {
     message("Grenadier and Popeye lengths are snout-to-anal-fin measurements")
-  } else {
+  } else if (nrow(.d) > 0) {
     message(paste0("All or majority of length measurements are ", length_type))
   }
   .d <- select(.d, -grenadier_ind)
@@ -524,9 +524,10 @@ get_commercial_samples <- function(species, unsorted_only = TRUE,
   .d$species_science_name <- tolower(.d$species_science_name)
   .d <- mutate(.d, year = lubridate::year(trip_start_date))
   is_grenadier <- .d$grenadier_ind == 1
-  if (any(is_grenadier, na.rm = TRUE)) {
+
+  if (nrow(.d) > 0 && any(is_grenadier, na.rm = TRUE)) {
     message("Grenadier and Popeye lengths are snout-to-anal-fin measurements")
-  } else {
+  } else if (nrow(.d) > 0) {
     message(paste0("All or majority of length measurements are ", length_type))
   }
   .d <- select(.d, -grenadier_ind)
