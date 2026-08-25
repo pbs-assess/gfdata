@@ -339,7 +339,6 @@ get_survey_samples <- function(species, ssid = NULL,
     )
   }
   length_type <- get_spp_sample_length_type(species)
-  message(paste0("All or majority of length measurements are ", length_type))
 
   # Grenadier lengths are recorded in B22's OTHER_VALUE field rather than in
   # one of the four standard length columns. Attribute code 31 is snout to
@@ -372,6 +371,12 @@ get_survey_samples <- function(species, ssid = NULL,
   names(.d) <- tolower(names(.d))
   .d$species_common_name <- tolower(.d$species_common_name)
   .d$species_science_name <- tolower(.d$species_science_name)
+
+  if (any(grepl("grenadier", .d$species_common_name), na.rm = TRUE)) {
+    message("Grenadier lengths are snout-to-anal-fin measurements")
+  } else {
+    message(paste0("All or majority of length measurements are ", length_type))
+  }
 
   if (!return_all_lengths) {
     .d <- .d %>%
