@@ -344,13 +344,17 @@ get_survey_samples <- function(species, ssid = NULL,
   # one of the four standard length columns. Attribute code 31 is snout to
   # anal fin length. OTHER_VALUE is in the same millimetre convention as the
   # standard B22 length fields, so it is converted to centimetres below.
+  grenadier_species <- paste0(
+    "(LOWER(SPP.SPECIES_COMMON_NAME) LIKE '%grenadier%' ",
+    "OR LOWER(SPP.PARENT_TAXONOMIC_UNIT) LIKE '%grenadier%')"
+  )
   grenadier_length <- paste0(
-    "CASE WHEN LOWER(SPP.SPECIES_COMMON_NAME) LIKE '%grenadier%' ",
+    "CASE WHEN ", grenadier_species, " ",
     "THEN CASE WHEN SP.MORPHOMETRICS_ATTRIBUTE_CODE = 31 ",
     "THEN SP.OTHER_VALUE END ELSE ", length_type, " END"
   )
   snout_to_anal_fin_length <- paste0(
-    "CASE WHEN LOWER(SPP.SPECIES_COMMON_NAME) LIKE '%grenadier%' ",
+    "CASE WHEN ", grenadier_species, " ",
     "AND SP.MORPHOMETRICS_ATTRIBUTE_CODE = 31 THEN SP.OTHER_VALUE END"
   )
   search_flag <- "-- insert length type here"
@@ -372,17 +376,19 @@ get_survey_samples <- function(species, ssid = NULL,
   .d$species_common_name <- tolower(.d$species_common_name)
   .d$species_science_name <- tolower(.d$species_science_name)
 
-  if (any(grepl("grenadier", .d$species_common_name), na.rm = TRUE)) {
-    message("Grenadier lengths are snout-to-anal-fin measurements")
+  is_grenadier <- .d$grenadier_ind == 1
+  if (any(is_grenadier, na.rm = TRUE)) {
+    message("Grenadier and Popeye lengths are snout-to-anal-fin measurements")
   } else {
     message(paste0("All or majority of length measurements are ", length_type))
   }
+  .d <- select(.d, -grenadier_ind)
 
   if (!return_all_lengths) {
     .d <- .d %>%
       mutate(
         length_type = ifelse(
-          grepl("grenadier", species_common_name),
+          is_grenadier,
           "Snout_To_Anal_Fin_Length",
           length_type
         )
