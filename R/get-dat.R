@@ -485,19 +485,32 @@ get_commercial_samples <- function(species, unsorted_only = TRUE,
   .q <- inject_filter("AND SM.SPECIES_CODE IN", species, sql_code = .q)
 
   length_type <- get_spp_sample_length_type(species)
-  message(paste0("All or majority of length measurements are ", length_type))
+  grenadier_species <- paste0(
+    "(LOWER(SPP.SPECIES_COMMON_NAME) LIKE '%grenadier%' ",
+    "OR LOWER(SPP.PARENT_TAXONOMIC_UNIT) LIKE '%grenadier%')"
+  )
+  grenadier_length <- paste0(
+    "CASE WHEN ", grenadier_species, " ",
+    "THEN CASE WHEN SP.MORPHOMETRICS_ATTRIBUTE_CODE = 31 ",
+    "THEN SP.OTHER_VALUE END ELSE ", length_type, " END"
+  )
+  snout_to_anal_fin_length <- paste0(
+    "CASE WHEN ", grenadier_species, " ",
+    "AND SP.MORPHOMETRICS_ATTRIBUTE_CODE = 31 THEN SP.OTHER_VALUE END"
+  )
   search_flag <- "-- insert length type here"
   i <- grep(search_flag, .q)
 
   if (return_all_lengths){
-    .q[i] <- paste0("CAST(ROUND(", length_type, "/ 10, 1) AS DECIMAL(8,1)) AS LENGTH,
+    .q[i] <- paste0("CAST(ROUND(", grenadier_length, "/ 10, 1) AS DECIMAL(8,1)) AS LENGTH,
                     CAST(ROUND(Fork_Length/ 10, 1) AS DECIMAL(8,1)) AS Fork_Length,
                     CAST(ROUND(Standard_Length/ 10, 1) AS DECIMAL(8,1)) AS Standard_Length,
                     CAST(ROUND(Total_Length/ 10, 1) AS DECIMAL(8,1)) AS Total_Length,
                     CAST(ROUND(Second_Dorsal_Length/ 10, 1) AS DECIMAL(8,1)) AS Second_Dorsal_Length,
+                    CAST(ROUND(", snout_to_anal_fin_length, "/ 10, 1) AS DECIMAL(8,1)) AS Snout_To_Anal_Fin_Length,
                     ")
   } else {
-    .q[i] <- paste0("CAST(ROUND(", length_type, "/ 10, 1) AS DECIMAL(8,1)) AS LENGTH,")
+    .q[i] <- paste0("CAST(ROUND(", grenadier_length, "/ 10, 1) AS DECIMAL(8,1)) AS LENGTH,")
   }
 
   if (!is.null(major)) {
@@ -510,11 +523,24 @@ get_commercial_samples <- function(species, unsorted_only = TRUE,
   .d$species_common_name <- tolower(.d$species_common_name)
   .d$species_science_name <- tolower(.d$species_science_name)
   .d <- mutate(.d, year = lubridate::year(trip_start_date))
+  is_grenadier <- .d$grenadier_ind == 1
+  if (any(is_grenadier, na.rm = TRUE)) {
+    message("Grenadier and Popeye lengths are snout-to-anal-fin measurements")
+  } else {
+    message(paste0("All or majority of length measurements are ", length_type))
+  }
+  .d <- select(.d, -grenadier_ind)
 
   if (!return_all_lengths){
-    .d <- .d %>% mutate(length_type = length_type)
+    .d <- .d %>% mutate(
+      length_type = ifelse(is_grenadier,
+        "Snout_To_Anal_Fin_Length", length_type)
+    )
   } else {
-    .n <- .d %>% select(-fork_length,-standard_length,-total_length, -second_dorsal_length)
+    .n <- .d %>% select(
+      -fork_length, -standard_length, -total_length,
+      -second_dorsal_length, -snout_to_anal_fin_length
+    )
     .n <- names(.n)
     .d <- .d %>% select(-length) %>%
       tidyr::pivot_longer(
