@@ -340,17 +340,32 @@ get_survey_samples <- function(species, ssid = NULL,
   }
   length_type <- get_spp_sample_length_type(species)
   message(paste0("All or majority of length measurements are ", length_type))
+
+  # Grenadier lengths are recorded in B22's OTHER_VALUE field rather than in
+  # one of the four standard length columns. Attribute code 31 is snout to
+  # anal fin length. OTHER_VALUE is in the same millimetre convention as the
+  # standard B22 length fields, so it is converted to centimetres below.
+  grenadier_length <- paste0(
+    "CASE WHEN LOWER(SPP.SPECIES_COMMON_NAME) LIKE '%grenadier%' ",
+    "THEN CASE WHEN SP.MORPHOMETRICS_ATTRIBUTE_CODE = 31 ",
+    "THEN SP.OTHER_VALUE END ELSE ", length_type, " END"
+  )
+  snout_to_anal_fin_length <- paste0(
+    "CASE WHEN LOWER(SPP.SPECIES_COMMON_NAME) LIKE '%grenadier%' ",
+    "AND SP.MORPHOMETRICS_ATTRIBUTE_CODE = 31 THEN SP.OTHER_VALUE END"
+  )
   search_flag <- "-- insert length type here"
   i <- grep(search_flag, .q)
 
   if (return_all_lengths) {
-    .q[i] <- paste0("CAST(ROUND(", length_type, "/ 10, 1) AS DECIMAL(8,1)) AS LENGTH,
+    .q[i] <- paste0("CAST(ROUND(", grenadier_length, "/ 10, 1) AS DECIMAL(8,1)) AS LENGTH,
                     CAST(ROUND(Fork_Length / 10, 1) AS DECIMAL(8,1)) AS Fork_Length,
                     CAST(ROUND(Standard_Length / 10, 1) AS DECIMAL(8,1)) AS Standard_Length,
                     CAST(ROUND(Total_Length / 10, 1) AS DECIMAL(8,1)) AS Total_Length,
-                    CAST(ROUND(Second_Dorsal_Length / 10, 1) AS DECIMAL(8,1)) AS Second_Dorsal_Length,")
+                    CAST(ROUND(Second_Dorsal_Length / 10, 1) AS DECIMAL(8,1)) AS Second_Dorsal_Length,
+                    CAST(ROUND(", snout_to_anal_fin_length, "/ 10, 1) AS DECIMAL(8,1)) AS Snout_To_Anal_Fin_Length,")
   } else {
-    .q[i] <- paste0("CAST(ROUND(", length_type, "/ 10, 1) AS DECIMAL(8,1)) AS LENGTH,")
+    .q[i] <- paste0("CAST(ROUND(", grenadier_length, "/ 10, 1) AS DECIMAL(8,1)) AS LENGTH,")
   }
 
   .d <- run_sql("GFBioSQL", .q)
@@ -359,15 +374,25 @@ get_survey_samples <- function(species, ssid = NULL,
   .d$species_science_name <- tolower(.d$species_science_name)
 
   if (!return_all_lengths) {
-    .d <- .d %>% mutate(length_type = length_type)
+    .d <- .d %>%
+      mutate(
+        length_type = ifelse(
+          grepl("grenadier", species_common_name),
+          "Snout_To_Anal_Fin_Length",
+          length_type
+        )
+      )
   } else {
     original_columns <- .d %>%
-      select(-fork_length, -standard_length, -total_length, -second_dorsal_length) %>%
+      select(
+        -fork_length, -standard_length, -total_length,
+        -second_dorsal_length, -snout_to_anal_fin_length
+      ) %>%
       names()
     .d <- .d %>%
       select(-length) %>%
       tidyr::pivot_longer(
-        cols = tidyr::ends_with("_length"),
+        cols = tidyr::ends_with("_length") & !tidyr::starts_with("best"),
         names_to = "length_type",
         values_to = "length",
         values_drop_na = TRUE
