@@ -1,0 +1,84 @@
+USE [GFBioSQL]
+GO
+
+/****** Object:  StoredProcedure [dbo].[proc_catmat_dog]    Script Date: 11/21/2017 12:02:13 ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+CREATE PROCEDURE [dbo].[proc_catmat_dog] @sid INTEGER, @spp VARCHAR(3)
+AS
+   SET NOCOUNT ON
+
+   -- Fishing event attributes for good (USABILITY_CODE = 0,1,2,6) sets:
+   SELECT FE.FISHING_EVENT_ID,
+      LGLSP_HOOK_COUNT AS HOOK_COUNT,
+      0.0024384 * 0.009144 * LGLSP_HOOK_COUNT AS AREA_SWEPT_KM2,
+      GROUPING_CODE,
+      1 AS AREA_KM2,
+      S.SURVEY_ID,
+      SURVEY_SERIES_ID,
+      SURVEY_DESC,
+      YEAR(TRIP_START_DATE) AS YEAR
+   INTO #SETS
+   FROM SURVEY S
+      INNER JOIN TRIP_SURVEY TS ON
+      S.SURVEY_ID = TS.SURVEY_ID
+      INNER JOIN TRIP T ON
+      TS.TRIP_ID = T.TRIP_ID
+      INNER JOIN FISHING_EVENT FE ON
+      T.TRIP_ID = FE.TRIP_ID
+      INNER JOIN LONGLINE_SPECS LS ON
+      FE.FISHING_EVENT_ID = LS.FISHING_EVENT_ID
+   WHERE S.SURVEY_ID = @sid AND
+      ISNULL(LS.USABILITY_CODE,1) IN (0, 1, 2, 6)
+
+     -- Cross-product:
+   SELECT FISHING_EVENT_ID, @spp AS SPECIES_CODE
+   INTO #SETS_FISH
+   FROM #SETS
+
+   -- STEP 2: Get the catch for the sets/fish cross product
+   --         Zero-weight sets are included
+   SELECT SF.FISHING_EVENT_ID,
+      SF.SPECIES_CODE,
+      SUM(ISNULL(CATCH_WEIGHT,0)) AS CATCH_WEIGHT,
+      SUM(ISNULL(CATCH_COUNT,0)) AS CATCH_COUNT
+   INTO #CATCH
+   FROM #SETS_FISH SF
+      LEFT OUTER JOIN (
+         SELECT S.FISHING_EVENT_ID,
+            C.SPECIES_CODE,
+            CATCH_WEIGHT,
+            CATCH_COUNT
+         FROM #SETS S
+            INNER JOIN FISHING_EVENT_CATCH FEC ON
+            S.FISHING_EVENT_ID = FEC.FISHING_EVENT_ID
+            INNER JOIN CATCH C ON
+            FEC.CATCH_ID = C.CATCH_ID) C
+      ON SF.FISHING_EVENT_ID = C.FISHING_EVENT_ID AND
+      SF.SPECIES_CODE = C.SPECIES_CODE
+   GROUP BY SF.FISHING_EVENT_ID, SF.SPECIES_CODE
+
+   -- STEP 3 (final): Put it all together
+   -- Total time to execute is about 40 sec
+   SELECT S.SURVEY_DESC,
+      S.SURVEY_SERIES_ID,
+      S.SURVEY_ID,
+      S.YEAR,
+      C.SPECIES_CODE,
+      S.FISHING_EVENT_ID,
+      S.GROUPING_CODE,
+      S.HOOK_COUNT,
+      C.CATCH_WEIGHT,
+      C.CATCH_COUNT,
+      C.CATCH_COUNT / S.AREA_SWEPT_KM2 AS DENSITY_PPKM2
+   FROM #SETS S
+      INNER JOIN #CATCH C ON
+      S.FISHING_EVENT_ID = C.FISHING_EVENT_ID
+
+GO
+
