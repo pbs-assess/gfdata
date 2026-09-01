@@ -1,5 +1,11 @@
 # Updates to gfdata
 
+## 0.1.12 2026-08-25
+
+- Add snout to anal fin length as length type for all grenadiers within
+  `get_survey_samples()`.
+- Add `best_length` column to `get_survey_samples()`.
+
 ## 0.1.11 2026-07-10
 
 - Add `design_indexes` data. See `?design_indexes`.
