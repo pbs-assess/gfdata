@@ -2,7 +2,7 @@
 
 These functions get all survey set or sample data for a set of species
 by major area, activity, or specific surveys. The main functions in this
-package focus on retrieving the more commonly used typs of data and are
+package focus on retrieving the more commonly used types of data and are
 often limited to sets and samples that conform to current design-based
 standards and survey grids. These functions will retrieve everything and
 therefore require careful consideration of what data types are
