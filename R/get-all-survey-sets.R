@@ -627,10 +627,14 @@ get_all_survey_sets <- function(species = NULL,
   )
 
   if (grouping_only) {
+    # SSID 16 is exempt from the updated-grouping check because its 2006 legacy
+    # FISHING_EVENT_GROUPING codes validly differ from the original codes.
+    trawl_requiring_updated_grouping <- setdiff(trawl, 16L)
     .d <- filter(
       .d,
       !is.na(grouping_code_original),
-      !(survey_series_id %in% trawl) | !is.na(grouping_code_updated)
+      !(survey_series_id %in% trawl_requiring_updated_grouping) |
+        !is.na(grouping_code_updated)
     )
 
     if (nrow(.d) < 1) {

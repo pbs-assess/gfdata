@@ -11,6 +11,84 @@ if (FALSE) {
     readRDS("../gfsynopsis-2025/report/data-cache-2026-07/survey-sets.rds")
 }
 
+# Repair the 2006 WCHG grouping codes in the already-downloaded generalized
+# extract. The legacy procedure selected the valid FISHING_EVENT_GROUPING code
+# for each event (151--154), whereas the generalized extract retained the old
+# FISHING_EVENT.GROUPING_CODE (125--129) and returned no updated code. This
+# event-level mapping cannot be reconstructed exactly from depth alone.
+wchg_legacy_file <- file.path("scratch", "get_survey_sets_2025_16.rds")
+if (!file.exists(wchg_legacy_file)) {
+  stop("Missing legacy WCHG grouping lookup: ", wchg_legacy_file, call. = FALSE)
+}
+
+wchg_2006_lookup <- readRDS(wchg_legacy_file) |>
+  dplyr::filter(survey_series_id == 16L, year == 2006L) |>
+  dplyr::distinct(fishing_event_id, legacy_grouping_code = grouping_code)
+
+if (anyDuplicated(wchg_2006_lookup$fishing_event_id) ||
+    anyNA(wchg_2006_lookup$legacy_grouping_code)) {
+  stop("Legacy WCHG lookup does not contain one grouping code per event.",
+    call. = FALSE)
+}
+
+wchg_grouping_metadata <- set_data |>
+  dplyr::filter(
+    survey_series_id == 16L,
+    grouping_code %in% unique(wchg_2006_lookup$legacy_grouping_code)
+  ) |>
+  dplyr::distinct(
+    grouping_code, grouping_desc, grouping_depth_id, grouping_area_km2
+  )
+
+if (anyDuplicated(wchg_grouping_metadata$grouping_code) ||
+    !setequal(
+      wchg_grouping_metadata$grouping_code,
+      wchg_2006_lookup$legacy_grouping_code
+    )) {
+  stop("Could not identify unique WCHG metadata for grouping codes 151--154.",
+    call. = FALSE)
+}
+
+wchg_event_match <- match(
+  set_data$fishing_event_id,
+  wchg_2006_lookup$fishing_event_id
+)
+fix_wchg_2006 <- set_data$survey_series_id == 16L &
+  set_data$year == 2006L &
+  !is.na(wchg_event_match)
+
+if (dplyr::n_distinct(set_data$fishing_event_id[fix_wchg_2006]) !=
+    nrow(wchg_2006_lookup)) {
+  stop("Downloaded survey data do not contain every legacy 2006 WCHG event.",
+    call. = FALSE)
+}
+
+fixed_grouping_code <- wchg_2006_lookup$legacy_grouping_code[
+  wchg_event_match[fix_wchg_2006]
+]
+metadata_match <- match(
+  fixed_grouping_code,
+  wchg_grouping_metadata$grouping_code
+)
+
+set_data$grouping_code[fix_wchg_2006] <- fixed_grouping_code
+set_data$grouping_code_updated[fix_wchg_2006] <- fixed_grouping_code
+set_data$grouping_desc[fix_wchg_2006] <-
+  wchg_grouping_metadata$grouping_desc[metadata_match]
+set_data$grouping_desc_updated[fix_wchg_2006] <-
+  wchg_grouping_metadata$grouping_desc[metadata_match]
+set_data$grouping_depth_id[fix_wchg_2006] <-
+  wchg_grouping_metadata$grouping_depth_id[metadata_match]
+set_data$grouping_area_km2[fix_wchg_2006] <-
+  wchg_grouping_metadata$grouping_area_km2[metadata_match]
+
+trawl <- c(1, 3, 4, 16)
+set_data <- dplyr::filter(
+  set_data,
+  !is.na(grouping_code),
+  !(survey_series_id %in% trawl) | !is.na(grouping_code_updated)
+)
+
 # Temporary fix for 2025 HBLL stratum codes:
 hbll_out_lu <- structure(list(grouping_code = c(448, 449, 450, 451, 452, 453,
   454, 455, 456, 457, 458, 459), fe_grouping_code = c(321, 322,
