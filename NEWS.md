@@ -1,5 +1,11 @@
 # Updates to gfdata
 
+## 0.1.13 2026-09-03
+
+- Update `grouping_only = TRUE` in `get_all_survey_sets()` to require
+  survey-specific updated grouping matches for trawl survey series, in addition
+  to non-missing original grouping codes.
+
 ## 0.1.12 2026-08-25
 
 - Add snout to anal fin length as length type for all grenadiers within

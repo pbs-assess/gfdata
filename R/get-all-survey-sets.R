@@ -37,8 +37,10 @@
 #'   doesn't seem to assign usabilities.
 #' @param grouping_only Defaults to FALSE, which will return all specimens or sets
 #'   collected on research trips. TRUE returns only sets or specimens from fishing
-#'   events with grouping codes that match that expected for a survey. Can also be
-#'   achieved by filtering for specimens where `!is.na(grouping_code)`.
+#'   events with grouping codes that match that expected for a survey. For trawl
+#'   surveys, this also requires a survey-specific updated grouping match. Can
+#'   also be partly achieved by filtering for specimens where
+#'   `!is.na(grouping_code)`.
 #' @param quiet_option Default option, `"message"`, suppresses messages from
 #'   sections of code with lots of `join_by` messages. Any other string will allow
 #'   messages.
@@ -625,7 +627,11 @@ get_all_survey_sets <- function(species = NULL,
   )
 
   if (grouping_only) {
-    .d <- filter(.d, !is.na(grouping_code_original))
+    .d <- filter(
+      .d,
+      !is.na(grouping_code_original),
+      !(survey_series_id %in% trawl) | !is.na(grouping_code_updated)
+    )
 
     if (nrow(.d) < 1) {
       if (is.null(ssid) & is.null(major)) {
