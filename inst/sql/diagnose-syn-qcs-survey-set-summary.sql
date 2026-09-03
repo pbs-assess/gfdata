@@ -64,12 +64,12 @@ SELECT
     qcs.qcs_link_count,
     qcs.qcs_survey_id_min,
     qcs.qcs_survey_id_max,
-    qcs.expected_survey_link_count,
+    qcs_expected.expected_survey_link_count,
     qcs.original_ind_min,
     qcs.original_ind_max,
 
     grp.feg_grouping_count,
-    grp.legacy_matching_group_count,
+    grp_match.legacy_matching_group_count,
     grp.feg_grouping_code_min,
     grp.feg_grouping_code_max,
 
@@ -85,10 +85,10 @@ SELECT
 
     CASE
         WHEN fe.fishing_event_id IS NOT NULL
-         AND qcs.expected_survey_link_count > 0
+         AND qcs_expected.expected_survey_link_count > 0
          AND fe.fe_parent_event_id IS NULL
          AND COALESCE(spec.usability_code_min, 1) IN (0, 1, 2, 6)
-         AND grp.legacy_matching_group_count > 0
+         AND grp_match.legacy_matching_group_count > 0
         THEN 1 ELSE 0
     END AS legacy_candidate_today,
 
@@ -132,10 +132,6 @@ OUTER APPLY (
         COUNT(*) AS qcs_link_count,
         MIN(s.survey_id) AS qcs_survey_id_min,
         MAX(s.survey_id) AS qcs_survey_id_max,
-        SUM(CASE
-            WHEN s.survey_id = x.expected_survey_id THEN 1
-            ELSE 0
-        END) AS expected_survey_link_count,
         MIN(s.original_ind) AS original_ind_min,
         MAX(s.original_ind) AS original_ind_max
     FROM trip_survey AS ts
@@ -146,19 +142,33 @@ OUTER APPLY (
 ) AS qcs
 
 OUTER APPLY (
+    SELECT COUNT(*) AS expected_survey_link_count
+    FROM trip_survey AS ts
+    INNER JOIN survey AS s
+        ON s.survey_id = ts.survey_id
+    WHERE ts.trip_id = fe.trip_id
+      AND s.survey_series_id = 1
+      AND s.survey_id = x.expected_survey_id
+) AS qcs_expected
+
+OUTER APPLY (
     SELECT
         COUNT(DISTINCT feg.grouping_code) AS feg_grouping_count,
-        COUNT(DISTINCT CASE
-            WHEN sg.grouping_code IS NOT NULL THEN feg.grouping_code
-        END) AS legacy_matching_group_count,
         MIN(feg.grouping_code) AS feg_grouping_code_min,
         MAX(feg.grouping_code) AS feg_grouping_code_max
     FROM fishing_event_grouping AS feg
-    LEFT JOIN survey_grouping AS sg
-        ON sg.survey_id = x.expected_survey_id
-       AND sg.grouping_code = feg.grouping_code
     WHERE feg.fishing_event_id = fe.fishing_event_id
 ) AS grp
+
+OUTER APPLY (
+    SELECT COUNT(DISTINCT feg.grouping_code)
+        AS legacy_matching_group_count
+    FROM fishing_event_grouping AS feg
+    INNER JOIN survey_grouping AS sg
+        ON sg.grouping_code = feg.grouping_code
+    WHERE feg.fishing_event_id = fe.fishing_event_id
+      AND sg.survey_id = x.expected_survey_id
+) AS grp_match
 
 OUTER APPLY (
     SELECT

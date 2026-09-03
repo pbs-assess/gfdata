@@ -3,7 +3,10 @@
    for the SYN QCS event IDs that differ between the caches.
 
    Run with:
-     run_sql("GFBioSQL", read_sql("diagnose-syn-qcs-new-event-rows.sql"))
+     gfdata::run_sql(
+       "GFBioSQL",
+       gfdata:::read_sql("diagnose-syn-qcs-new-event-rows.sql")
+     )
 */
 
 ;WITH target_events AS (
