@@ -19,7 +19,7 @@ as appropriate."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">gfdata</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.13</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.14</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -46,7 +46,7 @@ as appropriate."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Load survey block data (polygon, point, or coordinate table)</h1>
-      <small class="dont-index">Source: <a href="https://github.com/pbs-assess/gfdata/blob/master/R/utils.R" class="external-link"><code>R/utils.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/pbs-assess/gfdata/blob/master/R/spatial.R" class="external-link"><code>R/spatial.R</code></a></small>
       <div class="d-none name"><code>load_survey_blocks.Rd</code></div>
     </div>
 
@@ -74,7 +74,11 @@ as appropriate.</p>
 
 
 <dl><dt id="arg-dataset">dataset<a class="anchor" aria-label="anchor" href="#arg-dataset"></a></dt>
-<dd><p>Character string specifying the dataset to load. One of:</p><ul><li><p><code>"syn_hbll"</code> (default): Synoptic and HBLL survey grids (2x2 km square grids that may overlap with land).</p></li>
+<dd><p>Character string specifying the dataset to load. One of:</p><ul><li><p><code>"syn_hbll"</code> (default): Synoptic and HBLL survey grids combined (2x2 km square grids that may overlap with land).</p></li>
+<li><p><code>"synoptic"</code>: all four Synoptic survey grids combined (SYN HS, SYN QCS, SYN WCHG, SYN WCVI).</p></li>
+<li><p><code>"hbll"</code>: all four HBLL survey grids combined (HBLL INS N/S, HBLL OUT N/S).</p></li>
+<li><p><code>"hbll_ins"</code>: HBLL INS survey grids only (HBLL INS N and HBLL INS S).</p></li>
+<li><p><code>"hbll_out"</code>: HBLL OUT survey grids only (HBLL OUT N and HBLL OUT S).</p></li>
 <li><p><code>"mssm"</code>: MSSM survey grid data, see <code><a href="mssm_grid.html">gfdata::mssm_grid</a></code>.</p></li>
 <li><p><code>"syn_sog"</code>: Strait of Georgia Synoptic Bottom Trawl grid (only active blocks available).</p></li>
 </ul></dd>
@@ -83,8 +87,9 @@ as appropriate.</p>
 <dt id="arg-type">type<a class="anchor" aria-label="anchor" href="#arg-type"></a></dt>
 <dd><p>Character string specifying the output format. One of:</p><ul><li><p><code>"polygon"</code> (default): returns an <code>sf</code> object with polygon geometries.</p></li>
 <li><p><code>"centroid"</code>: returns an <code>sf</code> object with the centroid point for each block.</p></li>
-<li><p><code>"XY"</code>: returns a <code>tibble</code> with columns <code>X</code> and <code>Y</code> (in kilometres),
-representing point-on-surface coordinates extracted from each polygon.</p></li>
+<li><p><code>"XY"</code>: returns a <code>tibble</code> with columns <code>X</code> and <code>Y</code> (in kilometres, UTM zone 9N / EPSG:32609),
+representing point-on-surface coordinates extracted from each polygon. The CRS is also
+attached as a <code>"crs"</code> attribute on the returned tibble.</p></li>
 </ul></dd>
 
 

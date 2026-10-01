@@ -24,8 +24,20 @@ load_survey_blocks(
 
   Character string specifying the dataset to load. One of:
 
-  - `"syn_hbll"` (default): Synoptic and HBLL survey grids (2x2 km
-    square grids that may overlap with land).
+  - `"syn_hbll"` (default): Synoptic and HBLL survey grids combined (2x2
+    km square grids that may overlap with land).
+
+  - `"synoptic"`: all four Synoptic survey grids combined (SYN HS, SYN
+    QCS, SYN WCHG, SYN WCVI).
+
+  - `"hbll"`: all four HBLL survey grids combined (HBLL INS N/S, HBLL
+    OUT N/S).
+
+  - `"hbll_ins"`: HBLL INS survey grids only (HBLL INS N and HBLL INS
+    S).
+
+  - `"hbll_out"`: HBLL OUT survey grids only (HBLL OUT N and HBLL OUT
+    S).
 
   - `"mssm"`: MSSM survey grid data, see
     [`gfdata::mssm_grid`](https://pbs-assess.github.io/gfdata/reference/mssm_grid.md).
@@ -43,9 +55,10 @@ load_survey_blocks(
   - `"centroid"`: returns an `sf` object with the centroid point for
     each block.
 
-  - `"XY"`: returns a `tibble` with columns `X` and `Y` (in kilometres),
-    representing point-on-surface coordinates extracted from each
-    polygon.
+  - `"XY"`: returns a `tibble` with columns `X` and `Y` (in kilometres,
+    UTM zone 9N / EPSG:32609), representing point-on-surface coordinates
+    extracted from each polygon. The CRS is also attached as a `"crs"`
+    attribute on the returned tibble.
 
 - active_only:
 
