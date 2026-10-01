@@ -1,5 +1,17 @@
 # Updates to gfdata
 
+## 0.1.14 2026-10-01
+
+- Add `"synoptic"`, `"hbll"`, `"hbll_ins"`, and `"hbll_out"` dataset options
+  to `load_survey_blocks()`. Previously, Synoptic and HBLL grids could only be
+  loaded together.
+- `load_survey_blocks(type = "XY")` now attaches the CRS (UTM 9N) as a
+  `"crs"` attribute on the returned tibble.
+- `type` and `dataset` arguments in `load_survey_blocks()` are now
+  case-insensitive.
+- Fix rare geometry corruption on first subset of lazy-loaded survey block
+  data in `load_survey_blocks()`.
+
 ## 0.1.13 2026-09-03
 
 - Update `grouping_only = TRUE` in `get_all_survey_sets()` to require
