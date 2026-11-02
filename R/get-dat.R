@@ -476,9 +476,13 @@ get_survey_samples <- function(species, ssid = NULL,
 #'  and unknown). Default = TRUE.
 #' @param return_all_lengths Include all length types in long format, rather
 #'  than just the most common measurement. Default = FALSE.
+#' @param year_from_trip Year variable is based on trip year rather than date 
+#'  sampled. Default = TRUE for back compatibility with gfdata-based code pre-2027. 
 #' @rdname get_data
-get_commercial_samples <- function(species, unsorted_only = TRUE,
+get_commercial_samples <- function(species, 
+                                   unsorted_only = TRUE,
                                    return_all_lengths = FALSE,
+                                   year_from_trip = TRUE,
                                    major = NULL,
                                    usability = NULL) {
   .q <- read_sql("get-comm-samples.sql")
@@ -522,7 +526,11 @@ get_commercial_samples <- function(species, unsorted_only = TRUE,
   names(.d) <- tolower(names(.d))
   .d$species_common_name <- tolower(.d$species_common_name)
   .d$species_science_name <- tolower(.d$species_science_name)
+
+  if(year_from_trip) {
   .d <- mutate(.d, year = lubridate::year(trip_start_date))
+  }
+  
   is_grenadier <- .d$grenadier_ind == 1
 
   if (nrow(.d) > 0 && any(is_grenadier, na.rm = TRUE)) {
