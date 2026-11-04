@@ -128,6 +128,62 @@ boot_all_years_dt <- function(dat, reps) {
   out
 }
 
+# Keep only the sets inside an HBLL survey's own stratification frame.
+#
+# A design-based index estimates a total for one fixed area, but HBLL trips
+# include sets coded to strata outside the frame of the survey that fished them:
+# - strata of the neighbouring survey (e.g., HBLL OUT S 2007 and 2009 sets in
+#   HBLL OUT N blocks and strata); keeping these adds that survey's area.
+# - early "Inshore rockfish" strata 47 and 48 (2003--2009), which are almost
+#   entirely outside the current HBLL inside blocks.
+#
+# The legacy index code (calc.biomass() in Norm-SurveyIndices.r) also kept these
+# sets, but `mu[sa$GROUPING_CODE %in% names(mb)] <- mb` then applied the frame's
+# areas to the wrong strata by position, so legacy values for those years should
+# not be used as a reference.
+#
+# Any other code stops with an error rather than being dropped, so that new
+# stratum codes (e.g., those used in 2025) can't silently remove sets.
+filter_hbll_frame <- function(dat, ssid) {
+  frames <- list(
+    `22` = 321:323, # HBLL OUT N
+    `36` = 324:326, # HBLL OUT S
+    `39` = 317:318, # HBLL INS N
+    `40` = 319:320  # HBLL INS S
+  )
+  frame <- frames[[as.character(ssid)]]
+  if (is.null(frame)) return(dat)
+
+  outside <- list(
+    `22` = 324:326,
+    `36` = 321:323,
+    `39` = c(47, 48, 319:320),
+    `40` = c(47, 48, 317:318)
+  )[[as.character(ssid)]]
+
+  unknown <- setdiff(dat$grouping_code, c(frame, outside))
+  if (length(unknown) > 0L) {
+    stop(
+      "Unrecognized grouping_code(s) for HBLL ssid ", ssid, ": ",
+      paste(sort(unknown), collapse = ", "),
+      ". Map these to the survey's strata (",
+      paste(frame, collapse = ", "),
+      ") before calculating the index; see data-raw/design-indexes.R.",
+      call. = FALSE
+    )
+  }
+
+  keep <- dat$grouping_code %in% frame
+  if (any(!keep)) {
+    message(
+      "Dropping ", sum(!keep), " row(s) coded to strata outside the frame of ",
+      "HBLL ssid ", ssid, ": ",
+      paste(sort(unique(dat$grouping_code[!keep])), collapse = ", ")
+    )
+  }
+  dat[keep, , drop = FALSE]
+}
+
 #' @title Calculate a design index
 #'
 #' @description
@@ -171,6 +227,8 @@ get_design_index <- function(species, ssid = NULL, reps = 1000, data = NULL) {
   if (!is.null(ssid)) {
     dat <- dat[dat$survey_series_id %in% ssid,,drop=FALSE]
   }
+
+  dat <- filter_hbll_frame(dat, ssid)
 
   if (nrow(dat) == 0L) {
     stop(

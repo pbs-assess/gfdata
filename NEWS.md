@@ -1,5 +1,9 @@
 # Updates to gfdata
 
+## 0.1.15 2026-11-03
+
+- Correct HBLL design-based indexes.
+
 ## 0.1.14 2026-10-01
 
 - Add `"synoptic"`, `"hbll"`, `"hbll_ins"`, and `"hbll_out"` dataset options
